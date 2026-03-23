@@ -63,10 +63,10 @@
     <ClCompile Include="FileName.cpp">
       <Filter>controller</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\Downloads\glad.c">
+    <ClCompile Include="stb_image.cpp">
       <Filter>source\cpp</Filter>
     </ClCompile>
-    <ClCompile Include="stb_image.cpp">
+    <ClCompile Include="glad.c">
       <Filter>source\cpp</Filter>
     </ClCompile>
   </ItemGroup>
