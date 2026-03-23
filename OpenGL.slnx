@@ -1,6 +1,7 @@
 <Solution>
   <Configurations>
     <BuildType Name="Debug" />
+    <BuildType Name="Debug2" />
     <BuildType Name="Release" />
     <BuildType Name="Test" />
     <Platform Name="x64" />
