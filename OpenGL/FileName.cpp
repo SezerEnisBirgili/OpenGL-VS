@@ -284,7 +284,6 @@ int main()
     ourShader.setMat4("view", view);
     ourShader.setMat4("projection", projection);
 
-    ourShader.setVec3("lightPos", lightPos);
     ourShader.setVec3("viewPos", camera.Position);
 
     ourShader.setVec3("material.ambient", material.ambient);
@@ -302,6 +301,26 @@ int main()
     ourShader.setVec3("light.diffuse", light.diffuse);
     ourShader.setVec3("light.specular", light.specular);
     ourShader.setVec3("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+
+    ourShader.setFloat("light.constant", 1.0f);
+    ourShader.setFloat("light.linear", 0.09f);
+    ourShader.setFloat("light.quadratic", 0.032f);
+
+    ourShader.setVec3("light.position", camera.Position);
+    ourShader.setVec3("light.direction", camera.Front);
+
+    ourShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+    ourShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
+
+    lightCubeShader.use();
+
+    lightCubeShader.setMat4("model", lightModel);
+    lightCubeShader.setMat4("view", camera.GetViewMatrix());
+    lightCubeShader.setMat4("projection", projection);
+
+    lightCubeShader.setVec3("lightColor", lightColor);
+
+
 
 
     // ------------------------------------------------------------------
@@ -340,12 +359,13 @@ int main()
         ourShader.setMat4("view", camera.GetViewMatrix());
         ourShader.setMat4("projection", projection);
         ourShader.setVec3("viewPos", camera.Position);
+        ourShader.setVec3("light.position", camera.Position);
+        ourShader.setVec3("light.direction", camera.Front);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
-
 
         glBindVertexArray(cubeVAO);
 
@@ -360,6 +380,15 @@ int main()
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
+
+        lightCubeShader.use();
+        lightCubeShader.setMat4("model", lightModel);
+        lightCubeShader.setMat4("view", camera.GetViewMatrix());
+        lightCubeShader.setMat4("projection", projection);
+
+        glBindVertexArray(lightVAO);
+
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
         ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
