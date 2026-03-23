@@ -60,14 +60,14 @@
     <ClCompile Include="imgui_widgets.cpp">
       <Filter>source\cpp\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="FileName.cpp">
-      <Filter>controller</Filter>
-    </ClCompile>
     <ClCompile Include="stb_image.cpp">
       <Filter>source\cpp</Filter>
     </ClCompile>
     <ClCompile Include="glad.c">
       <Filter>source\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="FileName.cpp">
+      <Filter>controller</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
