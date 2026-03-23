@@ -34,6 +34,9 @@
     <Filter Include="source\shaders\fragmentShader">
       <UniqueIdentifier>{681bbd29-fea4-497c-9a48-cc1a206d59ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\resources\environment">
+      <UniqueIdentifier>{6b537e47-3700-4209-a923-1f9ed82921a7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imGuiTutorial.cpp">
@@ -138,5 +141,10 @@
     <Image Include="matrix_c.png">
       <Filter>source\resources\textures</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="platform.txt">
+      <Filter>source\resources\environment</Filter>
+    </Text>
   </ItemGroup>
 </Project>

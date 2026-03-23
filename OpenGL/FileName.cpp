@@ -14,6 +14,9 @@
 #include "camera.h"
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
 
 // -------------------------------------------------------------------------
 // Constants
@@ -23,6 +26,8 @@ const unsigned int SCR_HEIGHT = 600;
 
 const char* vertexShader[] = { "vPhongShader.vert", "vLightShader.vert" };
 const char* fragmentShader[] = { "fPhongShader.frag", "fLightShader.frag" };
+
+const char* wallFilePath = "platform.txt";
 
 // -------------------------------------------------------------------------
 // Timing
@@ -77,7 +82,7 @@ float specularStrength = 1.0f;
 // -------------------------------------------------------------------------
 // Camera state
 // -------------------------------------------------------------------------
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraPos = glm::vec3(0.0f, 5.0f, 0.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 float yaw = -90.0f;
@@ -114,6 +119,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 // -------------------------------------------------------------------------
 void processInput(GLFWwindow* window, Shader& ourShader);
 void loadTexture(const char* texFileName, unsigned int& texture1);
+void generateWorld(Shader& shader, const char* wallFilePath);
+void generatePlatform(Shader& shader, const std::string& floor, int y);
+std::string wallReader(const char* wallFilePath);
+std::vector<std::string> wallSections(const std::string& walls);
+void renderWorld(Shader& shader, std::vector<std::string> floors);
 
 // =========================================================================
 int main()
@@ -220,18 +230,6 @@ int main()
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
     };
 
-    glm::vec3 cubePositions[] = {
-    glm::vec3(2.0f,  5.0f, -15.0f),
-    glm::vec3(-1.5f, -2.2f, -2.5f),
-    glm::vec3(-3.8f, -2.0f, -12.3f),
-    glm::vec3(2.4f, -0.4f, -3.5f),
-    glm::vec3(-1.7f,  3.0f, -7.5f),
-    glm::vec3(1.3f, -2.0f, -2.5f),
-    glm::vec3(1.5f,  2.0f, -2.5f),
-    glm::vec3(1.5f,  0.2f, -1.5f),
-    glm::vec3(-1.3f,  1.0f, -1.5f)
-    };
-
     // ------------------------------------------------------------------
     // VAO / VBO
     // ------------------------------------------------------------------
@@ -312,17 +310,6 @@ int main()
     ourShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
     ourShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
 
-    lightCubeShader.use();
-
-    lightCubeShader.setMat4("model", lightModel);
-    lightCubeShader.setMat4("view", camera.GetViewMatrix());
-    lightCubeShader.setMat4("projection", projection);
-
-    lightCubeShader.setVec3("lightColor", lightColor);
-
-
-
-
     // ------------------------------------------------------------------
     // IMGUI
     // ------------------------------------------------------------------
@@ -332,6 +319,8 @@ int main()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
+
+    std::vector<std::string> floors = generateWorld(wallFilePath);
 
     // ------------------------------------------------------------------
     // Render loop
@@ -369,27 +358,7 @@ int main()
 
         glBindVertexArray(cubeVAO);
 
-        for (unsigned int i = 0; i < 9; i++)
-        {
-            // calculate the model matrix for each object and pass it to shader before drawing
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
-            float angle = 20.0f * i;
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            ourShader.setMat4("model", model);
-
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-
-        lightCubeShader.use();
-        lightCubeShader.setMat4("model", lightModel);
-        lightCubeShader.setMat4("view", camera.GetViewMatrix());
-        lightCubeShader.setMat4("projection", projection);
-
-        glBindVertexArray(lightVAO);
-
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
+        renderWorld(ourShader, floors);
 
         ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
         ImGui::Begin("Controls");                              
@@ -507,4 +476,86 @@ void loadTexture(const char* texFileName, unsigned int& texture1)
         std::cout << "Failed to load texture: " << stbi_failure_reason() << std::endl;
     }
     stbi_image_free(data);
+}
+
+std::vector<std::string> generateWorld(const char * wallFilePath)
+{
+    std::string building = wallReader(wallFilePath);
+    return wallSections(building);
+}
+
+void renderWorld(Shader& shader, std::vector<std::string> floors)
+{    
+    for (int i = 0; i < floors.size(); i++)
+        generatePlatform(shader, floors[i], i);
+}
+
+void generatePlatform(Shader& ourShader, const std::string& walls, int y = 0) 
+{
+    int wallLength = walls.size();
+
+    int x = 0;
+    int z = 0;
+
+    while (z < wallLength) 
+    {
+        while (x < wallLength)
+        {
+            if (walls[z*wallLength + x] == '#') 
+            {
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(x, y, z));
+                ourShader.setMat4("model", model);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+            x++;
+        }
+        x = 0;
+    }
+    z++;
+
+}
+
+std::string wallReader(const char* wallFilePath)
+{
+    std::string walls;
+
+    std::ifstream wallfile;
+
+    wallfile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+    try {
+        wallfile.open(wallFilePath);
+
+        std::stringstream wallFileStream;
+
+        wallFileStream << wallfile.rdbuf();
+
+        wallfile.close();
+
+        walls = wallFileStream.str();
+    }
+    catch (std::ifstream::failure e) {
+        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+    }
+    return walls;
+}
+
+std::vector<std::string> wallSections (const std::string& walls)
+{
+    char delimiter = '-';
+
+    std::vector<std::string> sections;
+    std::string section;
+    std::stringstream ss(walls);
+
+    while (std::getline(ss, section, delimiter))
+        sections.push_back(section);
+
+    for(int i = 0; i < sections.size(); i++) 
+    {
+        std::cout << sections[i] << std::endl;
+    }
+
+    return sections;
 }

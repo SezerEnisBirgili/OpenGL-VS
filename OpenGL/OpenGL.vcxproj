@@ -200,6 +200,9 @@
     <Image Include="matrix_c.png" />
     <Image Include="world.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="platform.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
