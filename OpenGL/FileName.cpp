@@ -119,7 +119,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 // -------------------------------------------------------------------------
 void processInput(GLFWwindow* window, Shader& ourShader);
 void loadTexture(const char* texFileName, unsigned int& texture1);
-void generateWorld(Shader& shader, const char* wallFilePath);
+std::vector<std::string> generateWorld(const char* wallFilePath);
 void generatePlatform(Shader& shader, const std::string& floor, int y);
 std::string wallReader(const char* wallFilePath);
 std::vector<std::string> wallSections(const std::string& walls);
@@ -490,30 +490,36 @@ void renderWorld(Shader& shader, std::vector<std::string> floors)
         generatePlatform(shader, floors[i], i);
 }
 
-void generatePlatform(Shader& ourShader, const std::string& walls, int y = 0) 
+void generatePlatform(Shader& ourShader, const std::string& walls, int y = 0)
 {
-    int wallLength = walls.size();
+    int rowWidth = 0;
+    while (rowWidth < (int)walls.size() && walls[rowWidth] != '\n' && walls[rowWidth] != '\r')
+        rowWidth++;
 
-    int x = 0;
-    int z = 0;
+    if (rowWidth == 0) return;
 
-    while (z < wallLength) 
+    int stride = rowWidth + 1; // +1 to skip \n
+
+    // Round up: if the last row has no trailing \n, still count it
+    int numRows = ((int)walls.size() + stride - 1) / stride;
+
+    for (int z = 0; z < numRows; z++)
     {
-        while (x < wallLength)
+        for (int x = 0; x < rowWidth; x++)
         {
-            if (walls[z*wallLength + x] == '#') 
+            int idx = z * stride + x;
+            if (idx >= (int)walls.size()) break; // guard against last partial row
+
+            char c = walls[idx];
+            if (c == '#')
             {
                 glm::mat4 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(x, y, z));
                 ourShader.setMat4("model", model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
-            x++;
         }
-        x = 0;
     }
-    z++;
-
 }
 
 std::string wallReader(const char* wallFilePath)
@@ -541,7 +547,7 @@ std::string wallReader(const char* wallFilePath)
     return walls;
 }
 
-std::vector<std::string> wallSections (const std::string& walls)
+std::vector<std::string> wallSections(const std::string& walls)
 {
     char delimiter = '-';
 
@@ -550,11 +556,14 @@ std::vector<std::string> wallSections (const std::string& walls)
     std::stringstream ss(walls);
 
     while (std::getline(ss, section, delimiter))
-        sections.push_back(section);
-
-    for(int i = 0; i < sections.size(); i++) 
     {
-        std::cout << sections[i] << std::endl;
+        // Strip leading \n left over from the delimiter line
+        if (!section.empty() && section[0] == '\n')
+            section = section.substr(1);
+
+        // Skip empty sections (e.g. trailing delimiter)
+        if (!section.empty())
+            sections.push_back(section);
     }
 
     return sections;
