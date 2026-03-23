@@ -1,0 +1,145 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Resource Files\textures">
+      <UniqueIdentifier>{1106713d-22e3-4251-8093-c10cb85b2660}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\shader">
+      <UniqueIdentifier>{8915057e-a300-4925-be07-d2d5b2f12a3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\shader\vertex">
+      <UniqueIdentifier>{ea69cbd5-2102-4e1f-9fd4-4ec226b06f8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\shader\fragment">
+      <UniqueIdentifier>{0fe6f9e9-51e8-4646-86f6-61cab478000b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\imgui">
+      <UniqueIdentifier>{8ac7c00b-ffc3-46cc-8e07-9e2853d60d6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="controller">
+      <UniqueIdentifier>{94827f12-ec4e-452f-a90c-aceeb98b4f29}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="world.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="awesomeface.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="container.jpg">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="container2.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="container2_specular.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="container2_wood_specular.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="lighting_maps_specular_color.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="matrix.jpg">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="matrix_c.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="fGouraudShader.frag">
+      <Filter>Source Files\shader\fragment</Filter>
+    </None>
+    <None Include="fLightShader.frag">
+      <Filter>Source Files\shader\fragment</Filter>
+    </None>
+    <None Include="fPhongShader.frag">
+      <Filter>Source Files\shader\fragment</Filter>
+    </None>
+    <None Include="fShader.frag">
+      <Filter>Source Files\shader\fragment</Filter>
+    </None>
+    <None Include="fTestShader.frag">
+      <Filter>Source Files\shader\fragment</Filter>
+    </None>
+    <None Include="vGouraudShader.vert">
+      <Filter>Source Files\shader\vertex</Filter>
+    </None>
+    <None Include="vLightShader.vert">
+      <Filter>Source Files\shader\vertex</Filter>
+    </None>
+    <None Include="vPhongShader.vert">
+      <Filter>Source Files\shader\vertex</Filter>
+    </None>
+    <None Include="vShader.vert">
+      <Filter>Source Files\shader\vertex</Filter>
+    </None>
+    <None Include="vTestShader.vert">
+      <Filter>Source Files\shader\vertex</Filter>
+    </None>
+    <None Include="imgui.ini">
+      <Filter>Source Files\imgui</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="glad.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stb_image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_demo.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_draw.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_glfw.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_opengl3.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_tables.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_widgets.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="FileName.cpp">
+      <Filter>controller</Filter>
+    </ClCompile>
+    <ClCompile Include="imGuiTutorial.cpp">
+      <Filter>controller</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
