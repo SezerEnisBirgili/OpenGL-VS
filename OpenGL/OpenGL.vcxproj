@@ -97,8 +97,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\OpenGL\include;D:\OpenGL\include\imgui;D:\OpenGL\include\imgui\backends;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\OpenGL\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\sezer.birgili\source\OpenGL\include;C:\Users\sezer.birgili\source\OpenGL\include\imgui\backends;C:\Users\sezer.birgili\source\OpenGL\include\imgui;D:\OpenGL\include;D:\OpenGL\include\imgui;D:\OpenGL\include\imgui\backends;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\sezer.birgili\source\OpenGL\lib\glfw-3.4;C:\Users\sezer.birgili\source\OpenGL\lib;D:\OpenGL\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Test|x64'">
     <IncludePath>D:\OpenGL\include;D:\OpenGL\include\imgui;D:\OpenGL\include\imgui\backends;$(IncludePath)</IncludePath>
