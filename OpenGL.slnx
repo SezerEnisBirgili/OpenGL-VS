@@ -1,0 +1,12 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Release" />
+    <BuildType Name="Test" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="OpenGL/OpenGL.vcxproj" Id="8513d203-aa1e-4f30-90a3-de870a0e34d4">
+    <BuildType Solution="Test|*" Project="Debug2" />
+  </Project>
+</Solution>
