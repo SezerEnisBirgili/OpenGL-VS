@@ -45,6 +45,13 @@ bool RAINBOW = false;
 // Lighting
 // -------------------------------------------------------------------------
 
+struct gameFloor
+{
+    int row;
+    int col;
+    const std::string walls;
+};
+
 struct Material {
     glm::vec3 ambient;
     glm::vec3 diffuse;
@@ -82,10 +89,10 @@ float specularStrength = 1.0f;
 // -------------------------------------------------------------------------
 // Camera state
 // -------------------------------------------------------------------------
-glm::vec3 cameraPos = glm::vec3(0.0f, 5.0f, 0.0f);
+glm::vec3 cameraPos = glm::vec3(1.0f, 1.0f, -3.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-float yaw = -90.0f;
+float yaw = 90.0f;
 float pitch = 0.0f;
 
 Camera camera = Camera(cameraPos, cameraUp, yaw, pitch);
@@ -119,11 +126,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 // -------------------------------------------------------------------------
 void processInput(GLFWwindow* window, Shader& ourShader);
 void loadTexture(const char* texFileName, unsigned int& texture1);
-std::vector<std::string> generateWorld(const char* wallFilePath);
-void generatePlatform(Shader& shader, const std::string& floor, int y);
+std::vector<gameFloor> generateWorld(const char* wallFilePath);
+void generatePlatform(Shader& shader, const gameFloor& floor, glm::vec3 startPos = glm::vec3(0.0f), float rotation = 0.0f); 
 std::string wallReader(const char* wallFilePath);
-std::vector<std::string> wallSections(const std::string& walls);
-void renderWorld(Shader& shader, std::vector<std::string> floors);
+std::vector<gameFloor> wallSections(const std::string& walls);
+void renderWorld(Shader& shader, std::vector<gameFloor> floors);
 
 // =========================================================================
 int main()
@@ -320,7 +327,7 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    std::vector<std::string> floors = generateWorld(wallFilePath);
+    std::vector<gameFloor> floors = generateWorld(wallFilePath);
 
     // ------------------------------------------------------------------
     // Render loop
@@ -478,43 +485,31 @@ void loadTexture(const char* texFileName, unsigned int& texture1)
     stbi_image_free(data);
 }
 
-std::vector<std::string> generateWorld(const char * wallFilePath)
+std::vector<gameFloor> generateWorld(const char * wallFilePath)
 {
     std::string building = wallReader(wallFilePath);
     return wallSections(building);
 }
 
-void renderWorld(Shader& shader, std::vector<std::string> floors)
+void renderWorld(Shader& shader, std::vector<gameFloor> floors)
 {    
     for (int i = 0; i < floors.size(); i++)
-        generatePlatform(shader, floors[i], i);
+        generatePlatform(shader, floors[i], glm::vec3(0.0f, i, 0.0f)); 
 }
 
-void generatePlatform(Shader& ourShader, const std::string& walls, int y = 0)
+void generatePlatform(Shader& ourShader, const gameFloor& floor, glm::vec3 startPos, float rotation)
 {
-    int rowWidth = 0;
-    while (rowWidth < (int)walls.size() && walls[rowWidth] != '\n' && walls[rowWidth] != '\r')
-        rowWidth++;
+    int y = 0;
 
-    if (rowWidth == 0) return;
-
-    int stride = rowWidth + 1; // +1 to skip \n
-
-    // Round up: if the last row has no trailing \n, still count it
-    int numRows = ((int)walls.size() + stride - 1) / stride;
-
-    for (int z = 0; z < numRows; z++)
+    for (int z = 0; z < floor.row; z++)
     {
-        for (int x = 0; x < rowWidth; x++)
+        for (int x = 0; x < floor.col; x++)
         {
-            int idx = z * stride + x;
-            if (idx >= (int)walls.size()) break; // guard against last partial row
-
-            char c = walls[idx];
-            if (c == '#')
+            if (floor.walls[(floor.col + 1) * z + x] == '#')
             {
                 glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(x, y, z));
+                model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
+                model = glm::translate(model, glm::vec3(startPos.x + x, startPos.y + y, startPos.z + z));
                 ourShader.setMat4("model", model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
@@ -542,29 +537,49 @@ std::string wallReader(const char* wallFilePath)
         walls = wallFileStream.str();
     }
     catch (std::ifstream::failure e) {
-        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+        std::cout << "ERROR::PLATFORMREADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
     }
     return walls;
 }
 
-std::vector<std::string> wallSections(const std::string& walls)
+std::vector<gameFloor> wallSections(const std::string& walls)
 {
     char delimiter = '-';
 
-    std::vector<std::string> sections;
+    std::vector<gameFloor> floors;
     std::string section;
     std::stringstream ss(walls);
 
+    int row = 0;
+    int col = 0;
+    int count = 0;
+
     while (std::getline(ss, section, delimiter))
     {
-        // Strip leading \n left over from the delimiter line
+        row = 0;
+        col = 0;
+        count = 0;
+
         if (!section.empty() && section[0] == '\n')
             section = section.substr(1);
 
-        // Skip empty sections (e.g. trailing delimiter)
+        while (section[count] != '\n')
+            count++;
+        col = count;
+        count = 0;
+
+        for (char c : section)
+            if (c == '\n') 
+                row++;
+
+        if (!section.empty() && section.back() != '\n')
+            row++;
+
+        gameFloor fl = gameFloor(row, col, section);
+
         if (!section.empty())
-            sections.push_back(section);
+            floors.push_back(fl);
     }
 
-    return sections;
+    return floors;
 }
