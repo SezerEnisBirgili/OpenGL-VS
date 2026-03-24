@@ -85,8 +85,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LibraryPath>C:\Users\sezer.birgili\source\OpenGL\lib\glfw-3.4;$(LibraryPath)</LibraryPath>
-    <IncludePath>C:\Users\sezer.birgili\source\OpenGL\include;C:\Users\sezer.birgili\source\OpenGL\include\imgui;C:\Users\sezer.birgili\source\OpenGL\include\imgui\backends;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\OpenGL\lib;C:\Users\sezer.birgili\source\OpenGL\lib\glfw-3.4;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\OpenGL\include\imgui\backends;D:\OpenGL\include\imgui;D:\OpenGL\include;C:\Users\sezer.birgili\source\OpenGL\include;C:\Users\sezer.birgili\source\OpenGL\include\imgui;C:\Users\sezer.birgili\source\OpenGL\include\imgui\backends;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug2|x64'">
     <ExternalIncludePath>C:\Users\sezer.birgili\source\OpenGL\include;C:\Users\sezer.birgili\source\OpenGL\include\imgui;C:\Users\sezer.birgili\source\OpenGL\include\imgui\backends;$(IncludePath)</ExternalIncludePath>
@@ -155,11 +155,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\Downloads\glad.c" />
     <ClCompile Include="FileName.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug2|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="glad.c" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="imgui_demo.cpp" />
     <ClCompile Include="imgui_draw.cpp" />
