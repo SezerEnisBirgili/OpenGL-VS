@@ -130,7 +130,7 @@ std::vector<std::vector<std::string>>generateWorld(const char* wallFilePath);
 void generatePlatform(Shader& shader, const std::vector<std::string>& floor, glm::vec3 startPos = glm::vec3(0.0f), float rotation = 0.0f);
 std::string wallReader(const char* wallFilePath);
 std::vector<std::vector<std::string>> wallSections(const std::string& walls, const char& delimiter = '-');
-void renderWorld(Shader& shader, std::vector<std::vector<std::string>> floors);
+void renderWorld(Shader& shader, std::vector<std::vector<std::string>> floors, glm::vec3 startPos = glm::vec3(0.0f), float rotation = 0.0f);
 
 // =========================================================================
 int main()
@@ -328,6 +328,8 @@ int main()
     ImGui_ImplOpenGL3_Init("#version 330");
 
     std::vector<std::vector<std::string>> floors = generateWorld(wallFilePath);
+    glm::vec3 startPos = glm::vec3(0.0f);
+    float rotation = 0.0f;
 
     // ------------------------------------------------------------------
     // Render loop
@@ -365,10 +367,13 @@ int main()
 
         glBindVertexArray(cubeVAO);
 
-        renderWorld(ourShader, floors);
+        renderWorld(ourShader, floors, startPos, rotation);
 
         ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
-        ImGui::Begin("Controls");                              
+        ImGui::Begin("Controls");              
+
+        ImGui::DragFloat3("Position", glm::value_ptr(startPos), 0.1f);
+        ImGui::SliderFloat("Rotation", &rotation, 0.0f, 360.0f);
         ImGui::End();
 
         ImGui::Render();
@@ -491,10 +496,11 @@ std::vector<std::vector<std::string>> generateWorld(const char* wallFilePath)
     return wallSections(building);
 }
 
-void renderWorld(Shader& shader, std::vector<std::vector<std::string>> floors)
+void renderWorld(Shader& shader, std::vector<std::vector<std::string>> floors, glm::vec3 startPos, float rotation)
 {    
-    for (int i = 0; i < floors.size(); i++)
-        generatePlatform(shader, floors[i], glm::vec3(0.0f, i, 0.0f));
+    
+    for (int i = 0; i < floors.size(); i++) 
+        generatePlatform(shader, floors[i], startPos + glm::vec3(0.0f, i, 0.0f), rotation);
 }
 
 void generatePlatform(Shader& ourShader, const std::vector<std::string>& floor, glm::vec3 startPos, float rotation)
