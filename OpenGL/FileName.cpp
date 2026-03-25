@@ -126,11 +126,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 // -------------------------------------------------------------------------
 void processInput(GLFWwindow* window, Shader& ourShader);
 void loadTexture(const char* texFileName, unsigned int& texture1);
-std::vector<gameFloor> generateWorld(const char* wallFilePath);
-void generatePlatform(Shader& shader, const gameFloor& floor, glm::vec3 startPos = glm::vec3(0.0f), float rotation = 0.0f); 
+std::vector<std::vector<std::string>>generateWorld(const char* wallFilePath);
+void generatePlatform(Shader& shader, const std::vector<std::string>& floor, glm::vec3 startPos = glm::vec3(0.0f), float rotation = 0.0f);
 std::string wallReader(const char* wallFilePath);
-std::vector<gameFloor> wallSections(const std::string& walls);
-void renderWorld(Shader& shader, std::vector<gameFloor> floors);
+std::vector<std::vector<std::string>> wallSections(const std::string& walls, const char& delimiter = '-');
+void renderWorld(Shader& shader, std::vector<std::vector<std::string>> floors);
 
 // =========================================================================
 int main()
@@ -327,7 +327,7 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    std::vector<gameFloor> floors = generateWorld(wallFilePath);
+    std::vector<std::vector<std::string>> floors = generateWorld(wallFilePath);
 
     // ------------------------------------------------------------------
     // Render loop
@@ -485,31 +485,29 @@ void loadTexture(const char* texFileName, unsigned int& texture1)
     stbi_image_free(data);
 }
 
-std::vector<gameFloor> generateWorld(const char * wallFilePath)
+std::vector<std::vector<std::string>> generateWorld(const char* wallFilePath)
 {
     std::string building = wallReader(wallFilePath);
     return wallSections(building);
 }
 
-void renderWorld(Shader& shader, std::vector<gameFloor> floors)
+void renderWorld(Shader& shader, std::vector<std::vector<std::string>> floors)
 {    
     for (int i = 0; i < floors.size(); i++)
-        generatePlatform(shader, floors[i], glm::vec3(0.0f, i, 0.0f)); 
+        generatePlatform(shader, floors[i], glm::vec3(0.0f, i, 0.0f));
 }
 
-void generatePlatform(Shader& ourShader, const gameFloor& floor, glm::vec3 startPos, float rotation)
+void generatePlatform(Shader& ourShader, const std::vector<std::string>& floor, glm::vec3 startPos, float rotation)
 {
-    int y = 0;
-
-    for (int z = 0; z < floor.row; z++)
+    for (int z = 0; z < floor.size(); z++)
     {
-        for (int x = 0; x < floor.col; x++)
+        for (int x = 0; x < floor.at(z).size(); x++)
         {
-            if (floor.walls[(floor.col + 1) * z + x] == '#')
+            if (floor.at(z).at(x) == '#')
             {
                 glm::mat4 model = glm::mat4(1.0f);
                 model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::translate(model, glm::vec3(startPos.x + x, startPos.y + y, startPos.z + z));
+                model = glm::translate(model, glm::vec3(startPos.x + x, startPos.y, startPos.z + z));
                 ourShader.setMat4("model", model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
@@ -542,43 +540,33 @@ std::string wallReader(const char* wallFilePath)
     return walls;
 }
 
-std::vector<gameFloor> wallSections(const std::string& walls)
+std::vector<std::vector<std::string>> wallSections(const std::string& walls, const char& delimiter)
 {
-    char delimiter = '-';
-
-    std::vector<gameFloor> floors;
+    std::vector<std::vector<std::string>> floors;
+    std::vector<std::string> floor;
     std::string section;
     std::stringstream ss(walls);
 
     int row = 0;
-    int col = 0;
-    int count = 0;
+    int prevIdx = 0;
 
     while (std::getline(ss, section, delimiter))
     {
-        row = 0;
-        col = 0;
-        count = 0;
+        for(int i = 0; i < section.size(); i++) 
+        {
+            if (!section.empty() && section.front() == '\n') section.erase(0, 1);
 
-        if (!section.empty() && section[0] == '\n')
-            section = section.substr(1);
+            if (section[i] == '\n') 
+            {
+                floor.push_back(section.substr(prevIdx, i - prevIdx));
+                prevIdx = i + 1;
+            }
 
-        while (section[count] != '\n')
-            count++;
-        col = count;
-        count = 0;
+        }
 
-        for (char c : section)
-            if (c == '\n') 
-                row++;
-
-        if (!section.empty() && section.back() != '\n')
-            row++;
-
-        gameFloor fl = gameFloor(row, col, section);
-
-        if (!section.empty())
-            floors.push_back(fl);
+        floors.push_back(floor);
+        floor.clear();
+        prevIdx = 0;
     }
 
     return floors;
