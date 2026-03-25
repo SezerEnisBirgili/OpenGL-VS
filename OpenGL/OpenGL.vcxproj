@@ -177,6 +177,7 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="horrorWorld.h" />
+    <ClInclude Include="lightingSets.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>

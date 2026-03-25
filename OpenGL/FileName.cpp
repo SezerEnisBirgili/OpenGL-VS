@@ -13,6 +13,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "horrorWorld.h"
+#include "lightingSets.h"
 
 #include <iostream>
 #include <fstream>
@@ -42,43 +43,6 @@ float lastFrame = 0.0f;
 bool lShiftPressedLastFrame = false;
 bool TOOGLE_MENU = false;
 bool RAINBOW = false;
-// -------------------------------------------------------------------------
-// Lighting
-// -------------------------------------------------------------------------
-
-struct Material {
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-    float shininess;
-};
-
-Material material = {
-    glm::vec3(0.00f, 0.03f, 0.05f), // ambient
-    glm::vec3(0.08f, 0.28f, 0.45f), // diffuse
-    glm::vec3(0.60f, 0.70f, 0.80f), // specular
-    19.2f                            // shininess
-};
-
-struct Light {
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-};
-
-Light light = {    
-    glm::vec3(0.05f, 0.05f, 0.04f), // ambient
-    glm::vec3(1.00f, 0.98f, 0.92f), // diffuse
-    glm::vec3(1.00f, 1.00f, 0.95f)  // specular
-};
-
-glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-glm::vec3 objectColor(1.0f, 1.0f, 1.0f);
-glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
-
-float ambientStrength = 1.0f;
-float diffuseStrength = 1.0f;
-float specularStrength = 1.0f;
 
 // -------------------------------------------------------------------------
 // Camera state
@@ -106,7 +70,7 @@ glm::mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.2f, 1.0
 glm::mat4 view = camera.GetViewMatrix();
 glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
-glm::mat4 lightModel = glm::scale(glm::translate(glm::mat4(1.0f), lightPos), glm::vec3(0.2f));
+glm::mat4 lightModel = glm::scale(glm::translate(glm::mat4(1.0f), light.position), glm::vec3(0.2f));
 
 // -------------------------------------------------------------------------
 // Callbacks
@@ -295,17 +259,17 @@ int main()
     ourShader.setVec3("light.ambient", light.ambient);
     ourShader.setVec3("light.diffuse", light.diffuse);
     ourShader.setVec3("light.specular", light.specular);
-    ourShader.setVec3("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+    ourShader.setVec3("light.direction", light.direction);
 
-    ourShader.setFloat("light.constant", 1.0f);
-    ourShader.setFloat("light.linear", 0.09f);
-    ourShader.setFloat("light.quadratic", 0.032f);
+    ourShader.setFloat("light.constant", light.constant);
+    ourShader.setFloat("light.linear", light.linear);
+    ourShader.setFloat("light.quadratic", light.quadratic);
 
     ourShader.setVec3("light.position", camera.Position);
     ourShader.setVec3("light.direction", camera.Front);
 
-    ourShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
-    ourShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
+    ourShader.setFloat("light.cutOff", light.cutOff);
+    ourShader.setFloat("light.outerCutOff", light.outerCutOff);
 
     // ------------------------------------------------------------------
     // IMGUI
