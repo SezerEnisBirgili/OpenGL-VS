@@ -70,30 +70,24 @@ std::string wallReader(const char* wallFilePath)
 std::vector<std::vector<std::string>> wallSections(const std::string& walls, const char& delimiter)
 {
     std::vector<std::vector<std::string>> floors;
-    std::vector<std::string> floor;
-    std::string section;
-    std::stringstream ss(walls);
+    std::vector<std::string> floor; 
 
-    int row = 0;
-    int prevIdx = 0;
+    std::string section; 
+    std::string row;
+
+    std::stringstream ss(walls);
+    std::istringstream sectionStream;
+    
 
     while (std::getline(ss, section, delimiter))
     {
-        for (int i = 0; i < section.size(); i++)
-        {
-            if (!section.empty() && section.front() == '\n') section.erase(0, 1);
+        std::istringstream sectionStream(section);
 
-            if (section[i] == '\n')
-            {
-                floor.push_back(section.substr(prevIdx, i - prevIdx));
-                prevIdx = i + 1;
-            }
-
-        }
+        while (std::getline(sectionStream, row))
+            if (!row.empty()) floor.push_back(row);
 
         floors.push_back(floor);
         floor.clear();
-        prevIdx = 0;
     }
 
     return floors;
