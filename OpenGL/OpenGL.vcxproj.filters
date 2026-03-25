@@ -66,10 +66,13 @@
     <ClCompile Include="FileName.cpp">
       <Filter>controller</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\Downloads\glad.c">
+    <ClCompile Include="stb_image.cpp">
       <Filter>source\cpp</Filter>
     </ClCompile>
-    <ClCompile Include="stb_image.cpp">
+    <ClCompile Include="glad.c">
+      <Filter>controller</Filter>
+    </ClCompile>
+    <ClCompile Include="horrorWorld.cpp">
       <Filter>source\cpp</Filter>
     </ClCompile>
   </ItemGroup>
@@ -81,6 +84,9 @@
       <Filter>.h files</Filter>
     </ClInclude>
     <ClInclude Include="camera.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="horrorWorld.h">
       <Filter>.h files</Filter>
     </ClInclude>
   </ItemGroup>
