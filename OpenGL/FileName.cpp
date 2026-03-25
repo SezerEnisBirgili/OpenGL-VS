@@ -45,13 +45,6 @@ bool RAINBOW = false;
 // Lighting
 // -------------------------------------------------------------------------
 
-struct gameFloor
-{
-    int row;
-    int col;
-    const std::string walls;
-};
-
 struct Material {
     glm::vec3 ambient;
     glm::vec3 diffuse;
