@@ -125,6 +125,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         updateFrameUniforms(ourShader, texture1, texture2);
+        camera.UpdateRotation(deltaTime);
+        camera.UpdatePosition(deltaTime);
 
         glBindVertexArray(vaos.cube);
         renderWorld(ourShader, floors, startPos, rotation);
@@ -135,6 +137,12 @@ int main()
 
         ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
         ImGui::Begin("Controls");
+
+        int selectedMouseState = (int)mouseState;
+        if (ImGui::Combo("Mouse Mode", &selectedMouseState, mouseStateArr, IM_ARRAYSIZE(mouseStateArr)))
+        {
+            mouseState = (MouseState)selectedMouseState;
+        }
         ImGui::DragFloat3("Position", glm::value_ptr(startPos), 0.1f);
         ImGui::SliderFloat("Rotation", &rotation, 0.0f, 360.0f);
         ImGui::End();

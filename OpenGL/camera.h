@@ -39,6 +39,11 @@ public:
     float MouseSensitivity;
     float Zoom;
 
+    float TargetYaw;
+    glm::vec3 TargetPosition;
+    bool IsMoving = false;
+    bool IsRotating = false;
+
     // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
@@ -119,6 +124,66 @@ public:
             Zoom = 1.0f;
         if (Zoom > 45.0f)
             Zoom = 45.0f;
+    }
+
+    void SetRotationTarget(float degrees)
+    {
+        if (IsRotating || IsMoving) return;
+        TargetYaw = Yaw + degrees; // negative = left, positive = right
+        IsRotating = true;
+    }
+
+    void UpdateRotation(float deltaTime)
+    {
+        if (!IsRotating) return;
+
+        float speed = 90.0f * deltaTime; // 90 degrees per second
+        float diff = TargetYaw - Yaw;
+
+        if (abs(diff) <= speed)
+        {
+            Yaw = TargetYaw;
+            IsRotating = false;
+        }
+        else
+        {
+            Yaw += glm::sign(diff) * speed;
+        }
+
+        updateCameraVectors();
+    }
+
+    void SetPositionTarget(Camera_Movement direction, float distance)
+    {
+        if (IsMoving || IsRotating) return;
+
+        if (direction == FORWARD)
+            TargetPosition = Position + Front * distance;
+
+        if (direction == BACKWARD)
+            TargetPosition = Position - Front * distance;
+
+        IsMoving = true;
+    }
+
+    void UpdatePosition(float deltaTime, float speed = SPEED)
+    {
+        if (!IsMoving) return;
+
+        glm::vec3 diff = TargetPosition - Position;
+        float distancePerTime = speed * deltaTime;
+
+        if (glm::length(diff) <= distancePerTime)
+        {
+            Position = TargetPosition;
+            IsMoving = false;
+        }
+        else
+        {
+            Position += glm::normalize(diff) * distancePerTime;
+        }
+
+        updateCameraVectors();
     }
 
 

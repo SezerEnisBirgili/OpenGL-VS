@@ -28,9 +28,17 @@ inline float lastFrame = 0.0f;
 // -------------------------------------------------------------------------
 // ImGui / menu state
 // -------------------------------------------------------------------------
-inline bool lShiftPressedLastFrame = false;
-inline bool TOOGLE_MENU = false;
+bool lShiftPressedLastFrame = false;
+bool wPressedLastFrame = false;
+bool sPressedLastFrame = false;
+bool aPressedLastFrame = false;
+bool dPressedLastFrame = false;
+inline bool TOGGLE_MENU = false;
 inline bool RAINBOW = false;
+
+enum MouseState { FREE, TANK };
+const char* const mouseStateArr[] = { "FREE", "TANK"};
+MouseState mouseState = MouseState::FREE;
 
 // -------------------------------------------------------------------------
 // Camera
