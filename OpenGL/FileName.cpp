@@ -14,63 +14,12 @@
 #include "camera.h"
 #include "horrorWorld.h"
 #include "lightingSets.h"
+#include "globals.h"
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
-
-// -------------------------------------------------------------------------
-// Constants
-// -------------------------------------------------------------------------
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-
-const char* vertexShader[] = { "vPhongShader.vert", "vLightShader.vert" };
-const char* fragmentShader[] = { "fPhongShader.frag", "fLightShader.frag" };
-
-const char* wallFilePath = "platform.txt";
-
-// -------------------------------------------------------------------------
-// Timing
-// -------------------------------------------------------------------------
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-
-// -------------------------------------------------------------------------
-// IMGUI menu state
-// -------------------------------------------------------------------------
-bool lShiftPressedLastFrame = false;
-bool TOOGLE_MENU = false;
-bool RAINBOW = false;
-
-// -------------------------------------------------------------------------
-// Camera state
-// -------------------------------------------------------------------------
-glm::vec3 cameraPos = glm::vec3(1.0f, 1.0f, -3.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-float yaw = 90.0f;
-float pitch = 0.0f;
-
-Camera camera = Camera(cameraPos, cameraUp, yaw, pitch);
-
-// perspective
-float fov = 45.0f;
-
-// mouse state
-float lastX = 400, lastY = 300;
-bool  firstMouse = true;
-
-// -------------------------------------------------------------------------
-// Transformations
-// -------------------------------------------------------------------------
-
-glm::mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.2f, 1.0f, 2.0f)), glm::vec3(1.0f));
-glm::mat4 view = camera.GetViewMatrix();
-glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
-
-glm::mat4 lightModel = glm::scale(glm::translate(glm::mat4(1.0f), light.position), glm::vec3(0.2f));
 
 // -------------------------------------------------------------------------
 // Callbacks
