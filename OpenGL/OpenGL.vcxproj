@@ -179,6 +179,7 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="globals.h" />
     <ClInclude Include="horrorWorld.h" />
+    <ClInclude Include="input.h" />
     <ClInclude Include="lightingSets.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="shaderUniforms.h" />

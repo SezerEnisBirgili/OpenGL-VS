@@ -18,6 +18,7 @@
 #include "vertexData.h"
 #include "bufferSetup.h"
 #include "shaderUniforms.h"
+#include "input.h"
 
 #include <iostream>
 #include <fstream>
@@ -184,70 +185,6 @@ int main()
     glDeleteBuffers(1, &VBO);
     glfwTerminate();
     return 0;
-}
-
-// =========================================================================
-// Callbacks
-// =========================================================================
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-    if (firstMouse)
-    {
-        lastX = (float)xpos;
-        lastY = (float)ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = (float)xpos - lastX;
-    float yoffset = lastY - (float)ypos;
-    lastX = (float)xpos;
-    lastY = (float)ypos;
-
-    if (!TOOGLE_MENU)
-        camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll((float)yoffset);
-    projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
-}
-
-// =========================================================================
-// Input
-// =========================================================================
-void processInput(GLFWwindow* window, Shader& ourShader)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    bool lShiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
-
-    if (lShiftPressed && !lShiftPressedLastFrame)
-    {
-        TOOGLE_MENU = !TOOGLE_MENU;
-        firstMouse = true;
-        if (TOOGLE_MENU)
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        else
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
-
-    lShiftPressedLastFrame = lShiftPressed;
-
-    // Camera movement
-    if (!TOOGLE_MENU) 
-    {
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.ProcessKeyboard(FORWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera.ProcessKeyboard(BACKWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera.ProcessKeyboard(LEFT, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera.ProcessKeyboard(RIGHT, deltaTime);
-    }
 }
 
 void loadTexture(const char* texFileName, unsigned int& texture1)
