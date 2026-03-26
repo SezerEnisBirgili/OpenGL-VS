@@ -200,8 +200,8 @@
     <None Include="vTestShader.vert" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\..\Downloads\awesomeface.png" />
-    <Image Include="..\..\..\..\Downloads\container.jpg" />
+    <Image Include="awesomeface.png" />
+    <Image Include="container.jpg" />
     <Image Include="container2.png" />
     <Image Include="container2_wood_specular.png" />
     <Image Include="lighting_maps_specular_color.png" />
