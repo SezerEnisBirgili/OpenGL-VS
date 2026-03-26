@@ -184,6 +184,7 @@
     <ClInclude Include="shader.h" />
     <ClInclude Include="shaderUniforms.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="textureLoader.h" />
     <ClInclude Include="vertexData.h" />
   </ItemGroup>
   <ItemGroup>
