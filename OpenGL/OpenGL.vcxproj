@@ -181,6 +181,7 @@
     <ClInclude Include="horrorWorld.h" />
     <ClInclude Include="lightingSets.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="shaderUniforms.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="vertexData.h" />
   </ItemGroup>

@@ -17,6 +17,7 @@
 #include "globals.h"
 #include "vertexData.h"
 #include "bufferSetup.h"
+#include "shaderUniforms.h"
 
 #include <iostream>
 #include <fstream>
@@ -113,38 +114,7 @@ int main()
     // ------------------------------------------------------------------
     std::cout << "Setting uniforms..." << std::endl;
 
-    ourShader.use();
-    ourShader.setMat4("model", model);
-    ourShader.setMat4("view", view);
-    ourShader.setMat4("projection", projection);
-
-    ourShader.setVec3("viewPos", camera.Position);
-
-    ourShader.setVec3("material.ambient", material.ambient);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture1);
-    ourShader.setInt("material.diffuse", 0);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture2);
-    ourShader.setInt("material.specular", 1);
-    glActiveTexture(GL_TEXTURE2);
-
-    ourShader.setFloat("material.shininess", material.shininess);
-
-    ourShader.setVec3("light.ambient", light.ambient);
-    ourShader.setVec3("light.diffuse", light.diffuse);
-    ourShader.setVec3("light.specular", light.specular);
-    ourShader.setVec3("light.direction", light.direction);
-
-    ourShader.setFloat("light.constant", light.constant);
-    ourShader.setFloat("light.linear", light.linear);
-    ourShader.setFloat("light.quadratic", light.quadratic);
-
-    ourShader.setVec3("light.position", camera.Position);
-    ourShader.setVec3("light.direction", camera.Front);
-
-    ourShader.setFloat("light.cutOff", light.cutOff);
-    ourShader.setFloat("light.outerCutOff", light.outerCutOff);
+    initShaderUniforms(ourShader, texture1, texture2);
 
     // ------------------------------------------------------------------
     // IMGUI
@@ -181,13 +151,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
        
         // Update per-frame uniforms
-        ourShader.use();
-        ourShader.setMat4("model", model);
-        ourShader.setMat4("view", camera.GetViewMatrix());
-        ourShader.setMat4("projection", projection);
-        ourShader.setVec3("viewPos", camera.Position);
-        ourShader.setVec3("light.position", camera.Position);
-        ourShader.setVec3("light.direction", camera.Front);
+        updateFrameUniforms(ourShader, texture1, texture2);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
