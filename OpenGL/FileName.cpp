@@ -194,7 +194,7 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
 
-        glBindVertexArray(cubeVAO);
+        glBindVertexArray(vaos.cube);
 
         renderWorld(ourShader, floors, startPos, rotation);
 
@@ -215,8 +215,8 @@ int main()
     // ------------------------------------------------------------------
     // Cleanup
     // ------------------------------------------------------------------
-    glDeleteVertexArrays(1, &cubeVAO);
-    glDeleteVertexArrays(1, &lightVAO);
+    glDeleteVertexArrays(1, &vaos.cube);
+    glDeleteVertexArrays(1, &vaos.light);
     glDeleteBuffers(1, &VBO);
     glfwTerminate();
     return 0;
