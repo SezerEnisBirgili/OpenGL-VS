@@ -1,53 +1,28 @@
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "stb_image.h"
 #include "shader.h"
-#include "camera.h"
 #include "horrorWorld.h"
-#include "lightingSets.h"
 #include "globals.h"
 #include "vertexData.h"
 #include "bufferSetup.h"
+#include "textureLoader.h"
 #include "shaderUniforms.h"
 #include "input.h"
-#include "textureLoader.h"
 
 #include <iostream>
-#include <fstream>
-#include <sstream>
 #include <vector>
 
-// -------------------------------------------------------------------------
-// Callbacks
-// -------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-
-// -------------------------------------------------------------------------
-// Input
-// -------------------------------------------------------------------------
-void processInput(GLFWwindow* window, Shader& ourShader);
-void loadTexture(const char* texFileName, unsigned int& texture1);
-
-
-// =========================================================================
 int main()
 {
     // ------------------------------------------------------------------
-    // GLFW: init and configure
+    // GLFW – init and configure
     // ------------------------------------------------------------------
     std::cout << "Starting GLFW init..." << std::endl;
-
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -57,11 +32,11 @@ int main()
 #endif
 
     // ------------------------------------------------------------------
-    // GLFW: window creation
+    // GLFW – window creation
     // ------------------------------------------------------------------
     std::cout << "Creating window..." << std::endl;
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
+    if (!window)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -74,7 +49,7 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // ------------------------------------------------------------------
-    // GLAD: load OpenGL function pointers
+    // GLAD – load OpenGL function pointers
     // ------------------------------------------------------------------
     std::cout << "Loading GLAD..." << std::endl;
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -87,39 +62,37 @@ int main()
     // Shaders
     // ------------------------------------------------------------------
     std::cout << "Compiling shaders..." << std::endl;
-
     Shader ourShader(vertexShader[0], fragmentShader[0]);
     Shader lightCubeShader(vertexShader[1], fragmentShader[1]);
 
-    for(int i = 0; i < std::size(vertexShader); i++)
-        std::cout << "Loading vertex shader: " << vertexShader[i] << std::endl;
-    for (int i = 0; i < std::size(fragmentShader); i++)
-        std::cout << "Loading vertex shader: " << fragmentShader[i] << std::endl;
+    for (int i = 0; i < (int)std::size(vertexShader); i++)
+        std::cout << "Vertex shader:   " << vertexShader[i] << std::endl;
+    for (int i = 0; i < (int)std::size(fragmentShader); i++)
+        std::cout << "Fragment shader: " << fragmentShader[i] << std::endl;
 
     // ------------------------------------------------------------------
-    // VAO / VBO
+    // GPU buffers
     // ------------------------------------------------------------------
     std::cout << "Uploading vertex data..." << std::endl;
     unsigned int VBO;
     VAOs vaos = setupBuffers(VBO);
 
     // ------------------------------------------------------------------
-    // Texture
+    // Textures
     // ------------------------------------------------------------------
-    std::cout << "Loading texture..." << std::endl;
-
+    std::cout << "Loading textures..." << std::endl;
     unsigned int texture1, texture2;
     loadTexture("container2.png", texture1);
     loadTexture("container2.png", texture2);
+
     // ------------------------------------------------------------------
-    // Shader uniforms
+    // Shader uniforms (static / one-time)
     // ------------------------------------------------------------------
     std::cout << "Setting uniforms..." << std::endl;
-
     initShaderUniforms(ourShader, texture1, texture2);
 
     // ------------------------------------------------------------------
-    // IMGUI
+    // ImGui
     // ------------------------------------------------------------------
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -128,9 +101,12 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
+    // ------------------------------------------------------------------
+    // World
+    // ------------------------------------------------------------------
     std::vector<std::vector<std::string>> floors = generateWorld(wallFilePath);
     glm::vec3 startPos = glm::vec3(0.0f);
-    float rotation = 0.0f;
+    float     rotation = 0.0f;
 
     // ------------------------------------------------------------------
     // Render loop
@@ -138,12 +114,8 @@ int main()
     std::cout << "Entering render loop..." << std::endl;
     while (!glfwWindowShouldClose(window))
     {
-        // Start ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        float currentFrame = (float) glfwGetTime();
+        // Timing
+        float currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
@@ -151,22 +123,18 @@ int main()
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-       
-        // Update per-frame uniforms
+
         updateFrameUniforms(ourShader, texture1, texture2);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture1);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture2);
-
         glBindVertexArray(vaos.cube);
-
         renderWorld(ourShader, floors, startPos, rotation);
 
-        ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
-        ImGui::Begin("Controls");              
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
+        ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
+        ImGui::Begin("Controls");
         ImGui::DragFloat3("Position", glm::value_ptr(startPos), 0.1f);
         ImGui::SliderFloat("Rotation", &rotation, 0.0f, 360.0f);
         ImGui::End();
@@ -184,6 +152,10 @@ int main()
     glDeleteVertexArrays(1, &vaos.cube);
     glDeleteVertexArrays(1, &vaos.light);
     glDeleteBuffers(1, &VBO);
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glfwTerminate();
+
     return 0;
 }
