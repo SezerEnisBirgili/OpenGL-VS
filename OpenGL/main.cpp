@@ -17,6 +17,12 @@
 #include <vector>
 
 // -------------------------------------------------------------------------
+// Screen
+// -------------------------------------------------------------------------
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
+// -------------------------------------------------------------------------
 // Shader / asset paths
 // -------------------------------------------------------------------------
 const char* vertexShader[] = { "vPhongShader.vert", "vLightShader.vert" };
@@ -24,12 +30,6 @@ const char* fragmentShader[] = { "fPhongShader.frag", "fLightShader.frag" };
 const char* wallFilePath = "platform.txt";
 
 float deltaTime, lastFrame;
-
-// -------------------------------------------------------------------------
-// Screen
-// -------------------------------------------------------------------------
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
 
 // -------------------------------------------------------------------------
 // ImGui / menu state
@@ -40,20 +40,19 @@ MouseState mouseState = MouseState::FREE;
 // -------------------------------------------------------------------------
 // Camera
 // ----------------------------------------------S---------------------------
-inline glm::vec3 cameraPos = glm::vec3(1.0f, 1.0f, -3.0f);
-inline glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-inline float     yaw = 90.0f;
-inline float     pitch = 0.0f;
-inline Camera    camera = Camera(cameraPos, cameraUp, yaw, pitch);
+glm::vec3 cameraPos = glm::vec3(1.0f, 1.0f, -3.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float     yaw = 90.0f;
+float     pitch = 0.0f;
+
+Camera    camera = Camera(cameraPos, cameraUp, yaw, pitch);
 
 // -------------------------------------------------------------------------
 // Matrices
 // -------------------------------------------------------------------------
-inline glm::mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.2f, 1.0f, 2.0f)), glm::vec3(1.0f));
-
-inline glm::mat4 view = camera.GetViewMatrix();
-
-inline glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+glm::mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.2f, 1.0f, 2.0f)), glm::vec3(1.0f));
+glm::mat4 view = camera.GetViewMatrix();
+glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
 int main()
 {
