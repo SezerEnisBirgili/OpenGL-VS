@@ -64,14 +64,14 @@ public:
     }
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
-    glm::mat4 GetViewMatrix()
+    glm::mat4 GetViewMatrix() const
     {
         return customLookAt();
         // return glm::lookAt(Position, Position + Front, Up);
     }
 
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime)
+    void ProcessKeyboard(const Camera_Movement direction, const float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
         if (direction == FORWARD)
@@ -117,7 +117,7 @@ public:
     }
 
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-    void ProcessMouseScroll(float yoffset)
+    void ProcessMouseScroll(const float yoffset)
     {
         Zoom -= (float)yoffset;
         if (Zoom < 1.0f)
@@ -126,14 +126,14 @@ public:
             Zoom = 45.0f;
     }
 
-    void SetRotationTarget(float degrees)
+    void SetRotationTarget(const float degrees)
     {
         if (IsRotating || IsMoving) return;
         TargetYaw = Yaw + degrees; // negative = left, positive = right
         IsRotating = true;
     }
 
-    void UpdateRotation(float deltaTime)
+    void UpdateRotation(const float deltaTime)
     {
         if (!IsRotating) return;
 
@@ -153,7 +153,7 @@ public:
         updateCameraVectors();
     }
 
-    void SetPositionTarget(Camera_Movement direction, float distance)
+    void SetPositionTarget(const Camera_Movement direction, const float distance)
     {
         if (IsMoving || IsRotating) return;
 
@@ -166,7 +166,7 @@ public:
         IsMoving = true;
     }
 
-    void UpdatePosition(float deltaTime, float speed = SPEED)
+    void UpdatePosition(const float deltaTime, const float speed = SPEED)
     {
         if (!IsMoving) return;
 
@@ -203,7 +203,7 @@ private:
         Up = glm::normalize(glm::cross(Right, Front));
     }
 
-    glm::mat4 customLookAt() 
+    glm::mat4 customLookAt() const
     {
         glm::mat4 rotationMatrix= glm::transpose(
             glm::mat4(glm::vec4(Right, 0),

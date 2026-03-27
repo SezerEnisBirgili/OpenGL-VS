@@ -89,8 +89,9 @@ int main()
     // Shader uniforms (static / one-time)
     // ------------------------------------------------------------------
     std::cout << "Setting uniforms..." << std::endl;
-    initShaderUniforms(ourShader, texture1, texture2);
 
+    ShaderUniform shaderUniforms = ShaderUniform(ourShader, texture1, texture2, model,camera, projection, material, light);
+    shaderUniforms.initShaderUniforms();
     // ------------------------------------------------------------------
     // ImGui
     // ------------------------------------------------------------------
@@ -124,7 +125,7 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        updateFrameUniforms(ourShader, texture1, texture2);
+        shaderUniforms.updateFrameUniforms();
         camera.UpdateRotation(deltaTime);
         camera.UpdatePosition(deltaTime);
 
