@@ -143,6 +143,8 @@ int main()
         {
             mouseState = (MouseState)selectedMouseState;
         }
+        ImGui::InputFloat3("Camera Position", glm::value_ptr(camera.Position));
+        ImGui::InputFloat3("Camera Direction", glm::value_ptr(camera.Front));
         ImGui::DragFloat3("Position", glm::value_ptr(startPos), 0.1f);
         ImGui::SliderFloat("Rotation", &rotation, 0.0f, 360.0f);
         ImGui::End();
