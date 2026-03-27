@@ -177,7 +177,7 @@
   <ItemGroup>
     <ClInclude Include="bufferSetup.h" />
     <ClInclude Include="camera.h" />
-    <ClInclude Include="globals.h" />
+    <ClInclude Include="enum.h" />
     <ClInclude Include="horrorWorld.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="lightingSets.h" />

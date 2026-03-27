@@ -63,9 +63,6 @@
     <ClCompile Include="imgui_widgets.cpp">
       <Filter>source\cpp\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="FileName.cpp">
-      <Filter>controller</Filter>
-    </ClCompile>
     <ClCompile Include="stb_image.cpp">
       <Filter>source\cpp</Filter>
     </ClCompile>
@@ -74,6 +71,9 @@
     </ClCompile>
     <ClCompile Include="horrorWorld.cpp">
       <Filter>source\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>controller</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -87,6 +87,27 @@
       <Filter>.h files</Filter>
     </ClInclude>
     <ClInclude Include="horrorWorld.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="bufferSetup.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="input.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="lightingSets.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="shaderUniforms.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="textureLoader.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="vertexData.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="enum.h">
       <Filter>.h files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -123,12 +144,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\..\Downloads\container.jpg">
-      <Filter>source\resources\textures</Filter>
-    </Image>
-    <Image Include="..\..\..\..\Downloads\awesomeface.png">
-      <Filter>source\resources\textures</Filter>
-    </Image>
     <Image Include="world.png">
       <Filter>source\resources\textures</Filter>
     </Image>
@@ -146,6 +161,12 @@
     </Image>
     <Image Include="matrix_c.png">
       <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="awesomeface.png">
+      <Filter>source</Filter>
+    </Image>
+    <Image Include="container.jpg">
+      <Filter>source</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>

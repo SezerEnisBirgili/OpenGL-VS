@@ -7,7 +7,6 @@
 
 #include "shader.h"
 #include "horrorWorld.h"
-#include "globals.h"
 #include "vertexData.h"
 #include "bufferSetup.h"
 #include "textureLoader.h"
@@ -16,6 +15,45 @@
 
 #include <iostream>
 #include <vector>
+
+// -------------------------------------------------------------------------
+// Shader / asset paths
+// -------------------------------------------------------------------------
+const char* vertexShader[] = { "vPhongShader.vert", "vLightShader.vert" };
+const char* fragmentShader[] = { "fPhongShader.frag", "fLightShader.frag" };
+const char* wallFilePath = "platform.txt";
+
+float deltaTime, lastFrame;
+
+// -------------------------------------------------------------------------
+// Screen
+// -------------------------------------------------------------------------
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
+// -------------------------------------------------------------------------
+// ImGui / menu state
+// -------------------------------------------------------------------------
+const char* const mouseStateArr[] = { "FREE", "TANK" };
+MouseState mouseState = MouseState::FREE;
+
+// -------------------------------------------------------------------------
+// Camera
+// ----------------------------------------------S---------------------------
+inline glm::vec3 cameraPos = glm::vec3(1.0f, 1.0f, -3.0f);
+inline glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+inline float     yaw = 90.0f;
+inline float     pitch = 0.0f;
+inline Camera    camera = Camera(cameraPos, cameraUp, yaw, pitch);
+
+// -------------------------------------------------------------------------
+// Matrices
+// -------------------------------------------------------------------------
+inline glm::mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.2f, 1.0f, 2.0f)), glm::vec3(1.0f));
+
+inline glm::mat4 view = camera.GetViewMatrix();
+
+inline glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
 int main()
 {
@@ -42,10 +80,12 @@ int main()
         glfwTerminate();
         return -1;
     }
+
+    MouseState mouseState = FREE;
+    AppState appState = AppState(mouseState, camera, projection);
+
     glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+    appState.setCallbacks(window);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // ------------------------------------------------------------------
@@ -120,7 +160,7 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        processInput(window, ourShader);
+        appState.processInput(window, ourShader, deltaTime);
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
