@@ -54,6 +54,27 @@ glm::mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.2f, 1.0
 glm::mat4 view = camera.GetViewMatrix();
 glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
+glm::vec3 pointLightPositions[] = {
+    glm::vec3(0.7f,  0.2f,  2.0f),
+    glm::vec3(2.3f, -3.3f, -4.0f),
+    glm::vec3(-4.0f,  2.0f, -12.0f),
+    glm::vec3(0.0f,  0.0f, -3.0f)
+};
+
+// positions all containers
+glm::vec3 cubePositions[] = {
+    glm::vec3(0.0f,  0.0f,  0.0f),
+    glm::vec3(2.0f,  5.0f, -15.0f),
+    glm::vec3(-1.5f, -2.2f, -2.5f),
+    glm::vec3(-3.8f, -2.0f, -12.3f),
+    glm::vec3(2.4f, -0.4f, -3.5f),
+    glm::vec3(-1.7f,  3.0f, -7.5f),
+    glm::vec3(1.3f, -2.0f, -2.5f),
+    glm::vec3(1.5f,  2.0f, -2.5f),
+    glm::vec3(1.5f,  0.2f, -1.5f),
+    glm::vec3(-1.3f,  1.0f, -1.5f)
+};
+
 int main()
 {
     // ------------------------------------------------------------------
@@ -97,6 +118,8 @@ int main()
         return -1;
     }
 
+    glEnable(GL_DEPTH_TEST);
+
     // ------------------------------------------------------------------
     // Shaders
     // ------------------------------------------------------------------
@@ -122,15 +145,17 @@ int main()
     std::cout << "Loading textures..." << std::endl;
     unsigned int texture1, texture2;
     loadTexture("container2.png", texture1);
-    loadTexture("container2.png", texture2);
+    loadTexture("container2_specular.png", texture2);
 
     // ------------------------------------------------------------------
     // Shader uniforms (static / one-time)
     // ------------------------------------------------------------------
     std::cout << "Setting uniforms..." << std::endl;
 
-    ShaderUniform shaderUniforms = ShaderUniform(ourShader, texture1, texture2, model,camera, projection, material, light);
-    shaderUniforms.initShaderUniforms();
+    OurShaderUniform ourShaderUniforms = OurShaderUniform(ourShader, texture1, texture2, model,camera, projection, material, light, pointLightPositions);
+    LightCubeShaderUniform lightCubeShaderUniform = LightCubeShaderUniform(lightCubeShader, model, camera, projection);
+    ourShaderUniforms.initShaderUniforms();
+    lightCubeShaderUniform.initShaderUniforms();
     // ------------------------------------------------------------------
     // ImGui
     // ------------------------------------------------------------------
@@ -145,8 +170,6 @@ int main()
     // World
     // ------------------------------------------------------------------
     std::vector<std::vector<std::string>> floors = generateWorld(wallFilePath);
-    glm::vec3 startPos = glm::vec3(0.0f);
-    float     rotation = 0.0f;
 
     // ------------------------------------------------------------------
     // Render loop
@@ -164,12 +187,36 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shaderUniforms.updateFrameUniforms();
         camera.UpdateRotation(deltaTime);
         camera.UpdatePosition(deltaTime);
 
+        ourShaderUniforms.updateFrameUniforms();
+        lightCubeShaderUniform.updateFrameUniforms();
+
+        ourShader.use();
         glBindVertexArray(vaos.cube);
-        renderWorld(ourShader, floors, startPos, rotation);
+        for(int i = 0 ; i < sizeof(cubePositions) / sizeof(cubePositions[0]); i++) 
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20 * i;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            ourShader.setMat4("model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        lightCubeShader.use();
+        glBindVertexArray(vaos.light);
+        for (int i = 0; i < sizeof(pointLightPositions) / sizeof(pointLightPositions[0]); i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, pointLightPositions[i]);
+            model = glm::scale(model, glm::vec3(0.2f));
+            lightCubeShader.setMat4("model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -185,8 +232,6 @@ int main()
         }
         ImGui::InputFloat3("Camera Position", glm::value_ptr(camera.Position));
         ImGui::InputFloat3("Camera Direction", glm::value_ptr(camera.Front));
-        ImGui::DragFloat3("Position", glm::value_ptr(startPos), 0.1f);
-        ImGui::SliderFloat("Rotation", &rotation, 0.0f, 360.0f);
         ImGui::End();
 
         ImGui::Render();
