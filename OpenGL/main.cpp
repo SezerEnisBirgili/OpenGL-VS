@@ -31,6 +31,17 @@ const char* wallFilePath = "platform.txt";
 
 float deltaTime, lastFrame;
 
+float attenuationFactor = 0.5f;
+
+float ambientFactor = 0.5f;
+
+glm::vec3 lightColor = glm::vec3(0.1f, 1.0f, 0.1f);
+
+glm::vec3 backgroundColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
+bool flashLightOn = false;
+
+
 // -------------------------------------------------------------------------
 // ImGui / menu state
 // -------------------------------------------------------------------------
@@ -101,7 +112,6 @@ int main()
         return -1;
     }
 
-    MouseState mouseState = FREE;
     AppState appState = AppState(mouseState, camera, projection);
 
     glfwMakeContextCurrent(window);
@@ -184,16 +194,19 @@ int main()
 
         appState.processInput(window, ourShader, deltaTime);
 
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(backgroundColor.x, backgroundColor.y, backgroundColor.z, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera.UpdateRotation(deltaTime);
         camera.UpdatePosition(deltaTime);
 
-        ourShaderUniforms.updateFrameUniforms();
-        lightCubeShaderUniform.updateFrameUniforms();
-
         ourShader.use();
+        ourShaderUniforms.updateFrameUniforms();
+        ourShader.setFloat("attenuationFactor", attenuationFactor);
+        ourShader.setVec3("lightColor", lightColor);
+        ourShader.setFloat("ambientFactor", ambientFactor);
+        ourShader.setInt("flashLightOn", (int)flashLightOn);
+
         glBindVertexArray(vaos.cube);
         for(int i = 0 ; i < sizeof(cubePositions) / sizeof(cubePositions[0]); i++) 
         {
@@ -207,6 +220,9 @@ int main()
         }
 
         lightCubeShader.use();
+        lightCubeShaderUniform.updateFrameUniforms();
+        lightCubeShader.setVec3("lightColor", lightColor);
+
         glBindVertexArray(vaos.light);
         for (int i = 0; i < sizeof(pointLightPositions) / sizeof(pointLightPositions[0]); i++)
         {
@@ -222,7 +238,7 @@ int main()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(400, 250), ImGuiCond_Once);
         ImGui::Begin("Controls");
 
         int selectedMouseState = (int)mouseState;
@@ -232,6 +248,11 @@ int main()
         }
         ImGui::InputFloat3("Camera Position", glm::value_ptr(camera.Position));
         ImGui::InputFloat3("Camera Direction", glm::value_ptr(camera.Front));
+        ImGui::SliderFloat("Ambient", &ambientFactor, 0.0f, 2.0f);
+        ImGui::SliderFloat("Attenuation", &attenuationFactor, 0.0f, 2.0f);
+        ImGui::ColorEdit3("Light Color", glm::value_ptr(lightColor));
+        ImGui::ColorEdit3("Background Color", glm::value_ptr(backgroundColor));
+        ImGui::Checkbox("flashlight", &flashLightOn);
         ImGui::End();
 
         ImGui::Render();

@@ -168,6 +168,7 @@ public:
         m_shader.setFloat("spotLight.quadratic", 0.032f);
         m_shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
         m_shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+
     }
 
     inline void updateFrameUniforms() override
