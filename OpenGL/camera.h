@@ -39,6 +39,11 @@ public:
     float MouseSensitivity;
     float Zoom;
 
+    float TargetYaw;
+    glm::vec3 TargetPosition;
+    bool IsMoving = false;
+    bool IsRotating = false;
+
     // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
@@ -59,14 +64,14 @@ public:
     }
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
-    glm::mat4 GetViewMatrix()
+    glm::mat4 GetViewMatrix() const
     {
         return customLookAt();
         // return glm::lookAt(Position, Position + Front, Up);
     }
 
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime)
+    void ProcessKeyboard(const Camera_Movement direction, const float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
         if (direction == FORWARD)
@@ -112,13 +117,73 @@ public:
     }
 
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-    void ProcessMouseScroll(float yoffset)
+    void ProcessMouseScroll(const float yoffset)
     {
         Zoom -= (float)yoffset;
         if (Zoom < 1.0f)
             Zoom = 1.0f;
         if (Zoom > 45.0f)
             Zoom = 45.0f;
+    }
+
+    void SetRotationTarget(const float degrees)
+    {
+        if (IsRotating || IsMoving) return;
+        TargetYaw = Yaw + degrees; // negative = left, positive = right
+        IsRotating = true;
+    }
+
+    void UpdateRotation(const float deltaTime)
+    {
+        if (!IsRotating) return;
+
+        float speed = 90.0f * deltaTime; // 90 degrees per second
+        float diff = TargetYaw - Yaw;
+
+        if (abs(diff) <= speed)
+        {
+            Yaw = TargetYaw;
+            IsRotating = false;
+        }
+        else
+        {
+            Yaw += glm::sign(diff) * speed;
+        }
+
+        updateCameraVectors();
+    }
+
+    void SetPositionTarget(const Camera_Movement direction, const float distance)
+    {
+        if (IsMoving || IsRotating) return;
+
+        if (direction == FORWARD)
+            TargetPosition = Position + Front * distance;
+
+        if (direction == BACKWARD)
+            TargetPosition = Position - Front * distance;
+
+        IsMoving = true;
+    }
+
+    void UpdatePosition(const float deltaTime, const float speed = SPEED)
+    {
+        if (!IsMoving) return;
+
+        glm::vec3 diff = TargetPosition - Position;
+        float distancePerTime = speed * deltaTime;
+
+        if (glm::length(diff) <= distancePerTime)
+        {
+            Position = TargetPosition;
+            IsMoving = false;
+        }
+        else
+        {
+            Position += glm::normalize(diff) * distancePerTime;
+        }
+
+        updateCameraVectors();
     }
 
 
@@ -138,7 +203,7 @@ private:
         Up = glm::normalize(glm::cross(Right, Front));
     }
 
-    glm::mat4 customLookAt() 
+    glm::mat4 customLookAt() const
     {
         glm::mat4 rotationMatrix= glm::transpose(
             glm::mat4(glm::vec4(Right, 0),

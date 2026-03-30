@@ -34,6 +34,9 @@
     <Filter Include="source\shaders\fragmentShader">
       <UniqueIdentifier>{681bbd29-fea4-497c-9a48-cc1a206d59ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\resources\environment">
+      <UniqueIdentifier>{6b537e47-3700-4209-a923-1f9ed82921a7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imGuiTutorial.cpp">
@@ -60,14 +63,17 @@
     <ClCompile Include="imgui_widgets.cpp">
       <Filter>source\cpp\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="FileName.cpp">
-      <Filter>controller</Filter>
-    </ClCompile>
     <ClCompile Include="stb_image.cpp">
       <Filter>source\cpp</Filter>
     </ClCompile>
     <ClCompile Include="glad.c">
+      <Filter>controller</Filter>
+    </ClCompile>
+    <ClCompile Include="horrorWorld.cpp">
       <Filter>source\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>controller</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -78,6 +84,30 @@
       <Filter>.h files</Filter>
     </ClInclude>
     <ClInclude Include="camera.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="horrorWorld.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="bufferSetup.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="input.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="lightingSets.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="shaderUniforms.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="textureLoader.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="vertexData.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="enum.h">
       <Filter>.h files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -114,12 +144,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\..\Downloads\container.jpg">
-      <Filter>source\resources\textures</Filter>
-    </Image>
-    <Image Include="..\..\..\..\Downloads\awesomeface.png">
-      <Filter>source\resources\textures</Filter>
-    </Image>
     <Image Include="world.png">
       <Filter>source\resources\textures</Filter>
     </Image>
@@ -138,5 +162,16 @@
     <Image Include="matrix_c.png">
       <Filter>source\resources\textures</Filter>
     </Image>
+    <Image Include="awesomeface.png">
+      <Filter>source</Filter>
+    </Image>
+    <Image Include="container.jpg">
+      <Filter>source</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="platform.txt">
+      <Filter>source\resources\environment</Filter>
+    </Text>
   </ItemGroup>
 </Project>
