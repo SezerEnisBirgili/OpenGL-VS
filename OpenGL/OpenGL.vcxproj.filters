@@ -25,9 +25,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="source\cpp\imgui">
-      <UniqueIdentifier>{85a78ce4-61cd-49a7-b524-e12e83ad6ee0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="source\shaders\vertexShader">
       <UniqueIdentifier>{459e1961-f3e4-43b0-88a5-6c2ee9dbbc8d}</UniqueIdentifier>
     </Filter>
@@ -37,37 +34,25 @@
     <Filter Include="source\resources\environment">
       <UniqueIdentifier>{6b537e47-3700-4209-a923-1f9ed82921a7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\src">
+      <UniqueIdentifier>{02ebf52b-2555-40da-bf79-d26a0eecd9df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\src\imgui">
+      <UniqueIdentifier>{eb742cb8-5b9d-41db-8a0e-e43bfac2eb56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\src\imgui\backends">
+      <UniqueIdentifier>{509b5d33-9f17-43dc-b58f-a2ddff947ce8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include=".h files\src">
+      <UniqueIdentifier>{8a2e1df1-7781-441a-854d-c52cdd170762}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imGuiTutorial.cpp">
       <Filter>controller</Filter>
     </ClCompile>
-    <ClCompile Include="imgui.cpp">
-      <Filter>source\cpp\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_demo.cpp">
-      <Filter>source\cpp\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_draw.cpp">
-      <Filter>source\cpp\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_impl_glfw.cpp">
-      <Filter>source\cpp\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_impl_opengl3.cpp">
-      <Filter>source\cpp\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_tables.cpp">
-      <Filter>source\cpp\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_widgets.cpp">
-      <Filter>source\cpp\imgui</Filter>
-    </ClCompile>
     <ClCompile Include="stb_image.cpp">
       <Filter>source\cpp</Filter>
-    </ClCompile>
-    <ClCompile Include="glad.c">
-      <Filter>controller</Filter>
     </ClCompile>
     <ClCompile Include="horrorWorld.cpp">
       <Filter>source\cpp</Filter>
@@ -75,11 +60,32 @@
     <ClCompile Include="main.cpp">
       <Filter>controller</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Downloads\glad (1)\src\glad.c">
+      <Filter>source\src</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui.cpp">
+      <Filter>source\src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_demo.cpp">
+      <Filter>source\src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_draw.cpp">
+      <Filter>source\src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_tables.cpp">
+      <Filter>source\src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_widgets.cpp">
+      <Filter>source\src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_glfw.cpp">
+      <Filter>source\src\imgui\backends</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_opengl3.cpp">
+      <Filter>source\src\imgui\backends</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stb_image.h">
-      <Filter>.h files</Filter>
-    </ClInclude>
     <ClInclude Include="shader.h">
       <Filter>.h files</Filter>
     </ClInclude>
@@ -109,6 +115,36 @@
     </ClInclude>
     <ClInclude Include="enum.h">
       <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>.h files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="imconfig.h">
+      <Filter>.h files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui.h">
+      <Filter>.h files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_impl_glfw.h">
+      <Filter>.h files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_impl_opengl3.h">
+      <Filter>.h files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_internal.h">
+      <Filter>.h files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="imstb_rectpack.h">
+      <Filter>.h files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="imstb_textedit.h">
+      <Filter>.h files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="imstb_truetype.h">
+      <Filter>.h files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_impl_opengl3_loader.h">
+      <Filter>.h files\src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -142,6 +178,10 @@
     <None Include="vLightShader.vert">
       <Filter>source\shaders\vertexShader</Filter>
     </None>
+    <None Include="6.light_cube.fs" />
+    <None Include="6.light_cube.vs" />
+    <None Include="6.multiple_lights.fs" />
+    <None Include="6.multiple_lights.vs" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="world.png">
@@ -166,6 +206,9 @@
       <Filter>source</Filter>
     </Image>
     <Image Include="container.jpg">
+      <Filter>source</Filter>
+    </Image>
+    <Image Include="container2_specular.png">
       <Filter>source</Filter>
     </Image>
   </ItemGroup>

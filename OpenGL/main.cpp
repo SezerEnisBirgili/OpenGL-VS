@@ -1,9 +1,10 @@
-#include <imgui/imgui.h>
-#include <imgui/backends/imgui_impl_glfw.h>
-#include <imgui/backends/imgui_impl_opengl3.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/type_ptr.hpp>
+
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 #include "shader.h"
 #include "horrorWorld.h"
@@ -80,7 +81,13 @@ int main()
     // ------------------------------------------------------------------
     // GLFW – init and configure
     // ------------------------------------------------------------------
+
+    glfwSetErrorCallback([](int error, const char* description) {
+        std::cerr << "GLFW Error " << error << ": " << description << std::endl;
+        });
+
     std::cout << "Starting GLFW init..." << std::endl;
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -108,6 +115,10 @@ int main()
     appState.setCallbacks(window);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+    // because vm
+    if (glfwRawMouseMotionSupported())
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
     // ------------------------------------------------------------------
     // GLAD – load OpenGL function pointers
     // ------------------------------------------------------------------
@@ -117,6 +128,12 @@ int main()
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+
+    const char* glVersion = (const char*)glGetString(GL_VERSION);
+    const char* glRenderer = (const char*)glGetString(GL_RENDERER);
+    std::cout << "OpenGL version: " << (glVersion ? glVersion : "NULL") << std::endl;
+    std::cout << "Renderer:       " << (glRenderer ? glRenderer : "NULL") << std::endl;
+
 
     glEnable(GL_DEPTH_TEST);
 

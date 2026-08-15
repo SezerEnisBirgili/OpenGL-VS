@@ -85,8 +85,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LibraryPath>D:\OpenGL\lib;C:\Users\sezer.birgili\source\OpenGL\lib\glfw-3.4;$(LibraryPath)</LibraryPath>
-    <IncludePath>D:\OpenGL\include\imgui\backends;D:\OpenGL\include\imgui;D:\OpenGL\include;C:\Users\sezer.birgili\source\OpenGL\include;C:\Users\sezer.birgili\source\OpenGL\include\imgui;C:\Users\sezer.birgili\source\OpenGL\include\imgui\backends;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir);$(ProjectDir)Dependencies\lib\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)Dependencies\include\;$(ProjectDir)Dependencies\include\imgui;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug2|x64'">
     <ExternalIncludePath>C:\Users\sezer.birgili\source\OpenGL\include;C:\Users\sezer.birgili\source\OpenGL\include\imgui;C:\Users\sezer.birgili\source\OpenGL\include\imgui\backends;$(IncludePath)</ExternalIncludePath>
@@ -155,12 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug2|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="glad.c" />
-    <ClCompile Include="horrorWorld.cpp" />
+    <ClCompile Include="..\..\..\..\..\Downloads\glad (1)\src\glad.c" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="imgui_demo.cpp" />
     <ClCompile Include="imgui_draw.cpp" />
@@ -168,6 +163,11 @@
     <ClCompile Include="imgui_impl_opengl3.cpp" />
     <ClCompile Include="imgui_tables.cpp" />
     <ClCompile Include="imgui_widgets.cpp" />
+    <ClCompile Include="main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug2|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="horrorWorld.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="imGuiTutorial.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug2|x64'">false</ExcludedFromBuild>
@@ -179,6 +179,15 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="enum.h" />
     <ClInclude Include="horrorWorld.h" />
+    <ClInclude Include="imconfig.h" />
+    <ClInclude Include="imgui.h" />
+    <ClInclude Include="imgui_impl_glfw.h" />
+    <ClInclude Include="imgui_impl_opengl3.h" />
+    <ClInclude Include="imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="imgui_internal.h" />
+    <ClInclude Include="imstb_rectpack.h" />
+    <ClInclude Include="imstb_textedit.h" />
+    <ClInclude Include="imstb_truetype.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="lightingSets.h" />
     <ClInclude Include="shader.h" />
