@@ -4,8 +4,9 @@
 #include "shader.h"
 #include "camera.h"
 #include "enum.h"
+#include "world.h"
 
-class AppState 
+class AppState
 {
     bool lShiftPressedLastFrame = false;
     bool wPressedLastFrame = false;
@@ -18,6 +19,7 @@ class AppState
     MouseState& a_mouseState;
     Camera& a_camera;
     glm::mat4& a_projection;
+    World* a_world = nullptr; // set via setWorld()
 
     float lastX = 400.0f;
     float lastY = 300.0f;
@@ -25,8 +27,14 @@ class AppState
 
 public:
 
-    AppState(MouseState& mouseState, Camera& camera, glm::mat4& projection) : 
-        a_mouseState(mouseState), a_camera(camera), a_projection(projection) {}
+    AppState(MouseState& mouseState, Camera& camera, glm::mat4& projection) :
+        a_mouseState(mouseState), a_camera(camera), a_projection(projection) {
+    }
+
+    void setWorld(World& world)
+    {
+        a_world = &world;
+    }
 
     // -------------------------------------------------------------------------
     // Callbacks
@@ -40,22 +48,21 @@ public:
     {
         if (TOGGLE_MENU) return;
 
-        if (a_mouseState == FREE)
+        if (firstMouse)
         {
-            if (firstMouse)
-            {
-                lastX = (float)xpos;
-                lastY = (float)ypos;
-                firstMouse = false;
-            }
-
-            float xoffset = (float)xpos - lastX;
-            float yoffset = lastY - (float)ypos;
             lastX = (float)xpos;
             lastY = (float)ypos;
-
-            a_camera.ProcessMouseMovement(xoffset, yoffset);
+            firstMouse = false;
+            return;
         }
+
+        float xoffset = (float)xpos - lastX;
+        float yoffset = lastY - (float)ypos;
+        lastX = (float)xpos;
+        lastY = (float)ypos;
+
+        if (a_mouseState == FREE)
+            a_camera.ProcessMouseMovement(xoffset, yoffset);
     }
 
     void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset, float SCR_WIDTH = 800.0f, float SCR_HEIGHT = 600.0f)
@@ -65,6 +72,21 @@ public:
             glm::radians(a_camera.Zoom),
             (float)SCR_WIDTH / SCR_HEIGHT,
             0.1f, 100.0f);
+    }
+
+    inline void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /*mods*/)
+    {
+        if (TOGGLE_MENU) return;
+        if (!a_world) return;
+        if (action != GLFW_PRESS) return;
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT)
+        {
+            Vec3 start(a_camera.Position.x, a_camera.Position.y, a_camera.Position.z);
+            Vec3 front(a_camera.Front.x, a_camera.Front.y, a_camera.Front.z);
+
+            placeBlock(start, front, *a_world, /*newTexture*/ 0);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -127,6 +149,11 @@ public:
         auto* app = static_cast<AppState*>(glfwGetWindowUserPointer(window));
         app->scroll_callback(window, xoffset, yoffset);
     }
+    static void mouse_button_callback_static(GLFWwindow* window, int button, int action, int mods)
+    {
+        auto* app = static_cast<AppState*>(glfwGetWindowUserPointer(window));
+        app->mouse_button_callback(window, button, action, mods);
+    }
 
     void setCallbacks(GLFWwindow* window)
     {
@@ -134,5 +161,6 @@ public:
         glfwSetFramebufferSizeCallback(window, framebuffer_size_callback_static);
         glfwSetCursorPosCallback(window, mouse_callback_static);
         glfwSetScrollCallback(window, scroll_callback_static);
+        glfwSetMouseButtonCallback(window, mouse_button_callback_static);
     }
 };

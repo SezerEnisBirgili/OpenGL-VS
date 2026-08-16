@@ -7,12 +7,12 @@
 #include <imgui_impl_opengl3.h>
 
 #include "shader.h"
-#include "horrorWorld.h"
 #include "vertexData.h"
 #include "bufferSetup.h"
 #include "textureLoader.h"
 #include "shaderUniforms.h"
 #include "input.h"
+#include "world.h"
 
 #include <iostream>
 #include <vector>
@@ -62,19 +62,12 @@ glm::vec3 pointLightPositions[] = {
     glm::vec3(0.0f,  0.0f, -3.0f)
 };
 
-// positions all containers
-glm::vec3 cubePositions[] = {
-    glm::vec3(0.0f,  0.0f,  0.0f),
-    glm::vec3(2.0f,  5.0f, -15.0f),
-    glm::vec3(-1.5f, -2.2f, -2.5f),
-    glm::vec3(-3.8f, -2.0f, -12.3f),
-    glm::vec3(2.4f, -0.4f, -3.5f),
-    glm::vec3(-1.7f,  3.0f, -7.5f),
-    glm::vec3(1.3f, -2.0f, -2.5f),
-    glm::vec3(1.5f,  2.0f, -2.5f),
-    glm::vec3(1.5f,  0.2f, -1.5f),
-    glm::vec3(-1.3f,  1.0f, -1.5f)
-};
+void initWorld(World& world, int sizeX, int sizeZ)
+{
+    for (int x = 0; x < sizeX; x++)
+        for (int z = 0; z < sizeZ; z++)
+            world.setBlock(x, 0, z, true, 0); // y=0 layer, texture id 0
+}
 
 int main()
 {
@@ -108,7 +101,6 @@ int main()
         return -1;
     }
 
-    MouseState mouseState = FREE;
     AppState appState = AppState(mouseState, camera, projection);
 
     glfwMakeContextCurrent(window);
@@ -116,8 +108,8 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // because vm
-    if (glfwRawMouseMotionSupported())
-        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    //if (glfwRawMouseMotionSupported())
+    //    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     // ------------------------------------------------------------------
     // GLAD – load OpenGL function pointers
@@ -173,6 +165,7 @@ int main()
     LightCubeShaderUniform lightCubeShaderUniform = LightCubeShaderUniform(lightCubeShader, model, camera, projection);
     ourShaderUniforms.initShaderUniforms();
     lightCubeShaderUniform.initShaderUniforms();
+
     // ------------------------------------------------------------------
     // ImGui
     // ------------------------------------------------------------------
@@ -183,22 +176,26 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    // ------------------------------------------------------------------
-    // World
-    // ------------------------------------------------------------------
-    std::vector<std::vector<std::string>> floors = generateWorld(wallFilePath);
+    World world(16, 16, 16);
+    initWorld(world, 16, 16);
+    appState.setWorld(world);
 
     // ------------------------------------------------------------------
-    // Render loop
+    // Main loop
     // ------------------------------------------------------------------
     std::cout << "Entering render loop..." << std::endl;
     while (!glfwWindowShouldClose(window))
     {
+        // ------------------------------------------------------------------
         // Timing
+        // ------------------------------------------------------------------
         float currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+        // ------------------------------------------------------------------
+        // Input
+        // ------------------------------------------------------------------
         appState.processInput(window, ourShader, deltaTime);
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -207,33 +204,52 @@ int main()
         camera.UpdateRotation(deltaTime);
         camera.UpdatePosition(deltaTime);
 
+        // ------------------------------------------------------------------
+        // Update shader uniforms every frame (view/projection/lighting)
+        // ------------------------------------------------------------------
         ourShaderUniforms.updateFrameUniforms();
         lightCubeShaderUniform.updateFrameUniforms();
 
+        // ------------------------------------------------------------------
+        // Render loop
+        // ------------------------------------------------------------------
+
         ourShader.use();
         glBindVertexArray(vaos.cube);
-        for(int i = 0 ; i < sizeof(cubePositions) / sizeof(cubePositions[0]); i++) 
-        {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
-            float angle = 20 * i;
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            ourShader.setMat4("model", model);
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (int x = 0; x < 16; x++)
+        {
+            for (int y = 0; y < 16; y++)
+            {
+                for (int z = 0; z < 16; z++)
+                {
+                    if (!world.isBlockSolid(x, y, z))
+                        continue;
+
+                    glm::mat4 blockModel = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
+                    ourShader.setMat4("model", blockModel);
+
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
+            }
         }
 
+        // --- Point light cubes ---
         lightCubeShader.use();
         glBindVertexArray(vaos.light);
         for (int i = 0; i < sizeof(pointLightPositions) / sizeof(pointLightPositions[0]); i++)
         {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, pointLightPositions[i]);
-            model = glm::scale(model, glm::vec3(0.2f));
-            lightCubeShader.setMat4("model", model);
+            glm::mat4 lightModel = glm::mat4(1.0f);
+            lightModel = glm::translate(lightModel, pointLightPositions[i]);
+            lightModel = glm::scale(lightModel, glm::vec3(0.2f));
+            lightCubeShader.setMat4("model", lightModel);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
+
+        // ------------------------------------------------------------------
+        // IMGUI
+        // ------------------------------------------------------------------
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();

@@ -167,7 +167,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug2|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="horrorWorld.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="imGuiTutorial.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug2|x64'">false</ExcludedFromBuild>
@@ -178,7 +177,6 @@
     <ClInclude Include="bufferSetup.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="enum.h" />
-    <ClInclude Include="horrorWorld.h" />
     <ClInclude Include="imconfig.h" />
     <ClInclude Include="imgui.h" />
     <ClInclude Include="imgui_impl_glfw.h" />
@@ -195,6 +193,7 @@
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="textureLoader.h" />
     <ClInclude Include="vertexData.h" />
+    <ClInclude Include="world.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="6.light_cube.fs" />

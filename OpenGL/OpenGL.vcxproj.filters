@@ -54,9 +54,6 @@
     <ClCompile Include="stb_image.cpp">
       <Filter>source\cpp</Filter>
     </ClCompile>
-    <ClCompile Include="horrorWorld.cpp">
-      <Filter>source\cpp</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>controller</Filter>
     </ClCompile>
@@ -90,9 +87,6 @@
       <Filter>.h files</Filter>
     </ClInclude>
     <ClInclude Include="camera.h">
-      <Filter>.h files</Filter>
-    </ClInclude>
-    <ClInclude Include="horrorWorld.h">
       <Filter>.h files</Filter>
     </ClInclude>
     <ClInclude Include="bufferSetup.h">
@@ -145,6 +139,9 @@
     </ClInclude>
     <ClInclude Include="imgui_impl_opengl3_loader.h">
       <Filter>.h files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="world.h">
+      <Filter>.h files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
