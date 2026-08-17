@@ -177,6 +177,7 @@
     <ClInclude Include="bufferSetup.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="enum.h" />
+    <ClInclude Include="GameObject.h" />
     <ClInclude Include="imconfig.h" />
     <ClInclude Include="imgui.h" />
     <ClInclude Include="imgui_impl_glfw.h" />

@@ -161,8 +161,8 @@ int main()
     // ------------------------------------------------------------------
     std::cout << "Setting uniforms..." << std::endl;
 
-    OurShaderUniform ourShaderUniforms = OurShaderUniform(ourShader, texture1, texture2, model,camera, projection, material, light, pointLightPositions);
-    LightCubeShaderUniform lightCubeShaderUniform = LightCubeShaderUniform(lightCubeShader, model, camera, projection);
+    OurShaderUniform       ourShaderUniforms      = OurShaderUniform(ourShader, camera, projection, pointLightPositions);
+    LightCubeShaderUniform lightCubeShaderUniform = LightCubeShaderUniform(lightCubeShader, camera, projection);
     ourShaderUniforms.initShaderUniforms();
     lightCubeShaderUniform.initShaderUniforms();
 
