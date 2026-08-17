@@ -1,0 +1,3 @@
+/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles/OpenGLApp.dir
+/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles/edit_cache.dir
+/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles/rebuild_cache.dir
