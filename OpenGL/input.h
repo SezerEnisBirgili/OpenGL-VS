@@ -98,7 +98,7 @@ public:
             glfwSetWindowShouldClose(window, true);
 
         // Left-shift toggles the ImGui menu
-        bool lShiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+        bool lShiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
         bool aPressed = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
         bool dPressed = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
         bool wPressed = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
@@ -120,6 +120,8 @@ public:
             if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) a_camera.ProcessKeyboard(BACKWARD, deltaTime);
             if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) a_camera.ProcessKeyboard(LEFT, deltaTime);
             if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) a_camera.ProcessKeyboard(RIGHT, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) a_camera.ProcessKeyboard(UP, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) a_camera.ProcessKeyboard(DOWN, deltaTime);
         }
         else if (a_mouseState == TANK)
         {
