@@ -1,4 +1,6 @@
 #pragma once
+#pragma warning(push)
+#pragma warning(disable: 4244)
 
 #include <fstream>
 #include <iostream>
@@ -196,19 +198,23 @@ RaycastHit3D intersectRayAABB3D(const Vec3& start, const Vec3& rayDir, const AAB
 bool placeBlock(const Vec3& start, const Vec3& front, World& world, int newTexture, int maxDistance = 100) {
     Vec3 hitBlock;
 
+    int hitX = static_cast<int>(std::floor(hitBlock.x));
+    int hitY = static_cast<int>(std::floor(hitBlock.y));
+    int hitZ = static_cast<int>(std::floor(hitBlock.z));
+
     bool hitSomething = traverseDDA(start, front, [&world](int x, int y, int z) { return world.isBlockSolid(x, y, z); }, hitBlock, maxDistance);
 
     std::cout << "[placeBlock] hitSomething=" << hitSomething
-        << " hitBlock=(" << hitBlock.x << "," << hitBlock.y << "," << hitBlock.z << ")" << std::endl;
+        << " hitBlock=(" << hitBlock.x << "," << hitY << "," << hitZ << ")" << std::endl;
 
-    if (!hitSomething || !world.isWithinBounds(hitBlock.x, hitBlock.y, hitBlock.z))
+    if (!hitSomething || !world.isWithinBounds(hitX, hitY, hitZ))
     {
         std::cout << "[placeBlock] failed: no hit or out of bounds" << std::endl;
         return false;
     }
 
     AABB3D blockAABB;
-    blockAABB.min = Vec3(std::floor(hitBlock.x), std::floor(hitBlock.y), std::floor(hitBlock.z));
+    blockAABB.min = Vec3(hitX, hitY, hitZ);
     blockAABB.max = Vec3(blockAABB.min.x + 1.0f, blockAABB.min.y + 1.0f, blockAABB.min.z + 1.0f);
 
     RaycastHit3D rayHit = intersectRayAABB3D(start, front, blockAABB);
@@ -221,28 +227,24 @@ bool placeBlock(const Vec3& start, const Vec3& front, World& world, int newTextu
         return false;
     }
 
-    int placeX = hitBlock.x;
-    int placeY = hitBlock.y;
-    int placeZ = hitBlock.z;
-
     switch (rayHit.face) {
-    case BoxFace3D::Left:   placeX -= 1; break;
-    case BoxFace3D::Right:  placeX += 1; break;
-    case BoxFace3D::Bottom: placeY -= 1; break;
-    case BoxFace3D::Top:    placeY += 1; break;
-    case BoxFace3D::Back:   placeZ -= 1; break;
-    case BoxFace3D::Front:  placeZ += 1; break;
+    case BoxFace3D::Left:   hitX -= 1; break;
+    case BoxFace3D::Right:  hitX += 1; break;
+    case BoxFace3D::Bottom: hitY -= 1; break;
+    case BoxFace3D::Top:    hitY += 1; break;
+    case BoxFace3D::Back:   hitZ -= 1; break;
+    case BoxFace3D::Front:  hitZ += 1; break;
     default:
         std::cout << "[placeBlock] failed: face == None" << std::endl;
         return false;
     }
 
-    std::cout << "[placeBlock] target placement=(" << placeX << "," << placeY << "," << placeZ << ")"
-        << " inBounds=" << world.isWithinBounds(placeX, placeY, placeZ)
-        << " alreadySolid=" << world.isBlockSolid(placeX, placeY, placeZ) << std::endl;
+    std::cout << "[placeBlock] target placement=(" << hitX << "," << hitY << "," << hitZ << ")"
+        << " inBounds=" << world.isWithinBounds(hitX, hitY, hitZ)
+        << " alreadySolid=" << world.isBlockSolid(hitX, hitY, hitZ) << std::endl;
 
-    if (world.isWithinBounds(placeX, placeY, placeZ) && !world.isBlockSolid(placeX, placeY, placeZ)) {
-        world.setBlock(placeX, placeY, placeZ, true, newTexture);
+    if (world.isWithinBounds(hitX, hitY, hitZ) && !world.isBlockSolid(hitX, hitY, hitZ)) {
+        world.setBlock(hitX, hitY, hitZ, true, newTexture);
         std::cout << "[placeBlock] SUCCESS" << std::endl;
         return true;
     }

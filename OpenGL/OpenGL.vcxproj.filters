@@ -15,9 +15,6 @@
     <Filter Include="source\resources\textures">
       <UniqueIdentifier>{e043d68f-1caf-4953-892a-20f8c8d4d814}</UniqueIdentifier>
     </Filter>
-    <Filter Include="source\cpp">
-      <UniqueIdentifier>{920a9914-3aa9-4f4c-b5f6-dd3c12717ae4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="source\shaders">
       <UniqueIdentifier>{7ac83143-7659-44d8-873a-15e39bffd037}</UniqueIdentifier>
     </Filter>
@@ -46,19 +43,22 @@
     <Filter Include=".h files\src">
       <UniqueIdentifier>{8a2e1df1-7781-441a-854d-c52cdd170762}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\src\c">
+      <UniqueIdentifier>{a4cc0db1-4784-43c4-98ef-5540f0bebb22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\src\cpp">
+      <UniqueIdentifier>{920a9914-3aa9-4f4c-b5f6-dd3c12717ae4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imGuiTutorial.cpp">
       <Filter>controller</Filter>
     </ClCompile>
     <ClCompile Include="stb_image.cpp">
-      <Filter>source\cpp</Filter>
+      <Filter>source\src\cpp</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>controller</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\Downloads\glad (1)\src\glad.c">
-      <Filter>source\src</Filter>
     </ClCompile>
     <ClCompile Include="imgui.cpp">
       <Filter>source\src\imgui</Filter>
@@ -80,6 +80,9 @@
     </ClCompile>
     <ClCompile Include="imgui_impl_opengl3.cpp">
       <Filter>source\src\imgui\backends</Filter>
+    </ClCompile>
+    <ClCompile Include="glad.c">
+      <Filter>source\src\c</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
