@@ -84,6 +84,9 @@ public:
     {
         m_shader.use();
         m_shader.setMat4("projection", m_projection);
+        m_shader.setInt("material.diffuse", 0);
+        m_shader.setInt("material.specular", 1);
+        m_shader.setFloat("material.shininess", 32.0f);
 
         // Directional light
         m_shader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));

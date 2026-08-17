@@ -156,6 +156,9 @@ int main()
     loadTexture("container2.png", texture1);
     loadTexture("container2_specular.png", texture2);
 
+    ourShader.use();
+    ourShader.setInt("material.diffuse", 0);
+    ourShader.setInt("material.specular", 1);
     // ------------------------------------------------------------------
     // Shader uniforms (static / one-time)
     // ------------------------------------------------------------------
@@ -215,6 +218,12 @@ int main()
         // ------------------------------------------------------------------
 
         ourShader.use();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
+
         glBindVertexArray(vaos.cube);
 
         for (int x = 0; x < 16; x++)
