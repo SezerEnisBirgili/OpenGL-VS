@@ -10,10 +10,9 @@
 #include <algorithm>
 #include <filesystem>
 
-struct Vec3 {
-    float x, y, z;
-    Vec3(float x = 0, float y = 0, float z = 0) : x(x), y(y), z(z) {}
-};
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 class Block {
 public:
@@ -42,6 +41,18 @@ public:
     {
         // initialize with empty air blocks
         blocks.resize(x * y * z, Block(false, 0));
+    }
+
+    int getBoundX() const {
+        return boundx;
+    }
+
+    int getBoundY() const {
+        return boundy;
+    }
+
+    int getBoundZ() const {
+        return boundz;
     }
 
     // Bounds check to assume 0 to bound coordinates
@@ -74,23 +85,27 @@ public:
 
 
 template <typename Visitor>
-bool traverseDDA(Vec3 start, Vec3 front, Visitor&& visit, Vec3& hit, int LOOP_LIMIT = 100)
+bool traverseDDA(glm::vec3 start, glm::vec3 front, Visitor&& visit, glm::vec3& hit, int LOOP_LIMIT = 100)
 {
     if (front.x == 0 && front.y == 0 && front.z == 0)
         return false;
 
-    int x = (int)std::floor(start.x);
-    int y = (int)std::floor(start.y);
-    int z = (int)std::floor(start.z);
+    front = glm::normalize(front);
+
+    int x = static_cast<int>(std::floor(start.x));
+    int y = static_cast<int>(std::floor(start.y));
+    int z = static_cast<int>(std::floor(start.z));
 
     int dir_x = (front.x > 0) - (front.x < 0);
     int dir_y = (front.y > 0) - (front.y < 0);
     int dir_z = (front.z > 0) - (front.z < 0);
 
     const float BIG = 1e30f;
-    float S_x = (front.x != 0) ? std::sqrt(1 + (front.y / front.x) * (front.y / front.x) + (front.z / front.x) * (front.z / front.x)) : BIG;
-    float S_y = (front.y != 0) ? std::sqrt(1 + (front.x / front.y) * (front.x / front.y) + (front.z / front.y) * (front.z / front.y)) : BIG;
-    float S_z = (front.z != 0) ? std::sqrt(1 + (front.x / front.z) * (front.x / front.z) + (front.y / front.z) * (front.y / front.z)) : BIG;
+
+    // if front is normalized, scaling factor calculation simplies to this
+    float S_x = (front.x != 0) ? std::abs(1.0f / front.x) : INFINITY;
+    float S_y = (front.y != 0) ? std::abs(1.0f / front.y) : INFINITY;
+    float S_z = (front.z != 0) ? std::abs(1.0f / front.z) : INFINITY;
 
     float D_x = (dir_x < 0) ? (start.x - x) * S_x : (x + 1 - start.x) * S_x;
     float D_y = (dir_y < 0) ? (start.y - y) * S_y : (y + 1 - start.y) * S_y;
@@ -100,7 +115,7 @@ bool traverseDDA(Vec3 start, Vec3 front, Visitor&& visit, Vec3& hit, int LOOP_LI
     {
         if (visit(x, y, z))
         {
-            hit = Vec3(x, y, z);
+            hit = glm::vec3(x, y, z);
             return true;
         }
 
@@ -118,8 +133,8 @@ bool traverseDDA(Vec3 start, Vec3 front, Visitor&& visit, Vec3& hit, int LOOP_LI
 }
 
 struct AABB3D {
-    Vec3 min;
-    Vec3 max;
+    glm::vec3 min;
+    glm::vec3 max;
 };
 
 // Enum to identify the hit face of the 3D box
@@ -137,11 +152,11 @@ enum class BoxFace3D {
 struct RaycastHit3D {
     bool collided = false;
     float t = -1.0f;
-    Vec3 point = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 point = { 0.0f, 0.0f, 0.0f };
     BoxFace3D face = BoxFace3D::None;
 };
 
-RaycastHit3D intersectRayAABB3D(const Vec3& start, const Vec3& rayDir, const AABB3D& box) {
+RaycastHit3D intersectRayAABB3D(const glm::vec3& start, const glm::vec3& rayDir, const AABB3D& box) {
 
     RaycastHit3D hit;
 
@@ -195,14 +210,15 @@ RaycastHit3D intersectRayAABB3D(const Vec3& start, const Vec3& rayDir, const AAB
     return hit; // Missed
 }
 
-bool placeBlock(const Vec3& start, const Vec3& front, World& world, int newTexture, int maxDistance = 100) {
-    Vec3 hitBlock;
+bool placeBlock(const glm::vec3& start, const glm::vec3& front, World& world, int newTexture, int maxDistance = 100) {
+    glm::vec3 hitBlock;
+
+    bool hitSomething = traverseDDA(start, front, [&world](int x, int y, int z) { return world.isBlockSolid(x, y, z); }, hitBlock, maxDistance);
 
     int hitX = static_cast<int>(std::floor(hitBlock.x));
     int hitY = static_cast<int>(std::floor(hitBlock.y));
     int hitZ = static_cast<int>(std::floor(hitBlock.z));
 
-    bool hitSomething = traverseDDA(start, front, [&world](int x, int y, int z) { return world.isBlockSolid(x, y, z); }, hitBlock, maxDistance);
 
     std::cout << "[placeBlock] hitSomething=" << hitSomething
         << " hitBlock=(" << hitBlock.x << "," << hitY << "," << hitZ << ")" << std::endl;
@@ -214,8 +230,8 @@ bool placeBlock(const Vec3& start, const Vec3& front, World& world, int newTextu
     }
 
     AABB3D blockAABB;
-    blockAABB.min = Vec3(hitX, hitY, hitZ);
-    blockAABB.max = Vec3(blockAABB.min.x + 1.0f, blockAABB.min.y + 1.0f, blockAABB.min.z + 1.0f);
+    blockAABB.min = glm::vec3(hitX, hitY, hitZ);
+    blockAABB.max = glm::vec3(blockAABB.min.x + 1.0f, blockAABB.min.y + 1.0f, blockAABB.min.z + 1.0f);
 
     RaycastHit3D rayHit = intersectRayAABB3D(start, front, blockAABB);
 
@@ -257,7 +273,8 @@ bool placeBlock(const Vec3& start, const Vec3& front, World& world, int newTextu
 
 namespace fs = std::filesystem;
 
-bool exportWorldToPath(const World& world, const std::string& destinationPath, int boundX, int boundY, int boundZ) {
+bool exportWorldToPath(const World& world, const std::string& destinationPath) {
+
     fs::path p(destinationPath);
     fs::path dir = p.parent_path();
 
@@ -276,6 +293,10 @@ bool exportWorldToPath(const World& world, const std::string& destinationPath, i
         std::cerr << "Failed to write to file: " << destinationPath << std::endl;
         return false;
     }
+
+    int boundX = world.getBoundX();
+    int boundY = world.getBoundY();
+    int boundZ = world.getBoundZ();
 
     outFile << boundX << " " << boundY << " " << boundZ << "\n";
 

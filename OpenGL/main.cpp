@@ -265,6 +265,29 @@ int main()
         }
         ImGui::InputFloat3("Camera Position", glm::value_ptr(camera.Position));
         ImGui::InputFloat3("Camera Direction", glm::value_ptr(camera.Front));
+
+
+        static char worldPath[256] = "world.txt";
+        ImGui::InputText("World File", worldPath, IM_ARRAYSIZE(worldPath));
+
+        if (ImGui::Button("Export World"))
+        {
+            if (exportWorldToPath(world, worldPath))
+                std::cout << "World exported to " << worldPath << std::endl;
+            else
+                std::cout << "World export failed!" << std::endl;
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Import World"))
+        {
+            World loaded = importWorldFromPath(worldPath);
+            world = loaded;
+            appState.setWorld(world);
+            std::cout << "World imported from " << worldPath << std::endl;
+        }
+
         ImGui::End();
 
         ImGui::Render();

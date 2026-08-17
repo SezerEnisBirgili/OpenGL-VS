@@ -82,8 +82,8 @@ public:
 
         if (button == GLFW_MOUSE_BUTTON_LEFT)
         {
-            Vec3 start(a_camera.Position.x, a_camera.Position.y, a_camera.Position.z);
-            Vec3 front(a_camera.Front.x, a_camera.Front.y, a_camera.Front.z);
+            glm::vec3 start(a_camera.Position.x, a_camera.Position.y, a_camera.Position.z);
+            glm::vec3 front(a_camera.Front.x, a_camera.Front.y, a_camera.Front.z);
 
             placeBlock(start, front, *a_world, /*newTexture*/ 0);
         }
