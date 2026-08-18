@@ -41,7 +41,6 @@ public:
         m_shader.use();
         m_shader.setMat4("view", m_camera.GetViewMatrix());
         m_shader.setMat4("projection", m_projection);
-        // "model" is set per-object by GameObject::draw()
     }
 };
 

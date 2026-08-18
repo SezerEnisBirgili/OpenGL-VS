@@ -13,6 +13,7 @@
 #include "shaderUniforms.h"
 #include "input.h"
 #include "world.h"
+#include "materialRegistry.h"
 
 #include <iostream>
 #include <vector>
@@ -40,7 +41,7 @@ MouseState mouseState = MouseState::FREE;
 
 // -------------------------------------------------------------------------
 // Camera
-// ----------------------------------------------S---------------------------
+// -------------------------------------------------------------------------
 glm::vec3 cameraPos = glm::vec3(1.0f, 1.0f, -3.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 float     yaw = 90.0f;
@@ -56,25 +57,17 @@ glm::mat4 view = camera.GetViewMatrix();
 glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
 glm::vec3 pointLightPositions[] = {
-    glm::vec3(0.7f,  0.2f,  2.0f),
-    glm::vec3(2.3f, -3.3f, -4.0f),
-    glm::vec3(-4.0f,  2.0f, -12.0f),
-    glm::vec3(0.0f,  0.0f, -3.0f)
+    glm::vec3(2.0f,  1.0f,  2.0f),
+    glm::vec3(4.0f, 1.0f, 4.0f),
+    glm::vec3(6.0f,  1.0f, 12.0f),
+    glm::vec3(8.0f,  1.0f, 1.0f)
 };
-
-void initWorld(World& world, int sizeX, int sizeZ)
-{
-    for (int x = 0; x < sizeX; x++)
-        for (int z = 0; z < sizeZ; z++)
-            world.setBlock(x, 0, z, true, 0); // y=0 layer, texture id 0
-}
 
 int main()
 {
     // ------------------------------------------------------------------
     // GLFW – init and configure
     // ------------------------------------------------------------------
-
     glfwSetErrorCallback([](int error, const char* description) {
         std::cerr << "GLFW Error " << error << ": " << description << std::endl;
         });
@@ -89,9 +82,6 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    // ------------------------------------------------------------------
-    // GLFW – window creation
-    // ------------------------------------------------------------------
     std::cout << "Creating window..." << std::endl;
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (!window)
@@ -107,13 +97,6 @@ int main()
     appState.setCallbacks(window);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    // because vm
-    //if (glfwRawMouseMotionSupported())
-    //    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-
-    // ------------------------------------------------------------------
-    // GLAD – load OpenGL function pointers
-    // ------------------------------------------------------------------
     std::cout << "Loading GLAD..." << std::endl;
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -125,7 +108,6 @@ int main()
     const char* glRenderer = (const char*)glGetString(GL_RENDERER);
     std::cout << "OpenGL version: " << (glVersion ? glVersion : "NULL") << std::endl;
     std::cout << "Renderer:       " << (glRenderer ? glRenderer : "NULL") << std::endl;
-
 
     glEnable(GL_DEPTH_TEST);
 
@@ -149,19 +131,25 @@ int main()
     VAOs vaos = setupBuffers(VBO);
 
     // ------------------------------------------------------------------
-    // Textures
+    // Textures + Materials
     // ------------------------------------------------------------------
     std::cout << "Loading textures..." << std::endl;
     unsigned int texture1, texture2;
     loadTexture("container2.png", texture1);
     loadTexture("container2_specular.png", texture2);
 
+    MaterialRegistry blockMaterials;
+    blockMaterials.add(0, Material({
+        { texture1, "material.diffuse"  },
+        { texture2, "material.specular" }
+        }));
+
     // ------------------------------------------------------------------
     // Shader uniforms (static / one-time)
     // ------------------------------------------------------------------
     std::cout << "Setting uniforms..." << std::endl;
 
-    OurShaderUniform       ourShaderUniforms      = OurShaderUniform(ourShader, camera, projection, pointLightPositions);
+    OurShaderUniform       ourShaderUniforms = OurShaderUniform(ourShader, camera, projection, pointLightPositions);
     LightCubeShaderUniform lightCubeShaderUniform = LightCubeShaderUniform(lightCubeShader, camera, projection);
     ourShaderUniforms.initShaderUniforms();
     lightCubeShaderUniform.initShaderUniforms();
@@ -177,7 +165,7 @@ int main()
     ImGui_ImplOpenGL3_Init("#version 330");
 
     World world(16, 16, 16);
-    initWorld(world, 16, 16);
+    world.platform(16, 16);
     appState.setWorld(world);
 
     // ------------------------------------------------------------------
@@ -186,16 +174,10 @@ int main()
     std::cout << "Entering render loop..." << std::endl;
     while (!glfwWindowShouldClose(window))
     {
-        // ------------------------------------------------------------------
-        // Timing
-        // ------------------------------------------------------------------
         float currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // ------------------------------------------------------------------
-        // Input
-        // ------------------------------------------------------------------
         appState.processInput(window, ourShader, deltaTime);
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -204,35 +186,11 @@ int main()
         camera.UpdateRotation(deltaTime);
         camera.UpdatePosition(deltaTime);
 
-        // ------------------------------------------------------------------
-        // Update shader uniforms every frame (view/projection/lighting)
-        // ------------------------------------------------------------------
         ourShaderUniforms.updateFrameUniforms();
         lightCubeShaderUniform.updateFrameUniforms();
 
-        // ------------------------------------------------------------------
-        // Render loop
-        // ------------------------------------------------------------------
-
-        ourShader.use();
         glBindVertexArray(vaos.cube);
-
-        for (int x = 0; x < 16; x++)
-        {
-            for (int y = 0; y < 16; y++)
-            {
-                for (int z = 0; z < 16; z++)
-                {
-                    if (!world.isBlockSolid(x, y, z))
-                        continue;
-
-                    glm::mat4 blockModel = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
-                    ourShader.setMat4("model", blockModel);
-
-                    glDrawArrays(GL_TRIANGLES, 0, 36);
-                }
-            }
-        }
+        world.draw(ourShader, blockMaterials);
 
         // --- Point light cubes ---
         lightCubeShader.use();
@@ -250,7 +208,6 @@ int main()
         // ------------------------------------------------------------------
         // IMGUI
         // ------------------------------------------------------------------
-
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -266,13 +223,12 @@ int main()
         ImGui::InputFloat3("Camera Position", glm::value_ptr(camera.Position));
         ImGui::InputFloat3("Camera Direction", glm::value_ptr(camera.Front));
 
-
         static char worldPath[256] = "world.txt";
         ImGui::InputText("World File", worldPath, IM_ARRAYSIZE(worldPath));
 
         if (ImGui::Button("Export World"))
         {
-            if (exportWorldToPath(world, worldPath))
+            if (world.exportWorldToPath(worldPath))
                 std::cout << "World exported to " << worldPath << std::endl;
             else
                 std::cout << "World export failed!" << std::endl;
@@ -282,8 +238,7 @@ int main()
 
         if (ImGui::Button("Import World"))
         {
-            World loaded = importWorldFromPath(worldPath);
-            world = loaded;
+            world.importWorldFromPath(worldPath);
             appState.setWorld(world);
             std::cout << "World imported from " << worldPath << std::endl;
         }

@@ -149,6 +149,9 @@
     <ClInclude Include="GameObject.h">
       <Filter>.h files</Filter>
     </ClInclude>
+    <ClInclude Include="materialRegistry.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="fLightShader.frag">

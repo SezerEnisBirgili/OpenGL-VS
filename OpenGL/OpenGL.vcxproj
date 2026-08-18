@@ -189,6 +189,7 @@
     <ClInclude Include="imstb_truetype.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="lightingSets.h" />
+    <ClInclude Include="materialRegistry.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="shaderUniforms.h" />
     <ClInclude Include="stb_image.h" />

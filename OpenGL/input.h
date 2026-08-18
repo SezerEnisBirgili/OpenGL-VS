@@ -85,7 +85,7 @@ public:
             glm::vec3 start(a_camera.Position.x, a_camera.Position.y, a_camera.Position.z);
             glm::vec3 front(a_camera.Front.x, a_camera.Front.y, a_camera.Front.z);
 
-            placeBlock(start, front, *a_world, /*newTexture*/ 0);
+            a_world->placeBlock(start, front, /*newTexture*/ 0);
         }
     }
 

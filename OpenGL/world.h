@@ -13,13 +13,40 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <materialRegistry.h>
+
+struct RaycastHit3D;
+enum class BoxFace3D;
+
+template <typename Visitor>
+bool traverseDDA(glm::vec3 start, glm::vec3 front, Visitor&& visit, glm::vec3& hit, int LOOP_LIMIT = 100);
+
+RaycastHit3D intersectRayAABB3D(const glm::vec3& start, const glm::vec3& rayDir, const glm::vec3& min, const glm::vec3& max);
+
+
+enum class BoxFace3D {
+    None,
+    Left,   // -X
+    Right,  // +X
+    Bottom, // -Y
+    Top,    // +Y
+    Back,   // -Z
+    Front   // +Z
+};
+
+struct RaycastHit3D {
+    bool collided = false;
+    float t = -1.0f;
+    glm::vec3 point = { 0.0f, 0.0f, 0.0f };
+    BoxFace3D face = BoxFace3D::None;
+};
 
 class Block {
 public:
     bool isSolid;
-    int texture;
+    int m_material;
 
-    Block(bool solid, int tex) : isSolid(solid), texture(tex) {}
+    Block(bool solid, int material) : isSolid(solid), m_material(material) {}
 };
 
 class World {
@@ -76,16 +103,172 @@ public:
         return blocks[getIndex(x, y, z)];
     }
 
-    void setBlock(int x, int y, int z, bool isSolid, int texture)
+    void setBlock(int x, int y, int z, bool isSolid, int material)
     {
         if (isWithinBounds(x, y, z))
-            blocks[getIndex(x, y, z)] = Block(isSolid, texture);
+            blocks[getIndex(x, y, z)] = Block(isSolid, material);
+    }
+
+    void platform(int sizeX, int sizeZ)
+    {
+        for (int x = 0; x < sizeX; x++)
+            for (int z = 0; z < sizeZ; z++)
+                setBlock(x, 0, z, true, 0); // y=0 layer, texture id 0
+    }
+
+    bool placeBlock(const glm::vec3& start, const glm::vec3& front, int newTexture, int maxDistance = 100) {
+        glm::vec3 hitBlock;
+
+        bool hitSomething = traverseDDA(start, front, [this](int x, int y, int z) { return isBlockSolid(x, y, z); }, hitBlock, maxDistance);
+
+        int hitX = static_cast<int>(std::floor(hitBlock.x));
+        int hitY = static_cast<int>(std::floor(hitBlock.y));
+        int hitZ = static_cast<int>(std::floor(hitBlock.z));
+
+        std::cout << "[placeBlock] hitSomething=" << hitSomething
+            << " hitBlock=(" << hitBlock.x << "," << hitY << "," << hitZ << ")" << std::endl;
+
+        if (!hitSomething || !isWithinBounds(hitX, hitY, hitZ))
+        {
+            std::cout << "[placeBlock] failed: no hit or out of bounds" << std::endl;
+            return false;
+        }
+
+        glm::vec3 min = glm::vec3(hitX, hitY, hitZ);
+        glm::vec3 max = glm::vec3(min.x + 1.0f, min.y + 1.0f, min.z + 1.0f);
+
+        RaycastHit3D rayHit = intersectRayAABB3D(start, front, min, max);
+
+        std::cout << "[placeBlock] rayHit.collided=" << rayHit.collided
+            << " face=" << (int)rayHit.face << std::endl;
+
+        if (!rayHit.collided) {
+            std::cout << "[placeBlock] failed: AABB raycast missed" << std::endl;
+            return false;
+        }
+
+        switch (rayHit.face) {
+        case BoxFace3D::Left:   hitX -= 1; break;
+        case BoxFace3D::Right:  hitX += 1; break;
+        case BoxFace3D::Bottom: hitY -= 1; break;
+        case BoxFace3D::Top:    hitY += 1; break;
+        case BoxFace3D::Back:   hitZ -= 1; break;
+        case BoxFace3D::Front:  hitZ += 1; break;
+        default:
+            std::cout << "[placeBlock] failed: face == None" << std::endl;
+            return false;
+        }
+
+        std::cout << "[placeBlock] target placement=(" << hitX << "," << hitY << "," << hitZ << ")"
+            << " inBounds=" << isWithinBounds(hitX, hitY, hitZ)
+            << " alreadySolid=" << isBlockSolid(hitX, hitY, hitZ) << std::endl;
+
+        if (isWithinBounds(hitX, hitY, hitZ) && !isBlockSolid(hitX, hitY, hitZ)) {
+            setBlock(hitX, hitY, hitZ, true, newTexture);
+            std::cout << "[placeBlock] SUCCESS" << std::endl;
+            return true;
+        }
+
+        std::cout << "[placeBlock] failed: target obstructed or out of bounds";
+    }
+
+    bool exportWorldToPath(const std::string& destinationPath) const {
+
+        std::filesystem::path p(destinationPath);
+        std::filesystem::path dir = p.parent_path();
+
+        if (!dir.empty() && !std::filesystem::exists(dir)) {
+            try {
+                std::filesystem::create_directories(dir);
+            }
+            catch (const std::filesystem::filesystem_error& e) {
+                std::cerr << "Failed to create directory path: " << e.what() << std::endl;
+                return false;
+            }
+        }
+
+        std::ofstream outFile(destinationPath);
+        if (!outFile.is_open()) {
+            std::cerr << "Failed to write to file: " << destinationPath << std::endl;
+            return false;
+        }
+
+        outFile << boundx << " " << boundy << " " << boundz << "\n";
+
+        for (int x = 0; x < boundx; ++x) {
+            for (int y = 0; y < boundy; ++y) {
+                for (int z = 0; z < boundz; ++z) {
+                    const Block& b = blocks[getIndex(x, y, z)];
+                    outFile << b.isSolid << " " << b.m_material << "\n";
+                }
+            }
+        }
+
+        outFile.close();
+        std::cout << "Successfully exported world to: " << destinationPath << std::endl;
+        return true;
+    }
+
+    bool importWorldFromPath(const std::string& sourcePath) {
+        if (!std::filesystem::exists(sourcePath)) {
+            std::cerr << "Error: File does not exist at path: " << sourcePath << std::endl;
+            return false;
+        }
+
+        std::ifstream inFile(sourcePath);
+        if (!inFile.is_open()) {
+            std::cerr << "Failed to open file for importing: " << sourcePath << std::endl;
+            return false;
+        }
+
+        int bx, by, bz;
+        inFile >> bx >> by >> bz;
+
+        for (int x = 0; x < bx; ++x) {
+            for (int y = 0; y < by; ++y) {
+                for (int z = 0; z < bz; ++z) {
+                    bool solid;
+                    int material;
+                    inFile >> solid >> material;
+                    setBlock(x, y, z, solid, material);
+                }
+            }
+        }
+
+        inFile.close();
+        std::cout << "Successfully imported world from: " << sourcePath << std::endl;
+        return true;
+    }
+
+    void draw(Shader& shader, const MaterialRegistry& materials) const {
+        shader.use();
+
+        std::unordered_map<int, std::vector<glm::vec3>> byTexture;
+
+        for (int x = 0; x < boundx; x++)
+            for (int y = 0; y < boundy; y++)
+                for (int z = 0; z < boundz; z++) 
+                {
+                    const Block& b = blocks[getIndex(x, y, z)];
+                    if (!b.isSolid) continue;
+                    byTexture[b.m_material].emplace_back(x, y, z);
+                }
+
+        for (auto& [id, positions] : byTexture) 
+        {
+            materials.get(id).bind(shader);
+            for (const auto& pos : positions) 
+            {
+                shader.setMat4("model", glm::translate(glm::mat4(1.0f), pos));
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+        }
     }
 };
 
 
 template <typename Visitor>
-bool traverseDDA(glm::vec3 start, glm::vec3 front, Visitor&& visit, glm::vec3& hit, int LOOP_LIMIT = 100)
+bool traverseDDA(glm::vec3 start, glm::vec3 front, Visitor&& visit, glm::vec3& hit, int LOOP_LIMIT)
 {
     if (front.x == 0 && front.y == 0 && front.z == 0)
         return false;
@@ -132,52 +315,29 @@ bool traverseDDA(glm::vec3 start, glm::vec3 front, Visitor&& visit, glm::vec3& h
     return false;
 }
 
-struct AABB3D {
-    glm::vec3 min;
-    glm::vec3 max;
-};
 
-// Enum to identify the hit face of the 3D box
-enum class BoxFace3D {
-    None,
-    Left,   // -X
-    Right,  // +X
-    Bottom, // -Y
-    Top,    // +Y
-    Back,   // -Z
-    Front   // +Z
-};
-
-// Struct to hold our complete 3D collision results
-struct RaycastHit3D {
-    bool collided = false;
-    float t = -1.0f;
-    glm::vec3 point = { 0.0f, 0.0f, 0.0f };
-    BoxFace3D face = BoxFace3D::None;
-};
-
-RaycastHit3D intersectRayAABB3D(const glm::vec3& start, const glm::vec3& rayDir, const AABB3D& box) {
+RaycastHit3D intersectRayAABB3D(const glm::vec3& start, const glm::vec3& rayDir, const glm::vec3& min, const glm::vec3& max) {
 
     RaycastHit3D hit;
 
-    float tMinX = (box.min.x - start.x) / rayDir.x;
-    float tMaxX = (box.max.x - start.x) / rayDir.x;
+    float tMinX = (min.x - start.x) / rayDir.x;
+    float tMaxX = (max.x - start.x) / rayDir.x;
     BoxFace3D nearFaceX = BoxFace3D::Left;
     if (tMinX > tMaxX) {
         std::swap(tMinX, tMaxX);
         nearFaceX = BoxFace3D::Right;
     }
 
-    float tMinY = (box.min.y - start.y) / rayDir.y;
-    float tMaxY = (box.max.y - start.y) / rayDir.y;
+    float tMinY = (min.y - start.y) / rayDir.y;
+    float tMaxY = (max.y - start.y) / rayDir.y;
     BoxFace3D nearFaceY = BoxFace3D::Bottom;
     if (tMinY > tMaxY) {
         std::swap(tMinY, tMaxY);
         nearFaceY = BoxFace3D::Top;
     }
 
-    float tMinZ = (box.min.z - start.z) / rayDir.z;
-    float tMaxZ = (box.max.z - start.z) / rayDir.z;
+    float tMinZ = (min.z - start.z) / rayDir.z;
+    float tMaxZ = (max.z - start.z) / rayDir.z;
     BoxFace3D nearFaceZ = BoxFace3D::Back;
     if (tMinZ > tMaxZ) {
         std::swap(tMinZ, tMaxZ);
@@ -208,143 +368,6 @@ RaycastHit3D intersectRayAABB3D(const glm::vec3& start, const glm::vec3& rayDir,
     }
 
     return hit; // Missed
-}
-
-bool placeBlock(const glm::vec3& start, const glm::vec3& front, World& world, int newTexture, int maxDistance = 100) {
-    glm::vec3 hitBlock;
-
-    bool hitSomething = traverseDDA(start, front, [&world](int x, int y, int z) { return world.isBlockSolid(x, y, z); }, hitBlock, maxDistance);
-
-    int hitX = static_cast<int>(std::floor(hitBlock.x));
-    int hitY = static_cast<int>(std::floor(hitBlock.y));
-    int hitZ = static_cast<int>(std::floor(hitBlock.z));
-
-
-    std::cout << "[placeBlock] hitSomething=" << hitSomething
-        << " hitBlock=(" << hitBlock.x << "," << hitY << "," << hitZ << ")" << std::endl;
-
-    if (!hitSomething || !world.isWithinBounds(hitX, hitY, hitZ))
-    {
-        std::cout << "[placeBlock] failed: no hit or out of bounds" << std::endl;
-        return false;
-    }
-
-    AABB3D blockAABB;
-    blockAABB.min = glm::vec3(hitX, hitY, hitZ);
-    blockAABB.max = glm::vec3(blockAABB.min.x + 1.0f, blockAABB.min.y + 1.0f, blockAABB.min.z + 1.0f);
-
-    RaycastHit3D rayHit = intersectRayAABB3D(start, front, blockAABB);
-
-    std::cout << "[placeBlock] rayHit.collided=" << rayHit.collided
-        << " face=" << (int)rayHit.face << std::endl;
-
-    if (!rayHit.collided) {
-        std::cout << "[placeBlock] failed: AABB raycast missed" << std::endl;
-        return false;
-    }
-
-    switch (rayHit.face) {
-    case BoxFace3D::Left:   hitX -= 1; break;
-    case BoxFace3D::Right:  hitX += 1; break;
-    case BoxFace3D::Bottom: hitY -= 1; break;
-    case BoxFace3D::Top:    hitY += 1; break;
-    case BoxFace3D::Back:   hitZ -= 1; break;
-    case BoxFace3D::Front:  hitZ += 1; break;
-    default:
-        std::cout << "[placeBlock] failed: face == None" << std::endl;
-        return false;
-    }
-
-    std::cout << "[placeBlock] target placement=(" << hitX << "," << hitY << "," << hitZ << ")"
-        << " inBounds=" << world.isWithinBounds(hitX, hitY, hitZ)
-        << " alreadySolid=" << world.isBlockSolid(hitX, hitY, hitZ) << std::endl;
-
-    if (world.isWithinBounds(hitX, hitY, hitZ) && !world.isBlockSolid(hitX, hitY, hitZ)) {
-        world.setBlock(hitX, hitY, hitZ, true, newTexture);
-        std::cout << "[placeBlock] SUCCESS" << std::endl;
-        return true;
-    }
-
-    std::cout << "[placeBlock] failed: target obstructed or out of bounds" << std::endl;
-    return false;
-}
-
-
-
-namespace fs = std::filesystem;
-
-bool exportWorldToPath(const World& world, const std::string& destinationPath) {
-
-    fs::path p(destinationPath);
-    fs::path dir = p.parent_path();
-
-    if (!dir.empty() && !fs::exists(dir)) {
-        try {
-            fs::create_directories(dir);
-        }
-        catch (const fs::filesystem_error& e) {
-            std::cerr << "Failed to create directory path: " << e.what() << std::endl;
-            return false;
-        }
-    }
-
-    std::ofstream outFile(destinationPath);
-    if (!outFile.is_open()) {
-        std::cerr << "Failed to write to file: " << destinationPath << std::endl;
-        return false;
-    }
-
-    int boundX = world.getBoundX();
-    int boundY = world.getBoundY();
-    int boundZ = world.getBoundZ();
-
-    outFile << boundX << " " << boundY << " " << boundZ << "\n";
-
-    for (int x = 0; x < boundX; ++x) {
-        for (int y = 0; y < boundY; ++y) {
-            for (int z = 0; z < boundZ; ++z) {
-                Block b = const_cast<World&>(world).getBlock(x, y, z);
-                outFile << b.isSolid << " " << b.texture << "\n";
-            }
-        }
-    }
-
-    outFile.close();
-    std::cout << "Successfully exported world to: " << destinationPath << std::endl;
-    return true;
-}
-
-World importWorldFromPath(const std::string& sourcePath) {
-    if (!fs::exists(sourcePath)) {
-        std::cerr << "Error: File does not exist at path: " << sourcePath << std::endl;
-        return World(0, 0, 0);
-    }
-
-    std::ifstream inFile(sourcePath);
-    if (!inFile.is_open()) {
-        std::cerr << "Failed to open file for importing: " << sourcePath << std::endl;
-        return World(0, 0, 0);
-    }
-
-    int bx, by, bz;
-    inFile >> bx >> by >> bz;
-
-    World loadedWorld(bx, by, bz);
-
-    for (int x = 0; x < bx; ++x) {
-        for (int y = 0; y < by; ++y) {
-            for (int z = 0; z < bz; ++z) {
-                bool solid;
-                int tex;
-                inFile >> solid >> tex;
-                loadedWorld.setBlock(x, y, z, solid, tex);
-            }
-        }
-    }
-
-    inFile.close();
-    std::cout << "Successfully imported world from: " << sourcePath << std::endl;
-    return loadedWorld;
 }
 
 
