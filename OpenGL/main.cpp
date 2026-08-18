@@ -57,10 +57,10 @@ glm::mat4 view = camera.GetViewMatrix();
 glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
 glm::vec3 pointLightPositions[] = {
-    glm::vec3(2.0f,  1.0f,  2.0f),
-    glm::vec3(4.0f, 1.0f, 4.0f),
-    glm::vec3(6.0f,  1.0f, 12.0f),
-    glm::vec3(8.0f,  1.0f, 1.0f)
+    glm::vec3(2.0f,  2.0f,  2.0f),
+    glm::vec3(4.0f,  2.0f,  4.0f),
+    glm::vec3(6.0f,  2.0f, 12.0f),
+    glm::vec3(8.0f,  2.0f,  1.0f)
 };
 
 int main()
@@ -139,10 +139,7 @@ int main()
     loadTexture("container2_specular.png", texture2);
 
     MaterialRegistry blockMaterials;
-    blockMaterials.add(0, Material({
-        { texture1, "material.diffuse"  },
-        { texture2, "material.specular" }
-        }));
+    blockMaterials.add(0, Material({ { texture1, "material.diffuse"  }, { texture2, "material.specular" }}));
 
     // ------------------------------------------------------------------
     // Shader uniforms (static / one-time)
@@ -198,7 +195,7 @@ int main()
         for (int i = 0; i < sizeof(pointLightPositions) / sizeof(pointLightPositions[0]); i++)
         {
             glm::mat4 lightModel = glm::mat4(1.0f);
-            lightModel = glm::translate(lightModel, pointLightPositions[i]);
+            lightModel = glm::translate(lightModel, pointLightPositions[i] - glm::vec3(0.1f));
             lightModel = glm::scale(lightModel, glm::vec3(0.2f));
             lightCubeShader.setMat4("model", lightModel);
 
@@ -211,6 +208,18 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+           
+        // --- Crosshair ---
+        {
+            ImVec2 center(SCR_WIDTH * 0.5f, SCR_HEIGHT * 0.5f);
+            float size = 10.0f;
+            float thickness = 2.0f;
+            ImU32 color = IM_COL32(255, 255, 255, 220);
+
+            ImDrawList* drawList = ImGui::GetForegroundDrawList();
+            drawList->AddLine(ImVec2(center.x - size, center.y), ImVec2(center.x + size, center.y), color, thickness);
+            drawList->AddLine(ImVec2(center.x, center.y - size), ImVec2(center.x, center.y + size), color, thickness);
+        }
 
         ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
         ImGui::Begin("Controls");
