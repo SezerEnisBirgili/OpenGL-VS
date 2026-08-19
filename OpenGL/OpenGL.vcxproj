@@ -191,7 +191,6 @@
     <ClInclude Include="lightingSets.h" />
     <ClInclude Include="materialRegistry.h" />
     <ClInclude Include="shader.h" />
-    <ClInclude Include="shaderUniforms.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="textureLoader.h" />
     <ClInclude Include="vertexData.h" />
@@ -206,6 +205,8 @@
     <None Include="fShader.frag" />
     <None Include="fTestShader.frag" />
     <None Include="fGouraudShader.frag" />
+    <None Include="lit.frag" />
+    <None Include="lit.vert" />
     <None Include="vGouraudShader.vert" />
     <None Include="fPhongShader.frag" />
     <None Include="vPhongShader.vert" />

@@ -10,13 +10,13 @@
 #include "vertexData.h"
 #include "bufferSetup.h"
 #include "textureLoader.h"
-#include "shaderUniforms.h"
 #include "input.h"
 #include "world.h"
 #include "materialRegistry.h"
 
 #include <iostream>
 #include <vector>
+#include <GameObject.h>
 
 // -------------------------------------------------------------------------
 // Screen
@@ -27,9 +27,7 @@ const unsigned int SCR_HEIGHT = 600;
 // -------------------------------------------------------------------------
 // Shader / asset paths
 // -------------------------------------------------------------------------
-const char* vertexShader[] = { "vPhongShader.vert", "vLightShader.vert" };
-const char* fragmentShader[] = { "fPhongShader.frag", "fLightShader.frag" };
-const char* wallFilePath = "platform.txt";
+char worldPath[256] = "world.txt";
 
 float deltaTime, lastFrame;
 
@@ -49,19 +47,27 @@ float     pitch = 0.0f;
 
 Camera    camera = Camera(cameraPos, cameraUp, yaw, pitch);
 
+GlobalLightSettings globalLights = {
+    0.03f,                  // ambientStrength
+    glm::vec3(1.0f),        // ambientColor
+    true,                   // dirLightEnabled
+    true                    // pointLightsEnabled
+};
+
 // -------------------------------------------------------------------------
 // Matrices
 // -------------------------------------------------------------------------
-glm::mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.2f, 1.0f, 2.0f)), glm::vec3(1.0f));
-glm::mat4 view = camera.GetViewMatrix();
 glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
-glm::vec3 pointLightPositions[] = {
-    glm::vec3(2.0f,  2.0f,  2.0f),
-    glm::vec3(4.0f,  2.0f,  4.0f),
-    glm::vec3(6.0f,  2.0f, 12.0f),
-    glm::vec3(8.0f,  2.0f,  1.0f)
-};
+// --- example script: spins whatever entity it's attached to ---------------
+void spinBehavior(int self, float time, float dt)
+{
+    extern Registry* g_registry;
+    auto& t = g_registry->transforms[self];
+    t.rotationEuler.y = time;
+}
+
+Registry* g_registry = nullptr;
 
 int main()
 {
@@ -112,18 +118,6 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     // ------------------------------------------------------------------
-    // Shaders
-    // ------------------------------------------------------------------
-    std::cout << "Compiling shaders..." << std::endl;
-    Shader ourShader(vertexShader[0], fragmentShader[0]);
-    Shader lightCubeShader(vertexShader[1], fragmentShader[1]);
-
-    for (int i = 0; i < (int)std::size(vertexShader); i++)
-        std::cout << "Vertex shader:   " << vertexShader[i] << std::endl;
-    for (int i = 0; i < (int)std::size(fragmentShader); i++)
-        std::cout << "Fragment shader: " << fragmentShader[i] << std::endl;
-
-    // ------------------------------------------------------------------
     // GPU buffers
     // ------------------------------------------------------------------
     std::cout << "Uploading vertex data..." << std::endl;
@@ -139,17 +133,7 @@ int main()
     loadTexture("container2_specular.png", texture2);
 
     MaterialRegistry blockMaterials;
-    blockMaterials.add(0, Material({ { texture1, "material.diffuse"  }, { texture2, "material.specular" }}));
-
-    // ------------------------------------------------------------------
-    // Shader uniforms (static / one-time)
-    // ------------------------------------------------------------------
-    std::cout << "Setting uniforms..." << std::endl;
-
-    OurShaderUniform       ourShaderUniforms = OurShaderUniform(ourShader, camera, projection, pointLightPositions);
-    LightCubeShaderUniform lightCubeShaderUniform = LightCubeShaderUniform(lightCubeShader, camera, projection);
-    ourShaderUniforms.initShaderUniforms();
-    lightCubeShaderUniform.initShaderUniforms();
+    blockMaterials.add(0, Material({ { texture1, "material.diffuse"  }, { texture2, "material.specular" } }));
 
     // ------------------------------------------------------------------
     // ImGui
@@ -165,6 +149,76 @@ int main()
     world.platform(16, 16);
     appState.setWorld(world);
 
+    Registry registry;
+    g_registry = &registry;
+
+    Shader litShader("lit.vert", "lit.frag");
+
+    unsigned int cubeVAO = vaos.cube;
+    int cubeVertexCount = 36;
+
+    int root = spawnEntity(registry, "root", 
+        /* position */ glm::vec3(0.0f, 0.0f, 0.0f), 
+        /* rotationEuler */ glm::vec3(0.0f, 0.0f, 0.0f), 
+        /* scale */ glm::vec3(1.0f, 1.0f, 1.0f), 
+        /* parent */ NULL_ENTITY);
+
+    int spinningCube = spawnEntity(registry, "spinningCube",
+        /* position */ glm::vec3(0.0f, 0.0f, 0.0f),
+        /* rotationEuler */ glm::vec3(0.0f, 0.0f, 0.0f),
+        /* scale */ glm::vec3(1.0f, 1.0f, 1.0f),
+        /* parent */ root);
+    addMesh(registry, spinningCube,
+        /* vao */ cubeVAO,
+        /* vertexCount */ (int)cubeVertexCount,
+        /* shader */ &litShader,
+        /* color */ glm::vec3(0.8f, 0.2f, 0.2f));
+    addScript(registry, spinningCube, /* updateFn */ &spinBehavior);
+
+    
+    int childCube = spawnEntity(registry, "childCube",
+        /* position */ glm::vec3(2.0f, 0.0f, 0.0f),
+        /* rotationEuler */ glm::vec3(0.0f, 0.0f, 0.0f),
+        /* scale */ glm::vec3(0.5f, 0.5f, 0.5f),
+        /* parent */ spinningCube);
+    addMesh(registry, childCube,
+        /* vao */ cubeVAO,
+        /* vertexCount */ (int)cubeVertexCount,
+        /* shader */ &litShader,
+        /* color */ glm::vec3(0.2f, 0.4f, 0.9f),
+        /* shininess */ 16.0f);
+
+    
+    int lamp = spawnEntity(registry, "lamp",
+        /* position */ glm::vec3(3.0f, 4.0f, 3.0f),
+        /* rotationEuler */ glm::vec3(0.0f, 0.0f, 0.0f),
+        /* scale */ glm::vec3(1.0f, 1.0f, 1.0f),
+        /* parent */ root);
+    addMesh(registry, lamp,
+        /* vao */ cubeVAO,
+        /* vertexCount */ (int)cubeVertexCount,
+        /* shader */ &litShader,
+        /* color */ glm::vec3(1.0f, 1.0f, 1.0f),
+        /* shininess */ 32.0f,
+        /* emissive */ 1.0f);
+    addPointLight(registry, lamp,
+        /* color */ glm::vec3(1.0f, 0.95f, 0.85f),
+        /* intensity */ 2.5f);
+
+    
+
+    int sun = spawnEntity(registry, "sun",
+        /* position */ glm::vec3(0.0f, 0.0f, 0.0f),
+        /* rotationEuler */ glm::vec3(0.0f, 0.0f, 0.0f),
+        /* scale */ glm::vec3(1.0f, 1.0f, 1.0f),
+        /* parent */ root);
+    addDirLight(registry, sun,
+        /* direction */ glm::vec3(-0.3f, -1.0f, -0.2f),
+        /* color */ glm::vec3(1.0f, 0.98f, 0.9f),
+        /* intensity */ 1.2f);
+
+
+
     // ------------------------------------------------------------------
     // Main loop
     // ------------------------------------------------------------------
@@ -175,32 +229,25 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        appState.processInput(window, ourShader, deltaTime);
-
+        glfwPollEvents();
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        appState.processInput(window, litShader, deltaTime);
 
         camera.UpdateRotation(deltaTime);
         camera.UpdatePosition(deltaTime);
 
-        ourShaderUniforms.updateFrameUniforms();
-        lightCubeShaderUniform.updateFrameUniforms();
+        glm::mat4 view = camera.GetViewMatrix();
 
         glBindVertexArray(vaos.cube);
-        world.draw(ourShader, blockMaterials);
+        world.draw(litShader, blockMaterials);
 
-        // --- Point light cubes ---
-        lightCubeShader.use();
-        glBindVertexArray(vaos.light);
-        for (int i = 0; i < sizeof(pointLightPositions) / sizeof(pointLightPositions[0]); i++)
-        {
-            glm::mat4 lightModel = glm::mat4(1.0f);
-            lightModel = glm::translate(lightModel, pointLightPositions[i] - glm::vec3(0.1f));
-            lightModel = glm::scale(lightModel, glm::vec3(0.2f));
-            lightCubeShader.setMat4("model", lightModel);
+        scriptSystem(registry, currentFrame, deltaTime);
+        transformSystem(registry, root, glm::mat4(1.0f));
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        renderSystem(registry, view, projection, camera.Position, globalLights);
+
 
         // ------------------------------------------------------------------
         // IMGUI
@@ -232,7 +279,6 @@ int main()
         ImGui::InputFloat3("Camera Position", glm::value_ptr(camera.Position));
         ImGui::InputFloat3("Camera Direction", glm::value_ptr(camera.Front));
 
-        static char worldPath[256] = "world.txt";
         ImGui::InputText("World File", worldPath, IM_ARRAYSIZE(worldPath));
 
         if (ImGui::Button("Export World"))
@@ -252,13 +298,51 @@ int main()
             std::cout << "World imported from " << worldPath << std::endl;
         }
 
+        if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::SliderFloat("Ambient Strength", &globalLights.ambientStrength, 0.0f, 1.0f);
+            ImGui::ColorEdit3("Ambient Color", glm::value_ptr(globalLights.ambientColor));
+
+            ImGui::Checkbox("Directional Light Enabled", &globalLights.dirLightEnabled);
+            ImGui::Checkbox("Point Lights Enabled", &globalLights.pointLightsEnabled);
+
+            ImGui::Separator();
+            ImGui::Text("Sun");
+            if (registry.dirLights.count(sun))
+            {
+                auto& sunLight = registry.dirLights[sun];
+                if (ImGui::SliderFloat3("Sun Direction", glm::value_ptr(sunLight.direction), -1.0f, 1.0f))
+                {
+                    if (glm::length(sunLight.direction) > 0.0001f)
+                        sunLight.direction = glm::normalize(sunLight.direction);
+                }
+                ImGui::ColorEdit3("Sun Color", glm::value_ptr(sunLight.color));
+                ImGui::SliderFloat("Sun Intensity", &sunLight.intensity, 0.0f, 5.0f);
+            }
+
+            ImGui::Separator();
+            ImGui::Text("Lamp");
+            if (registry.pointLights.count(lamp))
+            {
+                auto& lampLight = registry.pointLights[lamp];
+                ImGui::ColorEdit3("Lamp Color", glm::value_ptr(lampLight.color));
+                ImGui::SliderFloat("Lamp Intensity", &lampLight.intensity, 0.0f, 10.0f);
+                ImGui::SliderFloat("Lamp Linear", &lampLight.linear, 0.0f, 1.0f);
+                ImGui::SliderFloat("Lamp Quadratic", &lampLight.quadratic, 0.0f, 2.0f);
+            }
+            if (registry.materials.count(lamp))
+            {
+                auto& lampMat = registry.materials[lamp];
+                ImGui::SliderFloat("Lamp Emissive", &lampMat.emissive, 0.0f, 1.0f);
+            }
+        }
+
         ImGui::End();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     // ------------------------------------------------------------------

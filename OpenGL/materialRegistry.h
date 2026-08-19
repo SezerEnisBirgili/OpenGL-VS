@@ -4,6 +4,9 @@
 #include <string>
 #include <shader.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 struct TextureSlot {
     unsigned int texture;
     std::string uniformName;

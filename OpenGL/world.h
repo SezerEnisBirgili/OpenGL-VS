@@ -170,6 +170,8 @@ public:
         }
 
         std::cout << "[placeBlock] failed: target obstructed or out of bounds";
+
+        return false;
     }
 
     bool exportWorldToPath(const std::string& destinationPath) const {
@@ -242,6 +244,10 @@ public:
 
     void draw(Shader& shader, const MaterialRegistry& materials) const {
         shader.use();
+
+        shader.setVec3("material.color", glm::vec3(1.0f));
+        shader.setFloat("material.shininess", 32.0f);
+        shader.setFloat("material.emissive", 0.0f);
 
         std::unordered_map<int, std::vector<glm::vec3>> byTexture;
 

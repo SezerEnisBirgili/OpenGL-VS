@@ -101,9 +101,6 @@
     <ClInclude Include="lightingSets.h">
       <Filter>.h files</Filter>
     </ClInclude>
-    <ClInclude Include="shaderUniforms.h">
-      <Filter>.h files</Filter>
-    </ClInclude>
     <ClInclude Include="textureLoader.h">
       <Filter>.h files</Filter>
     </ClInclude>
@@ -188,6 +185,12 @@
     <None Include="6.light_cube.vs" />
     <None Include="6.multiple_lights.fs" />
     <None Include="6.multiple_lights.vs" />
+    <None Include="lit.vert">
+      <Filter>source\shaders\vertexShader</Filter>
+    </None>
+    <None Include="lit.frag">
+      <Filter>source\shaders\fragmentShader</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="world.png">
