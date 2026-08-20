@@ -168,10 +168,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug2|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="stb_image.cpp" />
-    <ClCompile Include="imGuiTutorial.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug2|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bufferSetup.h" />
@@ -197,22 +193,8 @@
     <ClInclude Include="world.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="6.light_cube.fs" />
-    <None Include="6.light_cube.vs" />
-    <None Include="6.multiple_lights.fs" />
-    <None Include="6.multiple_lights.vs" />
-    <None Include="fLightShader.frag" />
-    <None Include="fShader.frag" />
-    <None Include="fTestShader.frag" />
-    <None Include="fGouraudShader.frag" />
     <None Include="lit.frag" />
     <None Include="lit.vert" />
-    <None Include="vGouraudShader.vert" />
-    <None Include="fPhongShader.frag" />
-    <None Include="vPhongShader.vert" />
-    <None Include="vLightShader.vert" />
-    <None Include="vShader.vert" />
-    <None Include="vTestShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="awesomeface.png" />

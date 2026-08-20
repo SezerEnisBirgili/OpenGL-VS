@@ -8,8 +8,12 @@
 #include <string>
 
 #include "shader.h"
+#include "bufferSetup.h"
 
 constexpr int NULL_ENTITY = 0;
+
+
+class Registry;
 
 struct GlobalLightSettings {
     float ambientStrength = 0.03f;
@@ -45,18 +49,16 @@ struct MaterialComponent
     unsigned int specularTexture = 0;
 };
 
-struct RenderableComponent 
+struct RenderableComponent
 {
-    unsigned int VAO = 0;
-    int vertexCount = 0;
-    class Shader* shader = nullptr;
+    const Mesh* mesh = nullptr;
+    Shader* shader = nullptr;
 };
 
 
-
-struct ScriptComponent 
+struct ScriptComponent
 {
-    void (*updateFn)(int self, float time, float dt) = nullptr;
+    void (*updateFn)(Registry&, int, float, float) = nullptr;
 };
 
 struct PointLightComponent {
@@ -107,15 +109,13 @@ private:
 };
 
 inline int spawnEntity(
-    Registry& reg, 
+    Registry& reg,
     const std::string& name,
-    const glm::vec3& position = glm::vec3(0.0f),
-    const glm::vec3& rotationEuler = glm::vec3(0.0f),
-    const glm::vec3& scale = glm::vec3(1.0f),
-    int parent = NULL_ENTITY) 
+    const TransformComponent& transform = TransformComponent{},
+    int parent = NULL_ENTITY)
 {
     int e = reg.create(name);
-    reg.transforms[e] = { position, rotationEuler, scale };
+    reg.transforms[e] = transform;
     reg.hierarchy[e] = { parent, {} };
 
     if (parent != NULL_ENTITY) {
@@ -141,42 +141,35 @@ inline void setParent(Registry& reg, int child, int parent)
     }
 }
 
-inline void addDirLight(Registry& reg, int e,
-    const glm::vec3& direction,
-    const glm::vec3& color = glm::vec3(1.0f),
-    float intensity = 1.0f) {
-    reg.dirLights[e] = { glm::normalize(direction), color, intensity };
-}
-
 inline void addMesh(
-    Registry& reg, 
+    Registry& reg,
     int e,
-    unsigned int vao, 
-    int vertexCount, 
+    const Mesh* mesh,
     Shader* shader,
-    const glm::vec3& color = glm::vec3(1.0f),
-    float shininess = 32.0f,
-    float emissive = 0.0f,
-    unsigned int diffuseTexture = 0,
-    unsigned int specularTexture = 0)
+    const MaterialComponent& material = MaterialComponent{})
 {
-    reg.renderables[e] = { vao, vertexCount, shader };
-    reg.materials[e] = { color, shininess, emissive, diffuseTexture, specularTexture };
+    reg.renderables[e] = { mesh, shader };
+    reg.materials[e] = material;
 }
 
 inline void addPointLight(
-    Registry& reg, 
+    Registry& reg,
     int e,
-    const glm::vec3& color = glm::vec3(1.0f),
-    float intensity = 1.0f,
-    float constant = 1.0f, 
-    float linear = 0.09f, 
-    float quadratic = 0.032f) 
+    const PointLightComponent& light = PointLightComponent{})
 {
-    reg.pointLights[e] = { color, intensity, constant, linear, quadratic };
+    reg.pointLights[e] = light;
 }
 
-inline void addScript(Registry& reg, int e, void (*updateFn)(int, float, float)) 
+inline void addDirLight(
+    Registry& reg,
+    int e,
+    DirLightComponent light = DirLightComponent{})
+{
+    light.direction = glm::normalize(light.direction);
+    reg.dirLights[e] = light;
+}
+
+inline void addScript(Registry& reg, int e, void (*updateFn)(Registry&, int, float, float))
 {
     reg.scripts[e] = { updateFn };
 }
@@ -211,7 +204,7 @@ inline void scriptSystem(Registry& reg, float time, float dt)
 {
     for (auto& [entity, script] : reg.scripts) 
     {
-        if (script.updateFn) script.updateFn(entity, time, dt);
+        if (script.updateFn) script.updateFn(reg, entity, time, dt);
     }
 }
 
@@ -267,7 +260,7 @@ inline void renderSystem(Registry& reg, const glm::mat4& view, const glm::mat4& 
     std::vector<GpuPointLight> lights = lightingSystem(reg);
 
     for (auto& [entity, renderable] : reg.renderables) {
-        if (!renderable.shader || renderable.VAO == 0) continue;
+        if (!renderable.shader || !renderable.mesh) continue;
 
         const glm::mat4& world = reg.worldMatrices[entity].value;
         const MaterialComponent& mat = reg.materials[entity];
@@ -300,7 +293,6 @@ inline void renderSystem(Registry& reg, const glm::mat4& view, const glm::mat4& 
             renderable.shader->setInt("material.specular", 1);
         }
 
-        glBindVertexArray(renderable.VAO);
-        glDrawArrays(GL_TRIANGLES, 0, renderable.vertexCount);
+        renderable.mesh->draw();
     }
 }

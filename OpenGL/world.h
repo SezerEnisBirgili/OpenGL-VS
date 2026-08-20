@@ -265,7 +265,8 @@ public:
             materials.get(id).bind(shader);
             for (const auto& pos : positions) 
             {
-                shader.setMat4("model", glm::translate(glm::mat4(1.0f), pos));
+                glm::vec3 renderPos = pos + glm::vec3(0.5f); // center offset for -0.5..0.5 mesh
+                shader.setMat4("model", glm::translate(glm::mat4(1.0f), renderPos));
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }

@@ -24,6 +24,8 @@
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+
 // -------------------------------------------------------------------------
 // Shader / asset paths
 // -------------------------------------------------------------------------
@@ -54,20 +56,13 @@ GlobalLightSettings globalLights = {
     true                    // pointLightsEnabled
 };
 
-// -------------------------------------------------------------------------
-// Matrices
-// -------------------------------------------------------------------------
-glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
 // --- example script: spins whatever entity it's attached to ---------------
-void spinBehavior(int self, float time, float dt)
+void spinBehavior(Registry& registry, int self, float time, float dt)
 {
-    extern Registry* g_registry;
-    auto& t = g_registry->transforms[self];
+    TransformComponent& t = registry.transforms[self];
     t.rotationEuler.y = time;
 }
-
-Registry* g_registry = nullptr;
 
 int main()
 {
@@ -97,10 +92,7 @@ int main()
         return -1;
     }
 
-    AppState appState = AppState(mouseState, camera, projection);
-
     glfwMakeContextCurrent(window);
-    appState.setCallbacks(window);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     std::cout << "Loading GLAD..." << std::endl;
@@ -118,24 +110,6 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     // ------------------------------------------------------------------
-    // GPU buffers
-    // ------------------------------------------------------------------
-    std::cout << "Uploading vertex data..." << std::endl;
-    unsigned int VBO;
-    VAOs vaos = setupBuffers(VBO);
-
-    // ------------------------------------------------------------------
-    // Textures + Materials
-    // ------------------------------------------------------------------
-    std::cout << "Loading textures..." << std::endl;
-    unsigned int texture1, texture2;
-    loadTexture("container2.png", texture1);
-    loadTexture("container2_specular.png", texture2);
-
-    MaterialRegistry blockMaterials;
-    blockMaterials.add(0, Material({ { texture1, "material.diffuse"  }, { texture2, "material.specular" } }));
-
-    // ------------------------------------------------------------------
     // ImGui
     // ------------------------------------------------------------------
     IMGUI_CHECKVERSION();
@@ -145,77 +119,99 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
+
+    AppState appState = AppState(mouseState, camera, projection);
+    appState.setCallbacks(window);
+
+    std::cout << "Loading textures..." << std::endl;
+
+    unsigned int texture1 = 0, texture2 = 0;
+    bool ok1 = loadTexture("container2.png", texture1);
+    bool ok2 = loadTexture("container2_specular.png", texture2);
+    if (!ok1 || !ok2) {
+        std::cerr << "Texture load failed, continuing without textures." << std::endl;
+    }
+
+    std::vector<float> vertexData = std::vector<float>(std::begin(vertices), std::end(vertices));
+    std::vector<int> cubeLayout = {3, 3, 2}; // pos, normal, uv
+    Mesh cubeMesh(vertexData, cubeLayout);
+
+    // seperate registry for world
+    MaterialRegistry blockMaterials;
+    blockMaterials.add(0, Material({ { texture1, "material.diffuse"  }, { texture2, "material.specular" } }));
+
     World world(16, 16, 16);
     world.platform(16, 16);
     appState.setWorld(world);
 
     Registry registry;
-    g_registry = &registry;
 
     Shader litShader("lit.vert", "lit.frag");
 
-    unsigned int cubeVAO = vaos.cube;
-    int cubeVertexCount = 36;
 
-    int root = spawnEntity(registry, "root", 
-        /* position */ glm::vec3(0.0f, 0.0f, 0.0f), 
-        /* rotationEuler */ glm::vec3(0.0f, 0.0f, 0.0f), 
-        /* scale */ glm::vec3(1.0f, 1.0f, 1.0f), 
-        /* parent */ NULL_ENTITY);
+    TransformComponent rootTransform{
+        .position = glm::vec3(0.0f, 0.0f, 0.0f),
+    };
+    int root = spawnEntity(registry, "root", rootTransform, /* parent */ NULL_ENTITY);
 
-    int spinningCube = spawnEntity(registry, "spinningCube",
-        /* position */ glm::vec3(0.0f, 0.0f, 0.0f),
-        /* rotationEuler */ glm::vec3(0.0f, 0.0f, 0.0f),
-        /* scale */ glm::vec3(1.0f, 1.0f, 1.0f),
-        /* parent */ root);
-    addMesh(registry, spinningCube,
-        /* vao */ cubeVAO,
-        /* vertexCount */ (int)cubeVertexCount,
-        /* shader */ &litShader,
-        /* color */ glm::vec3(0.8f, 0.2f, 0.2f));
+
+    TransformComponent spinningCubeTransform{
+        .position = glm::vec3(13.0f, 2.0f, 3.0f),
+    };
+    int spinningCube = spawnEntity(registry, "spinningCube", spinningCubeTransform, /* parent */ root);
+
+    MaterialComponent spinningCubeMaterial{
+        .color = glm::vec3(1.0f),
+        .diffuseTexture = texture1,
+        .specularTexture = texture2,
+    };
+    addMesh(registry, spinningCube, &cubeMesh, &litShader, spinningCubeMaterial);
     addScript(registry, spinningCube, /* updateFn */ &spinBehavior);
 
-    
-    int childCube = spawnEntity(registry, "childCube",
-        /* position */ glm::vec3(2.0f, 0.0f, 0.0f),
-        /* rotationEuler */ glm::vec3(0.0f, 0.0f, 0.0f),
-        /* scale */ glm::vec3(0.5f, 0.5f, 0.5f),
-        /* parent */ spinningCube);
-    addMesh(registry, childCube,
-        /* vao */ cubeVAO,
-        /* vertexCount */ (int)cubeVertexCount,
-        /* shader */ &litShader,
-        /* color */ glm::vec3(0.2f, 0.4f, 0.9f),
-        /* shininess */ 16.0f);
 
-    
-    int lamp = spawnEntity(registry, "lamp",
-        /* position */ glm::vec3(3.0f, 4.0f, 3.0f),
-        /* rotationEuler */ glm::vec3(0.0f, 0.0f, 0.0f),
-        /* scale */ glm::vec3(1.0f, 1.0f, 1.0f),
-        /* parent */ root);
-    addMesh(registry, lamp,
-        /* vao */ cubeVAO,
-        /* vertexCount */ (int)cubeVertexCount,
-        /* shader */ &litShader,
-        /* color */ glm::vec3(1.0f, 1.0f, 1.0f),
-        /* shininess */ 32.0f,
-        /* emissive */ 1.0f);
-    addPointLight(registry, lamp,
-        /* color */ glm::vec3(1.0f, 0.95f, 0.85f),
-        /* intensity */ 2.5f);
+    TransformComponent childCubeTransform{
+        .position = glm::vec3(2.0f, 0.0f, 0.0f),
+        .scale = glm::vec3(0.5f, 0.5f, 0.5f),
+    };
+    int childCube = spawnEntity(registry, "childCube", childCubeTransform, /* parent */ spinningCube);
 
-    
+    MaterialComponent childCubeMaterial{
+        .color = glm::vec3(0.2f, 0.4f, 0.9f),
+        .shininess = 16.0f,
+    };
+    addMesh(registry, childCube, &cubeMesh, &litShader, childCubeMaterial);
 
-    int sun = spawnEntity(registry, "sun",
-        /* position */ glm::vec3(0.0f, 0.0f, 0.0f),
-        /* rotationEuler */ glm::vec3(0.0f, 0.0f, 0.0f),
-        /* scale */ glm::vec3(1.0f, 1.0f, 1.0f),
-        /* parent */ root);
-    addDirLight(registry, sun,
-        /* direction */ glm::vec3(-0.3f, -1.0f, -0.2f),
-        /* color */ glm::vec3(1.0f, 0.98f, 0.9f),
-        /* intensity */ 1.2f);
+
+    TransformComponent lampTransform{
+        .position = glm::vec3(3.0f, 4.0f, 3.0f),
+    };
+    int lamp = spawnEntity(registry, "lamp", lampTransform, /* parent */ root);
+
+    MaterialComponent lampMaterial{
+        .color = glm::vec3(1.0f, 1.0f, 1.0f),
+        .shininess = 32.0f,
+        .emissive = 1.0f,
+    };
+    addMesh(registry, lamp, &cubeMesh, &litShader, lampMaterial);
+
+    PointLightComponent lampLight{
+        .color = glm::vec3(1.0f, 0.95f, 0.85f),
+        .intensity = 2.5f,
+    };
+    addPointLight(registry, lamp, lampLight);
+
+
+    TransformComponent sunTransform{
+        .position = glm::vec3(0.0f, 0.0f, 0.0f),
+    };
+    int sun = spawnEntity(registry, "sun", sunTransform, /* parent */ root);
+
+    DirLightComponent sunLight{
+        .direction = glm::vec3(-0.3f, -1.0f, -0.2f),
+        .color = glm::vec3(1.0f, 0.98f, 0.9f),
+        .intensity = 1.2f,
+    };
+    addDirLight(registry, sun, sunLight);
 
 
 
@@ -240,7 +236,7 @@ int main()
 
         glm::mat4 view = camera.GetViewMatrix();
 
-        glBindVertexArray(vaos.cube);
+        glBindVertexArray(cubeMesh.getVAO());
         world.draw(litShader, blockMaterials);
 
         scriptSystem(registry, currentFrame, deltaTime);
@@ -348,9 +344,6 @@ int main()
     // ------------------------------------------------------------------
     // Cleanup
     // ------------------------------------------------------------------
-    glDeleteVertexArrays(1, &vaos.cube);
-    glDeleteVertexArrays(1, &vaos.light);
-    glDeleteBuffers(1, &VBO);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
