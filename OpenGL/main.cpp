@@ -119,20 +119,23 @@ int main()
 
     std::cout << "Loading textures..." << std::endl;
 
-    unsigned int texture1 = 0, texture2 = 0;
+    unsigned int texture1 = 0, texture2 = 0, texture3 = 0;
     bool ok1 = loadTexture("container2.png", texture1);
     bool ok2 = loadTexture("container2_specular.png", texture2);
-    if (!ok1 || !ok2) {
+    bool ok3 = loadTexture("world.png", texture3);
+    if (!ok1 || !ok2 || !ok3) {
         std::cerr << "Texture load failed, continuing without textures." << std::endl;
     }
 
-    std::vector<float> vertexData = std::vector<float>(std::begin(vertices), std::end(vertices));
+    std::vector<float> vertexData = std::vector<float>(std::begin(basicCube), std::end(basicCube));
+    std::vector<float> vertexDataWrappedTexture = std::vector<float>(std::begin(basicCubeWrappedTexture), std::end(basicCubeWrappedTexture));
     std::vector<int> cubeLayout = {3, 3, 2}; // pos, normal, uv
     Mesh cubeMesh(vertexData, cubeLayout);
+    Mesh earthMesh(vertexDataWrappedTexture, cubeLayout);
 
     // seperate registry for world
     MaterialRegistry blockMaterials;
-    blockMaterials.add(0, Material({ { texture1, "material.diffuse"  }, { texture2, "material.specular" } }));
+    blockMaterials.add(0, Material({ { texture1, "material.diffuse" }, { texture2, "material.specular" } }));
 
     World world(16, 16, 16);
     world.platform(16, 16);
@@ -165,20 +168,23 @@ int main()
         .specularTexture = texture2,
     };
     addMesh(registry, sun, &cubeMesh, &litShader, sunMaterial);
-    addScript(registry, sun, /* updateFn */ &spinBehavior);
+    addScript(registry, sun, spinBehavior(0.2f));
 
 
-    TransformComponent childCubeTransform{
+    TransformComponent earthTransform{
         .position = glm::vec3(2.0f, 0.0f, 0.0f),
         .scale = glm::vec3(0.5f, 0.5f, 0.5f),
     };
-    int childCube = spawnEntity(registry, "childCube", childCubeTransform, /* parent */ solarSystem);
+    int earth = spawnEntity(registry, "earth", earthTransform, /* parent */ solarSystem);
 
-    MaterialComponent childCubeMaterial{
+    MaterialComponent earthMaterial{
         .color = glm::vec3(0.2f, 0.4f, 0.9f),
         .shininess = 16.0f,
+        .diffuseTexture = texture3,
+        .specularTexture = texture3,
     };
-    addMesh(registry, childCube, &cubeMesh, &litShader, childCubeMaterial);
+    addMesh(registry, earth, &earthMesh, &litShader, earthMaterial);
+    addScript(registry, earth, earthOrbitBehavior(1.0f, 2.0f, 23.5f));
 
 
     TransformComponent lampTransform{

@@ -58,7 +58,7 @@ struct RenderableComponent
 
 struct ScriptComponent
 {
-    void (*updateFn)(Registry&, int, float, float) = nullptr;
+    std::function<void(Registry&, int, float, float)> updateFn;
 };
 
 struct PointLightComponent {
@@ -169,9 +169,9 @@ inline void addDirLight(
     reg.dirLights[e] = light;
 }
 
-inline void addScript(Registry& reg, int e, void (*updateFn)(Registry&, int, float, float))
+inline void addScript(Registry& reg, int e, std::function<void(Registry&, int, float, float)> fn)
 {
-    reg.scripts[e] = { updateFn };
+    reg.scripts[e] = { std::move(fn) };
 }
 
 inline glm::mat4 composeMatrix(const TransformComponent& t) 
