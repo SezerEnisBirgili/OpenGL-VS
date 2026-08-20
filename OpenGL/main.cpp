@@ -119,11 +119,13 @@ int main()
 
     std::cout << "Loading textures..." << std::endl;
 
-    unsigned int texture1 = 0, texture2 = 0, texture3 = 0;
+    unsigned int texture1 = 0, texture2 = 0, texture3 = 0, texture4 = 0, texture5 = 0;
     bool ok1 = loadTexture("container2.png", texture1);
     bool ok2 = loadTexture("container2_specular.png", texture2);
     bool ok3 = loadTexture("world.png", texture3);
-    if (!ok1 || !ok2 || !ok3) {
+    bool ok4 = loadTexture("sun.png", texture4);
+    bool ok5 = loadTexture("moon.png", texture5);
+    if (!ok1 || !ok2 || !ok3 || !ok4 || !ok5) {
         std::cerr << "Texture load failed, continuing without textures." << std::endl;
     }
 
@@ -131,6 +133,7 @@ int main()
     std::vector<float> vertexDataWrappedTexture = std::vector<float>(std::begin(basicCubeWrappedTexture), std::end(basicCubeWrappedTexture));
     std::vector<int> cubeLayout = {3, 3, 2}; // pos, normal, uv
     Mesh cubeMesh(vertexData, cubeLayout);
+    // earth has unique faces with different texture coordinates
     Mesh earthMesh(vertexDataWrappedTexture, cubeLayout);
 
     // seperate registry for world
@@ -164,15 +167,20 @@ int main()
 
     MaterialComponent sunMaterial {
         .color = glm::vec3(1.0f),
-        .diffuseTexture = texture1,
-        .specularTexture = texture2,
+        .diffuseTexture = texture4,
+        .specularTexture = texture4,
     };
     addMesh(registry, sun, &cubeMesh, &litShader, sunMaterial);
     addScript(registry, sun, spinBehavior(0.2f));
+        PointLightComponent sunLight{
+        .color = glm::vec3(1.0f, 1.0f, 1.0f),
+        .intensity = 1.0f,
+    };
+    addPointLight(registry, sun, sunLight);
 
 
     TransformComponent earthTransform{
-        .position = glm::vec3(2.0f, 0.0f, 0.0f),
+        .position = glm::vec3(3.0f, 0.0f, 0.0f),
         .scale = glm::vec3(0.5f, 0.5f, 0.5f),
     };
     int earth = spawnEntity(registry, "earth", earthTransform, /* parent */ solarSystem);
@@ -184,7 +192,22 @@ int main()
         .specularTexture = texture3,
     };
     addMesh(registry, earth, &earthMesh, &litShader, earthMaterial);
-    addScript(registry, earth, earthOrbitBehavior(1.0f, 2.0f, 23.5f));
+    addScript(registry, earth, earthOrbitBehavior(0.25f, 0.25f, 23.5f));
+
+    TransformComponent moonTransform{
+        .position = glm::vec3(1.5f, 0.0f, 0.0f),
+        .scale = glm::vec3(0.5f, 0.5f, 0.5f),
+    };
+    int moon = spawnEntity(registry, "moon", moonTransform, /* parent */ earth);
+
+    MaterialComponent moonMaterial{
+        .color = glm::vec3(0.2f, 0.4f, 0.9f),
+        .shininess = 0.0f,
+        .diffuseTexture = texture5,
+        .specularTexture = texture5,
+    };
+    addMesh(registry, moon, &cubeMesh, &litShader, moonMaterial);
+    addScript(registry, moon, moonBehavior(1.0f));
 
 
     TransformComponent lampTransform{

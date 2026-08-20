@@ -31,3 +31,25 @@ inline auto earthOrbitBehavior(float orbitSpeed = 1.0f, float spinSpeed = 1.0f, 
             t.rotation = spinQuat * tiltQuat;
         };
 }
+
+inline auto moonBehavior(float orbitSpeed = 1.0f, float spinSpeed = 1.0f, bool tidallyLocked = true)
+{
+    return [orbitSpeed, spinSpeed, tidallyLocked](Registry& registry, int self, float time, float dt)
+        {
+            int parent = getParent(registry, self);
+            if (parent == NULL_ENTITY) return;
+
+            TransformComponent& t = registry.transforms[self];
+
+            float radius = glm::length(glm::vec3(t.position.x, 0.0f, t.position.z));
+            float orbitAngle = time * orbitSpeed;
+
+            t.position.x = radius * cosf(orbitAngle);
+            t.position.z = radius * sinf(orbitAngle);
+
+            glm::quat orbitRotation = glm::angleAxis(-orbitAngle, glm::vec3(0, 1, 0));
+
+            t.rotation = orbitRotation;
+        };
+}
+

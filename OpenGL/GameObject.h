@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include <glad.h>
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -157,6 +157,16 @@ inline void setParent(Registry& reg, int child, int parent)
         reg.hierarchy[parent].children.push_back(child);
     }
 }
+
+inline int getParent(const Registry& reg, int entity)
+{
+    auto it = reg.hierarchy.find(entity);
+    if (it != reg.hierarchy.end()) {
+        return it->second.parent;
+    }
+    return NULL_ENTITY;
+}
+
 
 inline void addMesh(
     Registry& reg,
