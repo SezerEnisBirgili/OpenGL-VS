@@ -51,9 +51,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="imGuiTutorial.cpp">
-      <Filter>controller</Filter>
-    </ClCompile>
     <ClCompile Include="stb_image.cpp">
       <Filter>source\src\cpp</Filter>
     </ClCompile>
@@ -101,9 +98,6 @@
     <ClInclude Include="lightingSets.h">
       <Filter>.h files</Filter>
     </ClInclude>
-    <ClInclude Include="shaderUniforms.h">
-      <Filter>.h files</Filter>
-    </ClInclude>
     <ClInclude Include="textureLoader.h">
       <Filter>.h files</Filter>
     </ClInclude>
@@ -143,51 +137,26 @@
     <ClInclude Include="imgui_impl_opengl3_loader.h">
       <Filter>.h files\src</Filter>
     </ClInclude>
-    <ClInclude Include="world.h">
-      <Filter>.h files</Filter>
-    </ClInclude>
     <ClInclude Include="GameObject.h">
       <Filter>.h files</Filter>
     </ClInclude>
     <ClInclude Include="materialRegistry.h">
       <Filter>.h files</Filter>
     </ClInclude>
+    <ClInclude Include="world.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="fLightShader.frag">
-      <Filter>source\shaders\fragmentShader</Filter>
-    </None>
-    <None Include="fShader.frag">
-      <Filter>source\shaders\fragmentShader</Filter>
-    </None>
-    <None Include="fTestShader.frag">
-      <Filter>source\shaders\fragmentShader</Filter>
-    </None>
-    <None Include="fPhongShader.frag">
-      <Filter>source\shaders\fragmentShader</Filter>
-    </None>
-    <None Include="vPhongShader.vert">
+    <None Include="lit.vert">
       <Filter>source\shaders\vertexShader</Filter>
     </None>
-    <None Include="vGouraudShader.vert">
-      <Filter>source\shaders\vertexShader</Filter>
-    </None>
-    <None Include="fGouraudShader.frag">
+    <None Include="lit.frag">
       <Filter>source\shaders\fragmentShader</Filter>
     </None>
-    <None Include="vShader.vert">
-      <Filter>source\shaders\vertexShader</Filter>
-    </None>
-    <None Include="vTestShader.vert">
-      <Filter>source\shaders\vertexShader</Filter>
-    </None>
-    <None Include="vLightShader.vert">
-      <Filter>source\shaders\vertexShader</Filter>
-    </None>
-    <None Include="6.light_cube.fs" />
-    <None Include="6.light_cube.vs" />
-    <None Include="6.multiple_lights.fs" />
-    <None Include="6.multiple_lights.vs" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="world.png">
@@ -208,14 +177,14 @@
     <Image Include="matrix_c.png">
       <Filter>source\resources\textures</Filter>
     </Image>
-    <Image Include="awesomeface.png">
-      <Filter>source</Filter>
+    <Image Include="container2_specular.png">
+      <Filter>source\resources\textures</Filter>
     </Image>
     <Image Include="container.jpg">
-      <Filter>source</Filter>
+      <Filter>source\resources\textures</Filter>
     </Image>
-    <Image Include="container2_specular.png">
-      <Filter>source</Filter>
+    <Image Include="awesomeface.png">
+      <Filter>source\resources\textures</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>

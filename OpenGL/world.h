@@ -170,6 +170,8 @@ public:
         }
 
         std::cout << "[placeBlock] failed: target obstructed or out of bounds";
+
+        return false;
     }
 
     bool exportWorldToPath(const std::string& destinationPath) const {
@@ -243,6 +245,10 @@ public:
     void draw(Shader& shader, const MaterialRegistry& materials) const {
         shader.use();
 
+        shader.setVec3("material.color", glm::vec3(1.0f));
+        shader.setFloat("material.shininess", 32.0f);
+        shader.setFloat("material.emissive", 0.0f);
+
         std::unordered_map<int, std::vector<glm::vec3>> byTexture;
 
         for (int x = 0; x < boundx; x++)
@@ -259,7 +265,8 @@ public:
             materials.get(id).bind(shader);
             for (const auto& pos : positions) 
             {
-                shader.setMat4("model", glm::translate(glm::mat4(1.0f), pos));
+                glm::vec3 renderPos = pos + glm::vec3(0.5f); // center offset for -0.5..0.5 mesh
+                shader.setMat4("model", glm::translate(glm::mat4(1.0f), renderPos));
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }

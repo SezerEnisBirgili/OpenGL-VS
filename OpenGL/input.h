@@ -44,8 +44,9 @@ public:
         glViewport(0, 0, width, height);
     }
 
-    inline void mouse_callback(GLFWwindow* /*window*/, double xpos, double ypos)
+    inline void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     {
+        ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
         if (TOGGLE_MENU) return;
 
         if (firstMouse)
@@ -65,8 +66,11 @@ public:
             a_camera.ProcessMouseMovement(xoffset, yoffset);
     }
 
-    void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset, float SCR_WIDTH = 800.0f, float SCR_HEIGHT = 600.0f)
+    void scroll_callback(GLFWwindow* window, double xoffset, double yoffset, float SCR_WIDTH = 800.0f, float SCR_HEIGHT = 600.0f)
     {
+        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+        if (ImGui::GetIO().WantCaptureMouse) return;
+
         a_camera.ProcessMouseScroll((float)yoffset);
         a_projection = glm::perspective(
             glm::radians(a_camera.Zoom),
@@ -74,8 +78,11 @@ public:
             0.1f, 100.0f);
     }
 
-    inline void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /*mods*/)
+    inline void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     {
+        ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+        if (ImGui::GetIO().WantCaptureMouse) return;
+
         if (TOGGLE_MENU) return;
         if (!a_world) return;
         if (action != GLFW_PRESS) return;
@@ -97,7 +104,7 @@ public:
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
 
-        // Left-shift toggles the ImGui menu
+        // Left-ctrl toggles the ImGui menu
         bool lShiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
         bool aPressed = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
         bool dPressed = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
