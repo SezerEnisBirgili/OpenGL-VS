@@ -1,7 +1,7 @@
 CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o: \
- /home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp \
- /usr/include/stdc-predef.h /home/sezer/OpenGL-VS/OpenGL/imgui.h \
- /home/sezer/OpenGL-VS/OpenGL/imconfig.h \
+ /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp \
+ /usr/include/stdc-predef.h /var/home/sezer/OpenGL-VS/OpenGL/imgui.h \
+ /var/home/sezer/OpenGL-VS/OpenGL/imconfig.h \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/float.h \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/stdarg.h \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/stddef.h \
@@ -12,10 +12,10 @@ CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o: \
  /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h \
  /usr/include/bits/types/locale_t.h /usr/include/bits/types/__locale_t.h \
  /usr/include/strings.h /usr/include/assert.h \
- /home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.h /usr/include/stdio.h \
- /usr/include/bits/types.h /usr/include/bits/typesizes.h \
- /usr/include/bits/time64.h /usr/include/bits/types/__fpos_t.h \
- /usr/include/bits/types/__mbstate_t.h \
+ /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.h \
+ /usr/include/stdio.h /usr/include/bits/types.h \
+ /usr/include/bits/typesizes.h /usr/include/bits/time64.h \
+ /usr/include/bits/types/__fpos_t.h /usr/include/bits/types/__mbstate_t.h \
  /usr/include/bits/types/__fpos64_t.h /usr/include/bits/types/__FILE.h \
  /usr/include/bits/types/FILE.h /usr/include/bits/types/struct_FILE.h \
  /usr/include/bits/types/cookie_io_functions_t.h \
@@ -25,7 +25,7 @@ CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o: \
  /usr/include/stdint.h /usr/include/bits/wchar.h \
  /usr/include/bits/stdint-intn.h /usr/include/bits/stdint-uintn.h \
  /usr/include/bits/stdint-least.h \
- /home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3_loader.h \
+ /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3_loader.h \
  /usr/include/c++/15/stdlib.h /usr/include/c++/15/cstdlib \
  /usr/include/c++/15/x86_64-redhat-linux/bits/c++config.h \
  /usr/include/c++/15/x86_64-redhat-linux/bits/os_defines.h \

@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/sezer/OpenGL-VS/OpenGL
+CMAKE_SOURCE_DIR = /var/home/sezer/OpenGL-VS/OpenGL
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/sezer/OpenGL-VS/OpenGL/build
+CMAKE_BINARY_DIR = /var/home/sezer/OpenGL-VS/OpenGL/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/OpenGLApp.dir/depend.make
@@ -73,144 +73,144 @@ CMakeFiles/OpenGLApp.dir/codegen:
 .PHONY : CMakeFiles/OpenGLApp.dir/codegen
 
 CMakeFiles/OpenGLApp.dir/glad.c.o: CMakeFiles/OpenGLApp.dir/flags.make
-CMakeFiles/OpenGLApp.dir/glad.c.o: /home/sezer/OpenGL-VS/OpenGL/glad.c
+CMakeFiles/OpenGLApp.dir/glad.c.o: /var/home/sezer/OpenGL-VS/OpenGL/glad.c
 CMakeFiles/OpenGLApp.dir/glad.c.o: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/OpenGLApp.dir/glad.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/glad.c.o -MF CMakeFiles/OpenGLApp.dir/glad.c.o.d -o CMakeFiles/OpenGLApp.dir/glad.c.o -c /home/sezer/OpenGL-VS/OpenGL/glad.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/OpenGLApp.dir/glad.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/glad.c.o -MF CMakeFiles/OpenGLApp.dir/glad.c.o.d -o CMakeFiles/OpenGLApp.dir/glad.c.o -c /var/home/sezer/OpenGL-VS/OpenGL/glad.c
 
 CMakeFiles/OpenGLApp.dir/glad.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/OpenGLApp.dir/glad.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/sezer/OpenGL-VS/OpenGL/glad.c > CMakeFiles/OpenGLApp.dir/glad.c.i
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /var/home/sezer/OpenGL-VS/OpenGL/glad.c > CMakeFiles/OpenGLApp.dir/glad.c.i
 
 CMakeFiles/OpenGLApp.dir/glad.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/OpenGLApp.dir/glad.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/sezer/OpenGL-VS/OpenGL/glad.c -o CMakeFiles/OpenGLApp.dir/glad.c.s
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /var/home/sezer/OpenGL-VS/OpenGL/glad.c -o CMakeFiles/OpenGLApp.dir/glad.c.s
 
 CMakeFiles/OpenGLApp.dir/imgui.cpp.o: CMakeFiles/OpenGLApp.dir/flags.make
-CMakeFiles/OpenGLApp.dir/imgui.cpp.o: /home/sezer/OpenGL-VS/OpenGL/imgui.cpp
+CMakeFiles/OpenGLApp.dir/imgui.cpp.o: /var/home/sezer/OpenGL-VS/OpenGL/imgui.cpp
 CMakeFiles/OpenGLApp.dir/imgui.cpp.o: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui.cpp.o -c /home/sezer/OpenGL-VS/OpenGL/imgui.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui.cpp
 
 CMakeFiles/OpenGLApp.dir/imgui.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/OpenGLApp.dir/imgui.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sezer/OpenGL-VS/OpenGL/imgui.cpp > CMakeFiles/OpenGLApp.dir/imgui.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /var/home/sezer/OpenGL-VS/OpenGL/imgui.cpp > CMakeFiles/OpenGLApp.dir/imgui.cpp.i
 
 CMakeFiles/OpenGLApp.dir/imgui.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/OpenGLApp.dir/imgui.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sezer/OpenGL-VS/OpenGL/imgui.cpp -o CMakeFiles/OpenGLApp.dir/imgui.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /var/home/sezer/OpenGL-VS/OpenGL/imgui.cpp -o CMakeFiles/OpenGLApp.dir/imgui.cpp.s
 
 CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o: CMakeFiles/OpenGLApp.dir/flags.make
-CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o: /home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp
+CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o: /var/home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp
 CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o -c /home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp
 
 CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp > CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /var/home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp > CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.i
 
 CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp -o CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /var/home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp -o CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.s
 
 CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o: CMakeFiles/OpenGLApp.dir/flags.make
-CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o: /home/sezer/OpenGL-VS/OpenGL/imgui_draw.cpp
+CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o: /var/home/sezer/OpenGL-VS/OpenGL/imgui_draw.cpp
 CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o -c /home/sezer/OpenGL-VS/OpenGL/imgui_draw.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_draw.cpp
 
 CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sezer/OpenGL-VS/OpenGL/imgui_draw.cpp > CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /var/home/sezer/OpenGL-VS/OpenGL/imgui_draw.cpp > CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.i
 
 CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sezer/OpenGL-VS/OpenGL/imgui_draw.cpp -o CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /var/home/sezer/OpenGL-VS/OpenGL/imgui_draw.cpp -o CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.s
 
 CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o: CMakeFiles/OpenGLApp.dir/flags.make
-CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o: /home/sezer/OpenGL-VS/OpenGL/imgui_impl_glfw.cpp
+CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o: /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_glfw.cpp
 CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o -c /home/sezer/OpenGL-VS/OpenGL/imgui_impl_glfw.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_glfw.cpp
 
 CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sezer/OpenGL-VS/OpenGL/imgui_impl_glfw.cpp > CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_glfw.cpp > CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.i
 
 CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sezer/OpenGL-VS/OpenGL/imgui_impl_glfw.cpp -o CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_glfw.cpp -o CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.s
 
 CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o: CMakeFiles/OpenGLApp.dir/flags.make
-CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o: /home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp
+CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o: /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp
 CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o -c /home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp
 
 CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp > CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp > CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.i
 
 CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp -o CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp -o CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.s
 
 CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o: CMakeFiles/OpenGLApp.dir/flags.make
-CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o: /home/sezer/OpenGL-VS/OpenGL/imgui_tables.cpp
+CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o: /var/home/sezer/OpenGL-VS/OpenGL/imgui_tables.cpp
 CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o -c /home/sezer/OpenGL-VS/OpenGL/imgui_tables.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_tables.cpp
 
 CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sezer/OpenGL-VS/OpenGL/imgui_tables.cpp > CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /var/home/sezer/OpenGL-VS/OpenGL/imgui_tables.cpp > CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.i
 
 CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sezer/OpenGL-VS/OpenGL/imgui_tables.cpp -o CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /var/home/sezer/OpenGL-VS/OpenGL/imgui_tables.cpp -o CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.s
 
 CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o: CMakeFiles/OpenGLApp.dir/flags.make
-CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o: /home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp
+CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o: /var/home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp
 CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o -c /home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o -MF CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o.d -o CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp
 
 CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp > CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /var/home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp > CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.i
 
 CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp -o CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /var/home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp -o CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.s
 
 CMakeFiles/OpenGLApp.dir/main.cpp.o: CMakeFiles/OpenGLApp.dir/flags.make
-CMakeFiles/OpenGLApp.dir/main.cpp.o: /home/sezer/OpenGL-VS/OpenGL/main.cpp
+CMakeFiles/OpenGLApp.dir/main.cpp.o: /var/home/sezer/OpenGL-VS/OpenGL/main.cpp
 CMakeFiles/OpenGLApp.dir/main.cpp.o: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/OpenGLApp.dir/main.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/main.cpp.o -MF CMakeFiles/OpenGLApp.dir/main.cpp.o.d -o CMakeFiles/OpenGLApp.dir/main.cpp.o -c /home/sezer/OpenGL-VS/OpenGL/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/OpenGLApp.dir/main.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/main.cpp.o -MF CMakeFiles/OpenGLApp.dir/main.cpp.o.d -o CMakeFiles/OpenGLApp.dir/main.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/main.cpp
 
 CMakeFiles/OpenGLApp.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/OpenGLApp.dir/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sezer/OpenGL-VS/OpenGL/main.cpp > CMakeFiles/OpenGLApp.dir/main.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /var/home/sezer/OpenGL-VS/OpenGL/main.cpp > CMakeFiles/OpenGLApp.dir/main.cpp.i
 
 CMakeFiles/OpenGLApp.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/OpenGLApp.dir/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sezer/OpenGL-VS/OpenGL/main.cpp -o CMakeFiles/OpenGLApp.dir/main.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /var/home/sezer/OpenGL-VS/OpenGL/main.cpp -o CMakeFiles/OpenGLApp.dir/main.cpp.s
 
 CMakeFiles/OpenGLApp.dir/stb_image.cpp.o: CMakeFiles/OpenGLApp.dir/flags.make
-CMakeFiles/OpenGLApp.dir/stb_image.cpp.o: /home/sezer/OpenGL-VS/OpenGL/stb_image.cpp
+CMakeFiles/OpenGLApp.dir/stb_image.cpp.o: /var/home/sezer/OpenGL-VS/OpenGL/stb_image.cpp
 CMakeFiles/OpenGLApp.dir/stb_image.cpp.o: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/OpenGLApp.dir/stb_image.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/stb_image.cpp.o -MF CMakeFiles/OpenGLApp.dir/stb_image.cpp.o.d -o CMakeFiles/OpenGLApp.dir/stb_image.cpp.o -c /home/sezer/OpenGL-VS/OpenGL/stb_image.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/OpenGLApp.dir/stb_image.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/OpenGLApp.dir/stb_image.cpp.o -MF CMakeFiles/OpenGLApp.dir/stb_image.cpp.o.d -o CMakeFiles/OpenGLApp.dir/stb_image.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/stb_image.cpp
 
 CMakeFiles/OpenGLApp.dir/stb_image.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/OpenGLApp.dir/stb_image.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sezer/OpenGL-VS/OpenGL/stb_image.cpp > CMakeFiles/OpenGLApp.dir/stb_image.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /var/home/sezer/OpenGL-VS/OpenGL/stb_image.cpp > CMakeFiles/OpenGLApp.dir/stb_image.cpp.i
 
 CMakeFiles/OpenGLApp.dir/stb_image.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/OpenGLApp.dir/stb_image.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sezer/OpenGL-VS/OpenGL/stb_image.cpp -o CMakeFiles/OpenGLApp.dir/stb_image.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /var/home/sezer/OpenGL-VS/OpenGL/stb_image.cpp -o CMakeFiles/OpenGLApp.dir/stb_image.cpp.s
 
 # Object files for target OpenGLApp
 OpenGLApp_OBJECTS = \
@@ -228,27 +228,27 @@ OpenGLApp_OBJECTS = \
 # External object files for target OpenGLApp
 OpenGLApp_EXTERNAL_OBJECTS =
 
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/glad.c.o
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui.cpp.o
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/main.cpp.o
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/stb_image.cpp.o
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/build.make
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: /usr/lib64/libglfw.so.3.4
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: /usr/lib64/libGLX.so
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: /usr/lib64/libOpenGL.so
-/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable /home/sezer/OpenGL-VS/OpenGL/OpenGLApp"
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/glad.c.o
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui.cpp.o
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/main.cpp.o
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/stb_image.cpp.o
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/build.make
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/compiler_depend.ts
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: /usr/lib64/libglfw.so.3.4
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: /usr/lib64/libGLX.so
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: /usr/lib64/libOpenGL.so
+/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp: CMakeFiles/OpenGLApp.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable /var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/OpenGLApp.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
-CMakeFiles/OpenGLApp.dir/build: /home/sezer/OpenGL-VS/OpenGL/OpenGLApp
+CMakeFiles/OpenGLApp.dir/build: /var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp
 .PHONY : CMakeFiles/OpenGLApp.dir/build
 
 CMakeFiles/OpenGLApp.dir/clean:
@@ -256,6 +256,6 @@ CMakeFiles/OpenGLApp.dir/clean:
 .PHONY : CMakeFiles/OpenGLApp.dir/clean
 
 CMakeFiles/OpenGLApp.dir/depend:
-	cd /home/sezer/OpenGL-VS/OpenGL/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/sezer/OpenGL-VS/OpenGL /home/sezer/OpenGL-VS/OpenGL /home/sezer/OpenGL-VS/OpenGL/build /home/sezer/OpenGL-VS/OpenGL/build /home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles/OpenGLApp.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /var/home/sezer/OpenGL-VS/OpenGL/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /var/home/sezer/OpenGL-VS/OpenGL /var/home/sezer/OpenGL-VS/OpenGL /var/home/sezer/OpenGL-VS/OpenGL/build /var/home/sezer/OpenGL-VS/OpenGL/build /var/home/sezer/OpenGL-VS/OpenGL/build/CMakeFiles/OpenGLApp.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : CMakeFiles/OpenGLApp.dir/depend
 

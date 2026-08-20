@@ -5,13 +5,13 @@
 # compile CXX with /usr/bin/c++
 C_DEFINES = 
 
-C_INCLUDES = -I/home/sezer/OpenGL-VS/OpenGL -I/home/sezer/OpenGL-VS/OpenGL/Dependencies/include
+C_INCLUDES = -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include
 
 C_FLAGS = 
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/sezer/OpenGL-VS/OpenGL -I/home/sezer/OpenGL-VS/OpenGL/Dependencies/include
+CXX_INCLUDES = -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include
 
 CXX_FLAGS = -std=gnu++17
 

@@ -1,0 +1,62 @@
+[
+{
+  "directory": "/var/home/sezer/OpenGL-VS/OpenGL/build",
+  "command": "/usr/bin/cc  -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include  -o CMakeFiles/OpenGLApp.dir/glad.c.o -c /var/home/sezer/OpenGL-VS/OpenGL/glad.c",
+  "file": "/var/home/sezer/OpenGL-VS/OpenGL/glad.c",
+  "output": "CMakeFiles/OpenGLApp.dir/glad.c.o"
+},
+{
+  "directory": "/var/home/sezer/OpenGL-VS/OpenGL/build",
+  "command": "/usr/bin/c++  -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/imgui.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui.cpp",
+  "file": "/var/home/sezer/OpenGL-VS/OpenGL/imgui.cpp",
+  "output": "CMakeFiles/OpenGLApp.dir/imgui.cpp.o"
+},
+{
+  "directory": "/var/home/sezer/OpenGL-VS/OpenGL/build",
+  "command": "/usr/bin/c++  -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp",
+  "file": "/var/home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp",
+  "output": "CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o"
+},
+{
+  "directory": "/var/home/sezer/OpenGL-VS/OpenGL/build",
+  "command": "/usr/bin/c++  -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_draw.cpp",
+  "file": "/var/home/sezer/OpenGL-VS/OpenGL/imgui_draw.cpp",
+  "output": "CMakeFiles/OpenGLApp.dir/imgui_draw.cpp.o"
+},
+{
+  "directory": "/var/home/sezer/OpenGL-VS/OpenGL/build",
+  "command": "/usr/bin/c++  -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_glfw.cpp",
+  "file": "/var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_glfw.cpp",
+  "output": "CMakeFiles/OpenGLApp.dir/imgui_impl_glfw.cpp.o"
+},
+{
+  "directory": "/var/home/sezer/OpenGL-VS/OpenGL/build",
+  "command": "/usr/bin/c++  -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp",
+  "file": "/var/home/sezer/OpenGL-VS/OpenGL/imgui_impl_opengl3.cpp",
+  "output": "CMakeFiles/OpenGLApp.dir/imgui_impl_opengl3.cpp.o"
+},
+{
+  "directory": "/var/home/sezer/OpenGL-VS/OpenGL/build",
+  "command": "/usr/bin/c++  -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_tables.cpp",
+  "file": "/var/home/sezer/OpenGL-VS/OpenGL/imgui_tables.cpp",
+  "output": "CMakeFiles/OpenGLApp.dir/imgui_tables.cpp.o"
+},
+{
+  "directory": "/var/home/sezer/OpenGL-VS/OpenGL/build",
+  "command": "/usr/bin/c++  -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp",
+  "file": "/var/home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp",
+  "output": "CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o"
+},
+{
+  "directory": "/var/home/sezer/OpenGL-VS/OpenGL/build",
+  "command": "/usr/bin/c++  -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/main.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/main.cpp",
+  "file": "/var/home/sezer/OpenGL-VS/OpenGL/main.cpp",
+  "output": "CMakeFiles/OpenGLApp.dir/main.cpp.o"
+},
+{
+  "directory": "/var/home/sezer/OpenGL-VS/OpenGL/build",
+  "command": "/usr/bin/c++  -I/var/home/sezer/OpenGL-VS/OpenGL -I/var/home/sezer/OpenGL-VS/OpenGL/Dependencies/include -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/stb_image.cpp.o -c /var/home/sezer/OpenGL-VS/OpenGL/stb_image.cpp",
+  "file": "/var/home/sezer/OpenGL-VS/OpenGL/stb_image.cpp",
+  "output": "CMakeFiles/OpenGLApp.dir/stb_image.cpp.o"
+}
+]

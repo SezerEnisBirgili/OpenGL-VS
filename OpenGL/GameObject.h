@@ -1,8 +1,10 @@
 #pragma once
 
-#include <glad/glad.h>
+
+#include <glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -25,9 +27,24 @@ struct GlobalLightSettings {
 struct TransformComponent 
 {
     glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 rotationEuler = glm::vec3(0.0f);
     glm::vec3 scale = glm::vec3(1.0f);
+    glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 };
+
+inline glm::vec3 getEulerAngles(const TransformComponent& t) 
+{
+    return glm::degrees(glm::eulerAngles(t.rotation));
+}
+
+inline void setEulerAngles(TransformComponent& t, const glm::vec3& degrees) 
+{
+    t.rotation = glm::quat(glm::radians(degrees));
+}
+
+inline void rotateAroundAxis(TransformComponent& t, const glm::vec3& axis, float radians) 
+{
+    t.rotation = glm::angleAxis(radians, glm::normalize(axis)) * t.rotation;
+}
 
 struct WorldMatrixComponent 
 {
@@ -177,9 +194,7 @@ inline void addScript(Registry& reg, int e, std::function<void(Registry&, int, f
 inline glm::mat4 composeMatrix(const TransformComponent& t) 
 {
     glm::mat4 m = glm::translate(glm::mat4(1.0f), t.position);
-    m = glm::rotate(m, t.rotationEuler.y, glm::vec3(0, 1, 0));
-    m = glm::rotate(m, t.rotationEuler.x, glm::vec3(1, 0, 0));
-    m = glm::rotate(m, t.rotationEuler.z, glm::vec3(0, 0, 1));
+    m = m * glm::mat4_cast(t.rotation);
     m = glm::scale(m, t.scale);
     return m;
 }

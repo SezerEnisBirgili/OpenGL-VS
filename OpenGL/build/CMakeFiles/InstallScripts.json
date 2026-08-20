@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/var/home/sezer/OpenGL-VS/OpenGL/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

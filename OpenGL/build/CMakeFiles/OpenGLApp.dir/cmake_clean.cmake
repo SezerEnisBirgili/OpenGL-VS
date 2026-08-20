@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "/home/sezer/OpenGL-VS/OpenGL/OpenGLApp"
-  "/home/sezer/OpenGL-VS/OpenGL/OpenGLApp.pdb"
+  "/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp"
+  "/var/home/sezer/OpenGL-VS/OpenGL/OpenGLApp.pdb"
   "CMakeFiles/OpenGLApp.dir/link.d"
   "CMakeFiles/OpenGLApp.dir/glad.c.o"
   "CMakeFiles/OpenGLApp.dir/glad.c.o.d"

@@ -1,7 +1,7 @@
 CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o: \
- /home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp \
- /usr/include/stdc-predef.h /home/sezer/OpenGL-VS/OpenGL/imgui.h \
- /home/sezer/OpenGL-VS/OpenGL/imconfig.h \
+ /var/home/sezer/OpenGL-VS/OpenGL/imgui_widgets.cpp \
+ /usr/include/stdc-predef.h /var/home/sezer/OpenGL-VS/OpenGL/imgui.h \
+ /var/home/sezer/OpenGL-VS/OpenGL/imconfig.h \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/float.h \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/stdarg.h \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/stddef.h \
@@ -12,7 +12,7 @@ CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o: \
  /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h \
  /usr/include/bits/types/locale_t.h /usr/include/bits/types/__locale_t.h \
  /usr/include/strings.h /usr/include/assert.h \
- /home/sezer/OpenGL-VS/OpenGL/imgui_internal.h /usr/include/stdio.h \
+ /var/home/sezer/OpenGL-VS/OpenGL/imgui_internal.h /usr/include/stdio.h \
  /usr/include/bits/types.h /usr/include/bits/typesizes.h \
  /usr/include/bits/time64.h /usr/include/bits/types/__fpos_t.h \
  /usr/include/bits/types/__mbstate_t.h \
@@ -202,4 +202,4 @@ CMakeFiles/OpenGLApp.dir/imgui_widgets.cpp.o: \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/stdint.h \
  /usr/include/stdint.h /usr/include/bits/wchar.h \
  /usr/include/bits/stdint-uintn.h /usr/include/bits/stdint-least.h \
- /home/sezer/OpenGL-VS/OpenGL/imstb_textedit.h
+ /var/home/sezer/OpenGL-VS/OpenGL/imstb_textedit.h

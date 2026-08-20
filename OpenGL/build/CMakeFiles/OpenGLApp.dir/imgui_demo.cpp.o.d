@@ -1,7 +1,7 @@
 CMakeFiles/OpenGLApp.dir/imgui_demo.cpp.o: \
- /home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp /usr/include/stdc-predef.h \
- /home/sezer/OpenGL-VS/OpenGL/imgui.h \
- /home/sezer/OpenGL-VS/OpenGL/imconfig.h \
+ /var/home/sezer/OpenGL-VS/OpenGL/imgui_demo.cpp \
+ /usr/include/stdc-predef.h /var/home/sezer/OpenGL-VS/OpenGL/imgui.h \
+ /var/home/sezer/OpenGL-VS/OpenGL/imconfig.h \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/float.h \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/stdarg.h \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/stddef.h \
