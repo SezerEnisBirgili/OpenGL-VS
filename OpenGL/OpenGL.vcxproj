@@ -186,6 +186,7 @@
     <ClInclude Include="input.h" />
     <ClInclude Include="lightingSets.h" />
     <ClInclude Include="materialRegistry.h" />
+    <ClInclude Include="scripts.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="textureLoader.h" />

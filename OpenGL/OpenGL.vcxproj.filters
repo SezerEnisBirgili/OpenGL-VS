@@ -146,6 +146,9 @@
     <ClInclude Include="world.h">
       <Filter>.h files</Filter>
     </ClInclude>
+    <ClInclude Include="scripts.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="lit.vert">

@@ -13,6 +13,7 @@
 #include "input.h"
 #include "world.h"
 #include "materialRegistry.h"
+#include "scripts.h"
 
 #include <iostream>
 #include <vector>
@@ -56,13 +57,6 @@ GlobalLightSettings globalLights = {
     true                    // pointLightsEnabled
 };
 
-
-// --- example script: spins whatever entity it's attached to ---------------
-void spinBehavior(Registry& registry, int self, float time, float dt)
-{
-    TransformComponent& t = registry.transforms[self];
-    t.rotationEuler.y = time;
-}
 
 int main()
 {
@@ -154,26 +148,31 @@ int main()
     };
     int root = spawnEntity(registry, "root", rootTransform, /* parent */ NULL_ENTITY);
 
-
-    TransformComponent spinningCubeTransform{
-        .position = glm::vec3(13.0f, 2.0f, 3.0f),
+    TransformComponent solarSystemTransform{
+    .position = glm::vec3(13.0f, 2.0f, 3.0f),
     };
-    int spinningCube = spawnEntity(registry, "spinningCube", spinningCubeTransform, /* parent */ root);
+    int solarSystem = spawnEntity(registry, "solarSystem", solarSystemTransform, root);
 
-    MaterialComponent spinningCubeMaterial{
+
+    TransformComponent sunTransform{
+        .position = glm::vec3(0.0f, 0.0f, 0.0f),
+    };
+    int sun = spawnEntity(registry, "sun", sunTransform, /* parent */ solarSystem);
+
+    MaterialComponent sunMaterial {
         .color = glm::vec3(1.0f),
         .diffuseTexture = texture1,
         .specularTexture = texture2,
     };
-    addMesh(registry, spinningCube, &cubeMesh, &litShader, spinningCubeMaterial);
-    addScript(registry, spinningCube, /* updateFn */ &spinBehavior);
+    addMesh(registry, sun, &cubeMesh, &litShader, sunMaterial);
+    addScript(registry, sun, /* updateFn */ &spinBehavior);
 
 
     TransformComponent childCubeTransform{
         .position = glm::vec3(2.0f, 0.0f, 0.0f),
         .scale = glm::vec3(0.5f, 0.5f, 0.5f),
     };
-    int childCube = spawnEntity(registry, "childCube", childCubeTransform, /* parent */ spinningCube);
+    int childCube = spawnEntity(registry, "childCube", childCubeTransform, /* parent */ solarSystem);
 
     MaterialComponent childCubeMaterial{
         .color = glm::vec3(0.2f, 0.4f, 0.9f),
@@ -201,17 +200,17 @@ int main()
     addPointLight(registry, lamp, lampLight);
 
 
-    TransformComponent sunTransform{
+    TransformComponent dirLightTransform{
         .position = glm::vec3(0.0f, 0.0f, 0.0f),
     };
-    int sun = spawnEntity(registry, "sun", sunTransform, /* parent */ root);
+    int dirLight = spawnEntity(registry, "dirLight", dirLightTransform, /* parent */ root);
 
-    DirLightComponent sunLight{
+    DirLightComponent globalLight{
         .direction = glm::vec3(-0.3f, -1.0f, -0.2f),
         .color = glm::vec3(1.0f, 0.98f, 0.9f),
         .intensity = 1.2f,
     };
-    addDirLight(registry, sun, sunLight);
+    addDirLight(registry, dirLight, globalLight);
 
 
 
@@ -304,16 +303,16 @@ int main()
 
             ImGui::Separator();
             ImGui::Text("Sun");
-            if (registry.dirLights.count(sun))
+            if (registry.dirLights.count(dirLight))
             {
-                auto& sunLight = registry.dirLights[sun];
-                if (ImGui::SliderFloat3("Sun Direction", glm::value_ptr(sunLight.direction), -1.0f, 1.0f))
+                auto& globalLight = registry.dirLights[dirLight];
+                if (ImGui::SliderFloat3("Sun Direction", glm::value_ptr(globalLight.direction), -1.0f, 1.0f))
                 {
-                    if (glm::length(sunLight.direction) > 0.0001f)
-                        sunLight.direction = glm::normalize(sunLight.direction);
+                    if (glm::length(globalLight.direction) > 0.0001f)
+                        globalLight.direction = glm::normalize(globalLight.direction);
                 }
-                ImGui::ColorEdit3("Sun Color", glm::value_ptr(sunLight.color));
-                ImGui::SliderFloat("Sun Intensity", &sunLight.intensity, 0.0f, 5.0f);
+                ImGui::ColorEdit3("Sun Color", glm::value_ptr(globalLight.color));
+                ImGui::SliderFloat("Sun Intensity", &globalLight.intensity, 0.0f, 5.0f);
             }
 
             ImGui::Separator();
