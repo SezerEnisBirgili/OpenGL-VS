@@ -138,6 +138,9 @@ int main()
     loadTexture("container2.png", texture1);
     loadTexture("container2_specular.png", texture2);
 
+    ourShader.use();
+    ourShader.setInt("material.diffuse", 0);
+    ourShader.setInt("material.specular", 1);
     MaterialRegistry blockMaterials;
     blockMaterials.add(0, Material({
         { texture1, "material.diffuse"  },
