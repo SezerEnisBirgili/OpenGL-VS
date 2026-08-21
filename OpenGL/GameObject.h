@@ -11,6 +11,7 @@
 
 #include "shader.h"
 #include "bufferSetup.h"
+#include "stb_image.h"
 
 constexpr int NULL_ENTITY = 0;
 
@@ -111,18 +112,78 @@ public:
         return e;
     }
 
+    void setFallbackTextures(unsigned int diffuse, unsigned int specular)
+    {
+        fallbackDiffuse = diffuse;
+        fallbackSpecular = specular;
+    }
+
+    unsigned int getFallbackDiffuse() const { return fallbackDiffuse; }
+    unsigned int getFallbackSpecular() const { return fallbackSpecular; }
+
+    unsigned int loadTexture(const std::string& path, unsigned int filter, bool genMipMaps, const std::string& name)
+    {
+        auto cached = textures.find(name);
+        if (cached != textures.end()) return cached->second;
+
+        int width, height, nrChannels;
+        stbi_set_flip_vertically_on_load(true);
+        unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+        if (!data)
+        {
+            std::cout << "Failed to load texture '" << path << "': "
+                << stbi_failure_reason() << std::endl;
+            return 0;
+        }
+
+        GLenum format = GL_RGB;
+        if (nrChannels == 1) format = GL_RED;
+        else if (nrChannels == 4) format = GL_RGBA;
+
+        unsigned int id;
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_2D, id);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        if (filter == 0)
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, genMipMaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+        else
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, genMipMaps ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        }
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        if (genMipMaps) glGenerateMipmap(GL_TEXTURE_2D);
+
+        stbi_image_free(data);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        textures[name] = id;
+        return id;
+    }
+
     std::unordered_map<int, TransformComponent>    transforms;
     std::unordered_map<int, WorldMatrixComponent>  worldMatrices;
     std::unordered_map<int, HierarchyComponent>    hierarchy;
     std::unordered_map<int, MaterialComponent>     materials;
     std::unordered_map<int, RenderableComponent>   renderables;
     std::unordered_map<int, ScriptComponent>       scripts;
+    std::unordered_map<std::string, unsigned int>  textures;
     std::unordered_map<int, PointLightComponent>   pointLights;
     std::unordered_map<int, DirLightComponent>     dirLights;
     std::unordered_map<int, std::string>           names;
 
 private:
     int nextEntity = 1; // 0 reserved as NULL_ENTITY
+    unsigned int fallbackDiffuse = 0;
+    unsigned int fallbackSpecular = 0;
 };
 
 inline int spawnEntity(
@@ -307,16 +368,16 @@ inline void renderSystem(Registry& reg, const glm::mat4& view, const glm::mat4& 
         renderable.shader->setFloat("material.shininess", mat.shininess);
         renderable.shader->setFloat("material.emissive", mat.emissive);
 
-        if (mat.diffuseTexture) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, mat.diffuseTexture);
-            renderable.shader->setInt("material.diffuse", 0);
-        }
-        if (mat.specularTexture) {
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, mat.specularTexture);
-            renderable.shader->setInt("material.specular", 1);
-        }
+        unsigned int diffuseTex = mat.diffuseTexture ? mat.diffuseTexture : reg.getFallbackDiffuse();
+        unsigned int specularTex = mat.specularTexture ? mat.specularTexture : reg.getFallbackSpecular();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseTex);
+        renderable.shader->setInt("material.diffuse", 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularTex);
+        renderable.shader->setInt("material.specular", 1);
 
         renderable.mesh->draw();
     }

@@ -9,7 +9,6 @@
 #include "shader.h"
 #include "vertexData.h"
 #include "bufferSetup.h"
-#include "textureLoader.h"
 #include "input.h"
 #include "world.h"
 #include "materialRegistry.h"
@@ -113,21 +112,28 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
+    Registry registry;
 
     AppState appState = AppState(mouseState, camera, projection);
     appState.setCallbacks(window);
 
     std::cout << "Loading textures..." << std::endl;
 
-    unsigned int texture1 = 0, texture2 = 0, texture3 = 0, texture4 = 0, texture5 = 0;
-    bool ok1 = loadTexture("container2.png", texture1);
-    bool ok2 = loadTexture("container2_specular.png", texture2);
-    bool ok3 = loadTexture("world.png", texture3);
-    bool ok4 = loadTexture("sun.png", texture4);
-    bool ok5 = loadTexture("moon.png", texture5);
-    if (!ok1 || !ok2 || !ok3 || !ok4 || !ok5) {
-        std::cerr << "Texture load failed, continuing without textures." << std::endl;
+    unsigned int fallbackDiffuse       = registry.loadTexture("missing_texture.png",     1, true, "missing_texture");
+    unsigned int fallbackSpecular      = registry.loadTexture("missing_specular.png",    1, true, "missing_specular");
+    unsigned int texContainer2         = registry.loadTexture("container2.png",          1, true, "container2");
+    unsigned int texContainer2Specular = registry.loadTexture("container2_specular.png", 1, true, "container2_specular");
+    unsigned int texWorld              = registry.loadTexture("world.png",               1, true, "world");
+    unsigned int texSun                = registry.loadTexture("sun.png",                 1, true, "sun");
+    unsigned int texMoon               = registry.loadTexture("moon.png",                1, true, "moon");
+
+    if (!fallbackDiffuse || !fallbackSpecular || !texContainer2 || !texContainer2Specular ||
+        !texWorld || !texSun || !texMoon)
+    {
+        std::cerr << "One or more textures failed to load, continuing with fallbacks." << std::endl;
     }
+
+    registry.setFallbackTextures(fallbackDiffuse, fallbackSpecular);
 
     std::vector<float> vertexData = std::vector<float>(std::begin(basicCube), std::end(basicCube));
     std::vector<float> vertexDataWrappedTexture = std::vector<float>(std::begin(basicCubeWrappedTexture), std::end(basicCubeWrappedTexture));
@@ -138,13 +144,14 @@ int main()
 
     // seperate registry for world
     MaterialRegistry blockMaterials;
-    blockMaterials.add(0, Material({ { texture1, "material.diffuse" }, { texture2, "material.specular" } }));
+    blockMaterials.add(0, Material({
+    { texContainer2,         "material.diffuse"  },
+    { texContainer2Specular, "material.specular" }}));
 
     World world(16, 16, 16);
     world.platform(16, 16);
     appState.setWorld(world);
 
-    Registry registry;
 
     Shader litShader("lit.vert", "lit.frag");
 
@@ -165,10 +172,11 @@ int main()
     };
     int sun = spawnEntity(registry, "sun", sunTransform, /* parent */ solarSystem);
 
-    MaterialComponent sunMaterial {
+    MaterialComponent sunMaterial{
         .color = glm::vec3(1.0f),
-        .diffuseTexture = texture4,
-        .specularTexture = texture4,
+        .emissive = 1.0f,
+        .diffuseTexture = texSun,
+        // emmisive no specular map needed
     };
     addMesh(registry, sun, &cubeMesh, &litShader, sunMaterial);
     addScript(registry, sun, spinBehavior(0.2f));
@@ -188,8 +196,8 @@ int main()
     MaterialComponent earthMaterial{
         .color = glm::vec3(0.2f, 0.4f, 0.9f),
         .shininess = 16.0f,
-        .diffuseTexture = texture3,
-        .specularTexture = texture3,
+        .diffuseTexture = texWorld,
+        .specularTexture = texWorld,
     };
     addMesh(registry, earth, &earthMesh, &litShader, earthMaterial);
     addScript(registry, earth, earthOrbitBehavior(0.25f, 0.25f, 23.5f));
@@ -203,8 +211,8 @@ int main()
     MaterialComponent moonMaterial{
         .color = glm::vec3(0.2f, 0.4f, 0.9f),
         .shininess = 0.0f,
-        .diffuseTexture = texture5,
-        .specularTexture = texture5,
+        .diffuseTexture = texMoon,
+        .specularTexture = texMoon,
     };
     addMesh(registry, moon, &cubeMesh, &litShader, moonMaterial);
     addScript(registry, moon, moonBehavior(1.0f));
