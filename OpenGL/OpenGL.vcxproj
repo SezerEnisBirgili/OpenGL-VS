@@ -206,6 +206,8 @@
     <Image Include="lighting_maps_specular_color.png" />
     <Image Include="matrix.jpg" />
     <Image Include="matrix_c.png" />
+    <Image Include="moon.png" />
+    <Image Include="sun.png" />
     <Image Include="world.png" />
   </ItemGroup>
   <ItemGroup>

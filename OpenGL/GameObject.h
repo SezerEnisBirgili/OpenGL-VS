@@ -8,6 +8,7 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include "stb_image.h"
 
 #include "shader.h"
 #include "bufferSetup.h"
@@ -66,6 +67,14 @@ struct MaterialComponent
     unsigned int specularTexture = 0;
 };
 
+struct TextureComponent 
+{
+    unsigned int textureId = 0;
+    unsigned int textureFilter = 0;
+    bool generateMipMaps = true;
+    std::string name;
+};
+
 struct RenderableComponent
 {
     const Mesh* mesh = nullptr;
@@ -111,6 +120,64 @@ public:
         return e;
     }
 
+    int createTexture(const std::string& path, unsigned int filter, bool genMipMaps, const std::string& textureName)
+    {
+        int width, height, nrChannels;
+        stbi_set_flip_vertically_on_load(true);
+        unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+
+        if (!data)
+        {
+            std::cout << "Failed to load texture '" << path << "': "
+                << stbi_failure_reason() << std::endl;
+            return -1; // fail code nothing inserted into textures map
+        }
+
+        GLenum format = GL_RGB;
+        if (nrChannels == 1) { format = GL_RED; }
+        else if (nrChannels == 3) { format = GL_RGB; }
+        else if (nrChannels == 4) { format = GL_RGBA; }
+
+        int t = nextTexture++;
+        TextureComponent& comp = textures[t];
+        comp.textureFilter = filter;
+        comp.generateMipMaps = genMipMaps;
+        comp.name = textureName;
+
+        glGenTextures(1, &comp.textureId);
+        glBindTexture(GL_TEXTURE_2D, comp.textureId);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        if (filter == 0)
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, genMipMaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+        else
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, genMipMaps ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        }
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        if (genMipMaps) glGenerateMipmap(GL_TEXTURE_2D);
+
+        stbi_image_free(data);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        return t;
+    }
+
+
+    unsigned int getTextureId(int handle) const
+    {
+        auto it = textures.find(handle);
+        return it != textures.end() ? it->second.textureId : 0;
+    }
+
     std::unordered_map<int, TransformComponent>    transforms;
     std::unordered_map<int, WorldMatrixComponent>  worldMatrices;
     std::unordered_map<int, HierarchyComponent>    hierarchy;
@@ -119,10 +186,12 @@ public:
     std::unordered_map<int, ScriptComponent>       scripts;
     std::unordered_map<int, PointLightComponent>   pointLights;
     std::unordered_map<int, DirLightComponent>     dirLights;
+    std::unordered_map<int, TextureComponent>      textures;
     std::unordered_map<int, std::string>           names;
 
 private:
     int nextEntity = 1; // 0 reserved as NULL_ENTITY
+    int nextTexture = 1; // 0 for missing texture
 };
 
 inline int spawnEntity(
@@ -209,30 +278,6 @@ inline glm::mat4 composeMatrix(const TransformComponent& t)
     return m;
 }
 
-inline void transformSystem(Registry& reg, int e, const glm::mat4& parentWorld) 
-{
-    glm::mat4 local = composeMatrix(reg.transforms[e]);
-    glm::mat4 world = parentWorld * local;
-    reg.worldMatrices[e].value = world;
-
-    auto it = reg.hierarchy.find(e);
-    if (it != reg.hierarchy.end()) 
-    {
-        for (int child : it->second.children) 
-        {
-            transformSystem(reg, child, world);
-        }
-    }
-}
-
-inline void scriptSystem(Registry& reg, float time, float dt) 
-{
-    for (auto& [entity, script] : reg.scripts) 
-    {
-        if (script.updateFn) script.updateFn(reg, entity, time, dt);
-    }
-}
-
 inline std::vector<GpuPointLight> lightingSystem(Registry& reg) 
 {
     std::vector<GpuPointLight> lights;
@@ -279,12 +324,36 @@ inline void uploadDirLight(Shader& shader, Registry& reg, bool enabled) {
     }
 }
 
-inline void renderSystem(Registry& reg, const glm::mat4& view, const glm::mat4& projection,
-    const glm::vec3& viewPos, const GlobalLightSettings& globalLights = {}) {
+inline void transformSystem(Registry& reg, int e, const glm::mat4& parentWorld)
+{
+    glm::mat4 local = composeMatrix(reg.transforms[e]);
+    glm::mat4 world = parentWorld * local;
+    reg.worldMatrices[e].value = world;
+
+    auto it = reg.hierarchy.find(e);
+    if (it != reg.hierarchy.end())
+    {
+        for (int child : it->second.children)
+        {
+            transformSystem(reg, child, world);
+        }
+    }
+}
+
+inline void scriptSystem(Registry& reg, float time, float dt)
+{
+    for (auto& [entity, script] : reg.scripts)
+    {
+        if (script.updateFn) script.updateFn(reg, entity, time, dt);
+    }
+}
+
+inline void renderSystem(Registry& reg, const glm::mat4& view, const glm::mat4& projection, const glm::vec3& viewPos, unsigned int fallbackDiffuse, unsigned int fallbackSpecular, const GlobalLightSettings& globalLights = {}) {
 
     std::vector<GpuPointLight> lights = lightingSystem(reg);
 
-    for (auto& [entity, renderable] : reg.renderables) {
+    for (auto& [entity, renderable] : reg.renderables) 
+    {
         if (!renderable.shader || !renderable.mesh) continue;
 
         const glm::mat4& world = reg.worldMatrices[entity].value;
@@ -307,16 +376,13 @@ inline void renderSystem(Registry& reg, const glm::mat4& view, const glm::mat4& 
         renderable.shader->setFloat("material.shininess", mat.shininess);
         renderable.shader->setFloat("material.emissive", mat.emissive);
 
-        if (mat.diffuseTexture) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, mat.diffuseTexture);
-            renderable.shader->setInt("material.diffuse", 0);
-        }
-        if (mat.specularTexture) {
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, mat.specularTexture);
-            renderable.shader->setInt("material.specular", 1);
-        }
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, mat.diffuseTexture ? mat.diffuseTexture : fallbackDiffuse);
+        renderable.shader->setInt("material.diffuse", 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, mat.specularTexture ? mat.specularTexture : fallbackSpecular);
+        renderable.shader->setInt("material.specular", 1);
 
         renderable.mesh->draw();
     }

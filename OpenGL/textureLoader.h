@@ -2,6 +2,9 @@
 #include <glad/glad.h>
 #include "stb_image.h"
 #include <iostream>
+#include <vector>
+#include <string>
+#include <unordered_map>
 
 inline bool loadTexture(const char* texFileName, unsigned int& texture)
 {
@@ -31,12 +34,26 @@ inline bool loadTexture(const char* texFileName, unsigned int& texture)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+       
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     stbi_image_free(data);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    return true;
+}
+
+inline int loadAllTextures(std::vector<std::string> &texturePaths, std::unordered_map<std::string, unsigned int> &textures) 
+{
+    for (const auto& path : texturePaths) {
+        unsigned int id = 0;
+        if (!loadTexture(path.c_str(), id)) {
+            return false;
+        }
+        textures[path] = id;
+    }
 
     return true;
 }

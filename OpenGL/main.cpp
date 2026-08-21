@@ -9,7 +9,6 @@
 #include "shader.h"
 #include "vertexData.h"
 #include "bufferSetup.h"
-#include "textureLoader.h"
 #include "input.h"
 #include "world.h"
 #include "materialRegistry.h"
@@ -114,20 +113,40 @@ int main()
     ImGui_ImplOpenGL3_Init("#version 330");
 
 
+
     AppState appState = AppState(mouseState, camera, projection);
     appState.setCallbacks(window);
 
+    Registry registry;
+
     std::cout << "Loading textures..." << std::endl;
 
-    unsigned int texture1 = 0, texture2 = 0, texture3 = 0, texture4 = 0, texture5 = 0;
-    bool ok1 = loadTexture("container2.png", texture1);
-    bool ok2 = loadTexture("container2_specular.png", texture2);
-    bool ok3 = loadTexture("world.png", texture3);
-    bool ok4 = loadTexture("sun.png", texture4);
-    bool ok5 = loadTexture("moon.png", texture5);
-    if (!ok1 || !ok2 || !ok3 || !ok4 || !ok5) {
-        std::cerr << "Texture load failed, continuing without textures." << std::endl;
+    std::unordered_map<std::string, int> textureHandles = {
+        { "missing_texture.png",    registry.createTexture("missing_texture.png",    1, true, "missing_texture") },
+        { "missing_specular.png",   registry.createTexture("missing_specular.png",   1, true, "missing_specular") },
+        { "container2.png",        registry.createTexture("container2.png",          1, true, "container2") },
+        { "container2_specular.png",registry.createTexture("container2_specular.png",1, true, "container2_specular") },
+        { "world.png",              registry.createTexture("world.png",              1, true, "world") },
+        { "sun.png",                registry.createTexture("sun.png",                1, true, "sun") },
+        { "moon.png",               registry.createTexture("moon.png",               1, true, "moon") },
+    };
+
+    bool anyTextureFailed = false;
+    for (auto& [path, handle] : textureHandles)
+    {
+        if (handle < 0)
+        {
+            std::cerr << "Texture load failed: " << path << std::endl;
+            anyTextureFailed = true;
+        }
     }
+    if (anyTextureFailed)
+    {
+        std::cerr << "One or more textures failed to load, continuing with fallbacks." << std::endl;
+    }
+
+    unsigned int fallbackDiffuse = registry.getTextureId(textureHandles["missing_texture.png"]);
+    unsigned int fallbackSpecular = registry.getTextureId(textureHandles["missing_specular.png"]);
 
     std::vector<float> vertexData = std::vector<float>(std::begin(basicCube), std::end(basicCube));
     std::vector<float> vertexDataWrappedTexture = std::vector<float>(std::begin(basicCubeWrappedTexture), std::end(basicCubeWrappedTexture));
@@ -138,13 +157,14 @@ int main()
 
     // seperate registry for world
     MaterialRegistry blockMaterials;
-    blockMaterials.add(0, Material({ { texture1, "material.diffuse" }, { texture2, "material.specular" } }));
+    blockMaterials.add(0, Material({
+        { registry.getTextureId(textureHandles.at("container2.png")),          "material.diffuse"  },
+        { registry.getTextureId(textureHandles.at("container2_specular.png")), "material.specular" }
+        }));
 
     World world(16, 16, 16);
     world.platform(16, 16);
     appState.setWorld(world);
-
-    Registry registry;
 
     Shader litShader("lit.vert", "lit.frag");
 
@@ -165,16 +185,21 @@ int main()
     };
     int sun = spawnEntity(registry, "sun", sunTransform, /* parent */ solarSystem);
 
-    MaterialComponent sunMaterial {
+    MaterialComponent sunMaterial{
         .color = glm::vec3(1.0f),
-        .diffuseTexture = texture4,
-        .specularTexture = texture4,
+        .emissive = 1.0f,
+        .diffuseTexture = registry.getTextureId(textureHandles.at("sun.png")),
+        // no specularTexture (sun is emissive, doesn't need a specular map)
     };
     addMesh(registry, sun, &cubeMesh, &litShader, sunMaterial);
     addScript(registry, sun, spinBehavior(0.2f));
-        PointLightComponent sunLight{
+
+    PointLightComponent sunLight{
         .color = glm::vec3(1.0f, 1.0f, 1.0f),
         .intensity = 1.0f,
+        .constant = 1.0f,
+        .linear = 0.02f,
+        .quadratic = 0.005f,
     };
     addPointLight(registry, sun, sunLight);
 
@@ -188,8 +213,8 @@ int main()
     MaterialComponent earthMaterial{
         .color = glm::vec3(0.2f, 0.4f, 0.9f),
         .shininess = 16.0f,
-        .diffuseTexture = texture3,
-        .specularTexture = texture3,
+        .diffuseTexture = registry.getTextureId(textureHandles.at("world.png")),
+        .specularTexture = registry.getTextureId(textureHandles.at("world.png")),
     };
     addMesh(registry, earth, &earthMesh, &litShader, earthMaterial);
     addScript(registry, earth, earthOrbitBehavior(0.25f, 0.25f, 23.5f));
@@ -203,8 +228,8 @@ int main()
     MaterialComponent moonMaterial{
         .color = glm::vec3(0.2f, 0.4f, 0.9f),
         .shininess = 0.0f,
-        .diffuseTexture = texture5,
-        .specularTexture = texture5,
+        .diffuseTexture = registry.getTextureId(textureHandles.at("moon.png")),
+        .specularTexture = registry.getTextureId(textureHandles.at("moon.png")),
     };
     addMesh(registry, moon, &cubeMesh, &litShader, moonMaterial);
     addScript(registry, moon, moonBehavior(1.0f));
@@ -270,7 +295,7 @@ int main()
         scriptSystem(registry, currentFrame, deltaTime);
         transformSystem(registry, root, glm::mat4(1.0f));
 
-        renderSystem(registry, view, projection, camera.Position, globalLights);
+        renderSystem(registry, view, projection, camera.Position, fallbackDiffuse, fallbackSpecular, globalLights);
 
 
         // ------------------------------------------------------------------

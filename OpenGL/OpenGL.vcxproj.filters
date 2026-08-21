@@ -186,6 +186,12 @@
     <Image Include="awesomeface.png">
       <Filter>source\resources\textures</Filter>
     </Image>
+    <Image Include="moon.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="sun.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <Text Include="platform.txt">
