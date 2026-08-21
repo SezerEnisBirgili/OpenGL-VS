@@ -62,8 +62,7 @@ void main()
             result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
     }
 
-    vec3 emissiveColor = material.color * vec3(texture(material.diffuse, TexCoords));
-    result = mix(result, emissiveColor, material.emissive);
+    result = mix(result, material.color, material.emissive);
 
     FragColor = vec4(result, 1.0);
 }
