@@ -170,7 +170,7 @@
     <ClCompile Include="stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bufferSetup.h" />
+    <ClInclude Include="mesh.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="enum.h" />
     <ClInclude Include="GameObject.h" />
@@ -184,12 +184,9 @@
     <ClInclude Include="imstb_textedit.h" />
     <ClInclude Include="imstb_truetype.h" />
     <ClInclude Include="input.h" />
-    <ClInclude Include="lightingSets.h" />
-    <ClInclude Include="materialRegistry.h" />
     <ClInclude Include="scripts.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />
-    <ClInclude Include="textureLoader.h" />
     <ClInclude Include="vertexData.h" />
     <ClInclude Include="world.h" />
   </ItemGroup>

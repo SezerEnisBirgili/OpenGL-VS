@@ -8,10 +8,9 @@
 
 #include "shader.h"
 #include "vertexData.h"
-#include "bufferSetup.h"
+#include "mesh.h"
 #include "input.h"
 #include "world.h"
-#include "materialRegistry.h"
 #include "scripts.h"
 
 #include <iostream>

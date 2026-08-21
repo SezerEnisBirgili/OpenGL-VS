@@ -10,7 +10,7 @@
 #include <string>
 
 #include "shader.h"
-#include "bufferSetup.h"
+#include "mesh.h"
 #include "stb_image.h"
 
 constexpr int NULL_ENTITY = 0;
