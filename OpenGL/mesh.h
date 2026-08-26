@@ -1,64 +1,69 @@
 #pragma once
+
 #include <glad/glad.h>
 #include <vector>
-#include "vertexData.h"
+
+#include "vertex.h"
+#include "shader.h"
 
 class Mesh {
-private:
-    unsigned int VAO = 0, VBO = 0;
-    int vertexCount = 0;
-
-    int strideInFloats(const std::vector<int>& layout)
-    {
-        int total = 0;
-        for (const int& componentSize : layout) total += componentSize;
-        return total;
-    }
-
-    void applyLayout(const std::vector<int>& layout)
-    {
-        int stride = strideInFloats(layout) * sizeof(float);
-        int offset = 0;
-
-        for (size_t i = 0; i < layout.size(); ++i)
-        {
-            if (layout[i] == 0) { break; } // acoounting for {3, 0, 0} for only position
-            glVertexAttribPointer((GLuint)i, layout[i], GL_FLOAT, false, stride, (void*)offset);
-            glEnableVertexAttribArray((GLuint)i);
-            offset += layout[i] * sizeof(float);
-        }
-    }
-
-    void release()
-    {
-        if (VBO) glDeleteBuffers(1, &VBO);
-        if (VAO) glDeleteVertexArrays(1, &VAO);
-        VAO = 0, VBO = 0;
-    }
-
 public:
-    Mesh(const std::vector<float>& vertexData, const std::vector<int>& layout)
+    // mesh data
+    std::vector<Vertex>       vertices;
+    std::vector<unsigned int> indices;
+    unsigned int         diffuseTexture;
+    unsigned int         specularTexture;
+
+    Mesh() = default;
+
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, unsigned int diffuseTexture = 0, unsigned int specularTexture = 0)
+        : vertices(std::move(vertices)), indices(std::move(indices)), diffuseTexture(diffuseTexture), specularTexture(specularTexture)
     {
-        vertexCount = (int)vertexData.size() / strideInFloats(layout);
+        setupMesh();
+    }
 
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
+    void draw(Shader& shader) const
+    {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseTexture);
+        shader.setInt("material.diffuse", 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularTexture);
+        shader.setInt("material.specular", 1);
+
         glBindVertexArray(VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_STATIC_DRAW);
-
-        applyLayout(layout);
+        glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
+private:
+    //  render data
+    unsigned int VAO, VBO, EBO;
 
-    void draw() const
+    void setupMesh()
     {
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+    
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, vertexCount);
-    }
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    unsigned int getVAO() const { return VAO; }
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);  
 
-    ~Mesh() { release(); }
-};
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+
+        // vertex positions
+        glEnableVertexAttribArray(0);	
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+        // vertex normals
+        glEnableVertexAttribArray(1);	
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+        // vertex texture coords
+        glEnableVertexAttribArray(2);	
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+        glBindVertexArray(0);
+    } 
+};  

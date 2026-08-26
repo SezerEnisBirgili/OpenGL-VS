@@ -14,6 +14,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "shader.h"
+#include "vertex.h"
+
 struct RaycastHit3D;
 enum class BoxFace3D;
 
@@ -86,24 +89,48 @@ public:
 };
 
 class World {
-
 private:
-
     int boundx, boundy, boundz;
-
     std::vector<Block> blocks;
+    unsigned int cubeVAO = 0, cubeVBO = 0, cubeEBO = 0;
+    unsigned int indexCount = 0;
 
-    int getIndex(int x, int y, int z) const
+void setupCubeMesh(const std::vector<Vertex>& verts, const std::vector<unsigned int>& indices)
     {
-        return (x * boundy * boundz) + (y * boundz) + z;
+        indexCount = indices.size();
+
+        glGenVertexArrays(1, &cubeVAO);
+        glGenBuffers(1, &cubeVBO);
+        glGenBuffers(1, &cubeEBO);
+
+        glBindVertexArray(cubeVAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+        glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vertex), verts.data(), GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+        glBindVertexArray(0);
     }
 
 public:
-
     World(int x, int y, int z) : boundx(x), boundy(y), boundz(z)
     {
-        // initialize with empty air blocks
         blocks.resize(x * y * z, Block(false, 0));
+    }
+
+    // call once after construction, from main.cpp, passing the same cube vertex data
+    void initMesh(const std::vector<Vertex>& cubeVerts, const std::vector<unsigned int>& cubeIndices)
+    {
+        setupCubeMesh(cubeVerts, cubeIndices);
     }
 
     int getBoundX() const {
@@ -116,6 +143,11 @@ public:
 
     int getBoundZ() const {
         return boundz;
+    }
+
+    int getIndex(int x, int y, int z) const
+    {
+        return (x * boundy * boundz) + (y * boundz) + z;
     }
 
     // Bounds check to assume 0 to bound coordinates
@@ -280,32 +312,34 @@ public:
 
     void draw(Shader& shader, const MaterialRegistry& materials) const {
         shader.use();
+        glBindVertexArray(cubeVAO);   // <-- bind before drawing
 
         shader.setVec3("material.color", glm::vec3(1.0f));
         shader.setFloat("material.shininess", 32.0f);
         shader.setFloat("material.emissive", 0.0f);
 
         std::unordered_map<int, std::vector<glm::vec3>> byTexture;
-
         for (int x = 0; x < boundx; x++)
             for (int y = 0; y < boundy; y++)
-                for (int z = 0; z < boundz; z++) 
+                for (int z = 0; z < boundz; z++)
                 {
                     const Block& b = blocks[getIndex(x, y, z)];
                     if (!b.isSolid) continue;
                     byTexture[b.m_material].emplace_back(x, y, z);
                 }
 
-        for (auto& [id, positions] : byTexture) 
+        for (auto& [id, positions] : byTexture)
         {
             materials.get(id).bind(shader);
-            for (const auto& pos : positions) 
+            for (const auto& pos : positions)
             {
-                glm::vec3 renderPos = pos + glm::vec3(0.5f); // center offset for -0.5..0.5 mesh
+                glm::vec3 renderPos = pos + glm::vec3(0.5f);
                 shader.setMat4("model", glm::translate(glm::mat4(1.0f), renderPos));
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indexCount), GL_UNSIGNED_INT, 0);
             }
         }
+
+        glBindVertexArray(0);
     }
 };
 
@@ -359,7 +393,7 @@ bool traverseDDA(glm::vec3 start, glm::vec3 front, Visitor&& visit, glm::vec3& h
 }
 
 
-RaycastHit3D intersectRayAABB3D(const glm::vec3& start, const glm::vec3& rayDir, const glm::vec3& min, const glm::vec3& max) {
+inline RaycastHit3D intersectRayAABB3D(const glm::vec3& start, const glm::vec3& rayDir, const glm::vec3& min, const glm::vec3& max) {
 
     RaycastHit3D hit;
 

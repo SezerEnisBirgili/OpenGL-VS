@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch C++ Debugger",
+            "type": "lldb",
+            "request": "launch",
+            // Points directly to the binary location in the inner OpenGL folder
+            "program": "${workspaceFolder}/OpenGL/OpenGLApp", 
+            "args": [],
+            "cwd": "${workspaceFolder}/OpenGL", // Sets working directory so assets load correctly
+            "preLaunchTask": "Build C++ Project"
+        }
+    ]
+}

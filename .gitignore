@@ -364,3 +364,9 @@ FodyWeavers.xsd
 
 OpenGL/OpenGLApp
 OpenGL/build/
+
+# CMake build output
+build/
+
+# ImGui runtime settings
+OpenGL/imgui.ini

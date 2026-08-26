@@ -2,18 +2,14 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build and Run (clean)",
             "type": "shell",
-            "command": "${workspaceFolder}/OpenGL/run.sh",
+            "label": "Build C++ Project",
+            "command": "cmake --build ${workspaceFolder}/build",
+            "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
+            }
         }
     ]
 }

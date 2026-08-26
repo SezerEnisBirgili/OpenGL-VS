@@ -1,0 +1,18 @@
+If:
+  PathMatch: .*\.(cpp|cc|cxx)$
+CompileFlags:
+  Compiler: g++
+---
+If:
+  PathMatch: .*\.c$
+CompileFlags:
+  Compiler: gcc
+---
+If:
+  PathMatch: .*\.h$
+CompileFlags:
+  Compiler: g++
+  Add: [-xc++-header, -std=gnu++17]
+
+Diagnostics:
+  UnusedIncludes: None

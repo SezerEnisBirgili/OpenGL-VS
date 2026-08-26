@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <algorithm>
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -63,16 +64,12 @@ struct MaterialComponent
     glm::vec3 color = glm::vec3(1.0f);
     float shininess = 32.0f;
     float emissive = 0.0f;
-    unsigned int diffuseTexture = 0;
-    unsigned int specularTexture = 0;
 };
 
-struct RenderableComponent
+struct ShaderComponent
 {
-    const Mesh* mesh = nullptr;
     Shader* shader = nullptr;
 };
-
 
 struct ScriptComponent
 {
@@ -111,15 +108,6 @@ public:
         names[e] = name;
         return e;
     }
-
-    void setFallbackTextures(unsigned int diffuse, unsigned int specular)
-    {
-        fallbackDiffuse = diffuse;
-        fallbackSpecular = specular;
-    }
-
-    unsigned int getFallbackDiffuse() const { return fallbackDiffuse; }
-    unsigned int getFallbackSpecular() const { return fallbackSpecular; }
 
     unsigned int loadTexture(const std::string& path, unsigned int filter, bool genMipMaps, const std::string& name)
     {
@@ -173,7 +161,8 @@ public:
     std::unordered_map<int, WorldMatrixComponent>  worldMatrices;
     std::unordered_map<int, HierarchyComponent>    hierarchy;
     std::unordered_map<int, MaterialComponent>     materials;
-    std::unordered_map<int, RenderableComponent>   renderables;
+    std::unordered_map<int, Mesh>                  meshes;
+    std::unordered_map<int, ShaderComponent>       shaders;
     std::unordered_map<int, ScriptComponent>       scripts;
     std::unordered_map<std::string, unsigned int>  textures;
     std::unordered_map<int, PointLightComponent>   pointLights;
@@ -182,8 +171,6 @@ public:
 
 private:
     int nextEntity = 1; // 0 reserved as NULL_ENTITY
-    unsigned int fallbackDiffuse = 0;
-    unsigned int fallbackSpecular = 0;
 };
 
 inline int spawnEntity(
@@ -229,14 +216,17 @@ inline int getParent(const Registry& reg, int entity)
 }
 
 
+
+// texure ids assume textures are already in the system, otherwise call loadTexture()
 inline void addMesh(
     Registry& reg,
     int e,
-    const Mesh* mesh,
+    const Mesh mesh,
     Shader* shader,
     const MaterialComponent& material = MaterialComponent{})
 {
-    reg.renderables[e] = { mesh, shader };
+    reg.shaders[e] = { shader };
+    reg.meshes[e] = std::move(mesh);
     reg.materials[e] = material;
 }
 
@@ -345,40 +335,32 @@ inline void renderSystem(Registry& reg, const glm::mat4& view, const glm::mat4& 
 
     std::vector<GpuPointLight> lights = lightingSystem(reg);
 
-    for (auto& [entity, renderable] : reg.renderables) {
-        if (!renderable.shader || !renderable.mesh) continue;
+    for (auto& [e, mesh] : reg.meshes) {
 
-        const glm::mat4& world = reg.worldMatrices[entity].value;
-        const MaterialComponent& mat = reg.materials[entity];
+        auto shaderIt = reg.shaders.find(e);
+        if (shaderIt == reg.shaders.end() || !shaderIt->second.shader) continue;
 
-        renderable.shader->use();
+        Shader* shader = shaderIt->second.shader;
+        const glm::mat4& world = reg.worldMatrices[e].value;
+        const MaterialComponent& mat = reg.materials[e];
 
-        renderable.shader->setVec3("viewPos", viewPos);
-        renderable.shader->setFloat("ambientStrength", globalLights.ambientStrength);
-        renderable.shader->setVec3("ambientColor", globalLights.ambientColor);
-        renderable.shader->setBool("pointLightsEnabled", globalLights.pointLightsEnabled);
+        shader->use();
 
-        uploadLights(*renderable.shader, lights);
-        uploadDirLight(*renderable.shader, reg, globalLights.dirLightEnabled);
+        shader->setVec3("viewPos", viewPos);
+        shader->setFloat("ambientStrength", globalLights.ambientStrength);
+        shader->setVec3("ambientColor", globalLights.ambientColor);
+        shader->setBool("pointLightsEnabled", globalLights.pointLightsEnabled);
 
-        renderable.shader->setMat4("model", world);
-        renderable.shader->setMat4("view", view);
-        renderable.shader->setMat4("projection", projection);
-        renderable.shader->setVec3("material.color", mat.color);
-        renderable.shader->setFloat("material.shininess", mat.shininess);
-        renderable.shader->setFloat("material.emissive", mat.emissive);
+        uploadLights(*shader, lights);
+        uploadDirLight(*shader, reg, globalLights.dirLightEnabled);
 
-        unsigned int diffuseTex = mat.diffuseTexture ? mat.diffuseTexture : reg.getFallbackDiffuse();
-        unsigned int specularTex = mat.specularTexture ? mat.specularTexture : reg.getFallbackSpecular();
+        shader->setMat4("model", world);
+        shader->setMat4("view", view);
+        shader->setMat4("projection", projection);
+        shader->setVec3("material.color", mat.color);
+        shader->setFloat("material.shininess", mat.shininess);
+        shader->setFloat("material.emissive", mat.emissive);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, diffuseTex);
-        renderable.shader->setInt("material.diffuse", 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, specularTex);
-        renderable.shader->setInt("material.specular", 1);
-
-        renderable.mesh->draw();
+        mesh.draw(*shader);
     }
 }
