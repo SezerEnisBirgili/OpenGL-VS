@@ -94,14 +94,10 @@ public:
         aiString str;
         mat->GetTexture(type, 0, &str);
 
-        // 1. Extract the clean std::string path
         std::string filename = extractTexturePath(str);
         std::string fullPath = directory + "/" + filename;
 
-        std::cout << "Loading material texture: " << fullPath << std::endl;
-
-        // 2. Pass filename to your registry and RETURN the resulting unsigned int (texture ID)
-        return reg.loadTexture(fullPath, 0, true, filename); 
+        return reg.loadTexture(fullPath, 0, true); 
     }
 
     std::string extractTexturePath(const aiString& str)

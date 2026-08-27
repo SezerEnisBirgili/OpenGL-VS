@@ -13,6 +13,7 @@
 #include "shader.h"
 #include "mesh.h"
 #include "stb_image.h"
+#include "world.h"
 
 constexpr int NULL_ENTITY = 0;
 
@@ -51,6 +52,11 @@ inline void rotateAroundAxis(TransformComponent& t, const glm::vec3& axis, float
 struct WorldMatrixComponent 
 {
     glm::mat4 value = glm::mat4(1.0f);
+};
+
+struct WorldComponent 
+{
+    World* world = nullptr;
 };
 
 struct HierarchyComponent 
@@ -109,10 +115,12 @@ public:
         return e;
     }
 
-    unsigned int loadTexture(const std::string& path, unsigned int filter, bool genMipMaps, const std::string& name)
+    unsigned int loadTexture(const std::string& path, unsigned int filter, bool genMipMaps)
     {
-        auto cached = textures.find(name);
-        if (cached != textures.end()) return cached->second;
+
+        // if already exists, give existing entry id
+        auto cached = textures.find(path);
+        if (cached != textures.end())  { return cached->second; }
 
         int width, height, nrChannels;
         stbi_set_flip_vertically_on_load(true);
@@ -153,12 +161,13 @@ public:
         stbi_image_free(data);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        textures[name] = id;
+        textures[path] = id;
         return id;
     }
 
     std::unordered_map<int, TransformComponent>    transforms;
     std::unordered_map<int, WorldMatrixComponent>  worldMatrices;
+    std::unordered_map<int, WorldComponent>        worlds;
     std::unordered_map<int, HierarchyComponent>    hierarchy;
     std::unordered_map<int, MaterialComponent>     materials;
     std::unordered_map<int, Mesh>                  meshes;
@@ -215,7 +224,11 @@ inline int getParent(const Registry& reg, int entity)
     return NULL_ENTITY;
 }
 
-
+inline void addWorld(Registry& reg, int e, World* world, Shader* shader)
+{
+    reg.worlds[e] = { world };
+    reg.shaders[e] = { shader };
+}
 
 // texure ids assume textures are already in the system, otherwise call loadTexture()
 inline void addMesh(
@@ -362,5 +375,56 @@ inline void renderSystem(Registry& reg, const glm::mat4& view, const glm::mat4& 
         shader->setFloat("material.emissive", mat.emissive);
 
         mesh.draw(*shader);
+    }
+}
+
+inline void renderWorldSystem(
+    Registry& reg, 
+    const glm::mat4& view, 
+    const glm::mat4& projection, 
+    const glm::vec3& viewPos, 
+    const GlobalLightSettings& globalLights = {}) 
+{
+    for (auto& [e, worldComp] : reg.worlds) {
+        if (!worldComp.world) continue;
+
+        auto shaderIt = reg.shaders.find(e);
+        if (shaderIt == reg.shaders.end() || !shaderIt->second.shader) continue;
+
+        Shader* shader = shaderIt->second.shader;
+        shader->use();
+
+        shader->setMat4("view", view);
+        shader->setMat4("projection", projection);
+        shader->setVec3("viewPos", viewPos);
+        shader->setFloat("ambientStrength", globalLights.ambientStrength);
+        shader->setVec3("ambientColor", globalLights.ambientColor);
+        shader->setBool("pointLightsEnabled", globalLights.pointLightsEnabled); 
+
+        // Default platform material settings to match regular meshes
+        shader->setVec3("material.color", glm::vec3(1.0f));
+        shader->setFloat("material.shininess", 32.0f);
+        shader->setFloat("material.emissive", 0.0f);
+
+        glm::mat4 model = reg.worldMatrices.count(e) ? reg.worldMatrices[e].value : glm::mat4(1.0f);
+        shader->setMat4("model", model);
+
+        std::vector<GpuPointLight> lights = lightingSystem(reg);
+        uploadLights(*shader, lights);
+        uploadDirLight(*shader, reg, globalLights.dirLightEnabled);
+
+        int diffTex = worldComp.world->getBlockDiffuseTexture();
+        int specTex = worldComp.world->getBlockSpecularTexture();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffTex);
+        shader->setInt("material.diffuse", 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specTex);
+        shader->setInt("material.specular", 1);
+
+        // Execute instanced draw call
+        worldComp.world->draw();
     }
 }

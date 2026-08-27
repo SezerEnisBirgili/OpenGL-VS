@@ -13,14 +13,14 @@
 #include "vertexData.h"
 #include "mesh.h"
 #include "input.h"
+#include "player.h"
 #include "world.h"
 #include "scripts.h"
 #include "Importer.h"
+#include "GameObject.h"
 
 #include <iostream>
 #include <vector>
-#include <GameObject.h>
-
 // -------------------------------------------------------------------------
 // Screen
 // -------------------------------------------------------------------------
@@ -31,7 +31,8 @@ glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / 
 
 char worldPath[256] = "world.txt";
 
-float deltaTime, lastFrame;
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 // -------------------------------------------------------------------------
 // ImGui / menu state
@@ -39,18 +40,8 @@ float deltaTime, lastFrame;
 const char* const mouseStateArr[] = { "FREE", "TANK" };
 MouseState mouseState = MouseState::FREE;
 
-// -------------------------------------------------------------------------
-// Camera
-// -------------------------------------------------------------------------
-glm::vec3 cameraPos = glm::vec3(1.0f, 1.0f, -3.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-float     yaw = 90.0f;
-float     pitch = 0.0f;
-
-Camera    camera = Camera(cameraPos, cameraUp, yaw, pitch);
-
 GlobalLightSettings globalLights = {
-    0.03f,                  // ambientStrength
+    0.2f,                   // ambientStrength
     glm::vec3(1.0f),        // ambientColor
     true,                   // dirLightEnabled
     true                    // pointLightsEnabled
@@ -60,7 +51,7 @@ std::vector<Vertex> floatArrayToVertexVector(const float* data, size_t count);
 
 GLFWwindow* initOpenGL();
 void initImGui(GLFWwindow* window);
-void renderImGui(Registry& registry, World& world, AppState& appState, int dirLight, int lamp);
+void renderImGui(Registry& registry, World& world, int dirLight, int lamp); // <----- FIXED: Removed AppState parameter
 
 // Scene Graph Helpers
 void setupSolarSystem(Registry& registry, Shader& litShader, int parentEntity, const Mesh& sunMesh, const Mesh& earthMesh, const Mesh& moonMesh);
@@ -77,36 +68,27 @@ int main()
 
     Registry registry;
 
-    AppState appState = AppState(mouseState, camera, projection);
-    appState.setCallbacks(window);
+    InputManager::setupCallbacks(window);
 
     std::cout << "Loading textures..." << std::endl;
 
-    unsigned int fallbackDiffuse       = registry.loadTexture("missing_texture.png",     1, true, "missing_texture");
-    unsigned int fallbackSpecular      = registry.loadTexture("missing_specular.png",    1, true, "missing_specular");
-    unsigned int texContainer2         = registry.loadTexture("container2.png",          1, true, "container2");
-    unsigned int texContainer2Specular = registry.loadTexture("container2_specular.png", 1, true, "container2_specular");
-    unsigned int texWorld              = registry.loadTexture("world.png",               1, true, "world");
-    unsigned int texSun                = registry.loadTexture("sun.png",                 1, true, "sun");
-    unsigned int texMoon               = registry.loadTexture("moon.png",                1, true, "moon");
+    unsigned int fallbackDiffuse       = registry.loadTexture("missing_texture.png",     1, true);
+    unsigned int fallbackSpecular      = registry.loadTexture("missing_specular.png",    1, true);
+    unsigned int texContainer2         = registry.loadTexture("container2.png",          1, true);
+    unsigned int texContainer2Specular = registry.loadTexture("container2_specular.png", 1, true);
+    unsigned int texWorld              = registry.loadTexture("world.png",               1, true);
+    unsigned int texSun                = registry.loadTexture("sun.png",                 1, true);
+    unsigned int texMoon               = registry.loadTexture("moon.png",                1, true);
 
     if (!fallbackDiffuse || !fallbackSpecular || !texContainer2 || !texContainer2Specular || !texWorld || !texSun || !texMoon) {
         std::cerr << "One or more textures failed to load, continuing with fallbacks." << std::endl;
     }
 
-    // separate registry for world
-    MaterialRegistry blockMaterials;
-    blockMaterials.add(0, Material({
-        { texContainer2,         "material.diffuse"  },
-        { texContainer2Specular, "material.specular" }}));
-
-
     Shader litShader("lit.vert", "lit.frag");
-
+    Shader worldShader("world.vert", "lit.frag");
 
     std::vector<Vertex> cubeVerts  = floatArrayToVertexVector(basicCubeVertices,               std::size(basicCubeVertices));
     std::vector<Vertex> earthVerts = floatArrayToVertexVector(basicCubeWrappedTextureVertices, std::size(basicCubeWrappedTextureVertices));
-    
     std::vector<unsigned int> cubeIndices(std::begin(::cubeIndices), std::end(::cubeIndices));
     
     
@@ -117,17 +99,23 @@ int main()
     Mesh lampMesh (cubeVerts,  cubeIndices, fallbackDiffuse, 0);
 
 
-    World world(16, 16, 16);
+    World world(16, 16, 16, Block(false, texContainer2, texContainer2Specular));
     world.initMesh(cubeVerts, cubeIndices); 
     world.platform(16, 16);
-    appState.setWorld(world);
+    world.updateInstanceBuffer();
 
+    int worldEntity = spawnEntity(registry, "VoxelWorld");
+    addWorld(registry, worldEntity, &world, &worldShader);
+
+    Player::getInstance().setWorld(&world);
+
+    Camera defaultCam(glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f); // <----- FIXED: Camera initialized on Player
+    Player::getInstance().setCamera(defaultCam);
     // ------------------------------------------------------------------
     // Scene graph
     // ------------------------------------------------------------------
     int dirLight = NULL_ENTITY;
     int lamp = NULL_ENTITY;
-
     int root = setupSceneGraph(registry, litShader, sunMesh, earthMesh, moonMesh, lampMesh, dirLight, lamp);
 
     // ------------------------------------------------------------------
@@ -144,21 +132,21 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        appState.processInput(window, litShader, deltaTime);
+        InputManager::processInput(window, deltaTime);
 
+        Camera& camera = Player::getInstance().getCamera();
         camera.UpdateRotation(deltaTime);
         camera.UpdatePosition(deltaTime);
 
         glm::mat4 view = camera.GetViewMatrix();
 
-        world.draw(litShader, blockMaterials);
-
         scriptSystem(registry, currentFrame, deltaTime);
         transformSystem(registry, root, glm::mat4(1.0f));
 
         renderSystem(registry, view, projection, camera.Position, globalLights);
+        renderWorldSystem(registry, view, projection, camera.Position, globalLights);
 
-        renderImGui(registry, world, appState, dirLight, lamp);
+        renderImGui(registry, world, dirLight, lamp);
 
         glfwSwapBuffers(window);
     }
@@ -258,7 +246,7 @@ std::vector<Vertex> floatArrayToVertexVector(const float* data, size_t count)
     return vertices;
 }
 
-void renderImGui(Registry& registry, World& world, AppState& appState, int dirLight, int lamp)
+void renderImGui(Registry& registry, World& world, int dirLight, int lamp)
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -278,6 +266,8 @@ void renderImGui(Registry& registry, World& world, AppState& appState, int dirLi
 
     ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
     ImGui::Begin("Controls");
+
+    Camera& camera = Player::getInstance().getCamera();
 
     int selectedMouseState = (int)mouseState;
     if (ImGui::Combo("Mouse Mode", &selectedMouseState, mouseStateArr, IM_ARRAYSIZE(mouseStateArr)))
@@ -302,7 +292,7 @@ void renderImGui(Registry& registry, World& world, AppState& appState, int dirLi
     if (ImGui::Button("Import World"))
     {
         world.importWorldFromPath(worldPath);
-        appState.setWorld(world);
+        Player::getInstance().setWorld(&world);
         std::cout << "World imported from " << worldPath << std::endl;
     }
 
