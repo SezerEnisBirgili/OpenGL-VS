@@ -14,22 +14,43 @@ public:
     Player(const Player&) = delete;
     Player& operator=(const Player&) = delete;
 
-    static Player& getInstance() 
+    static Player* getInstance() 
     {
         static Player instance;
-        return instance;
+        return &instance;
     }
 
     void setWorld(World* w) { world = w; }
     void setCamera(const Camera& cam) { camera = cam; }
     Camera& getCamera() { return camera; }
+    bool getHasSelectedBlock() { return hasSelectedBlock; }
+    glm::vec3 getSelectedBlock() { return selectedBlock; }
 
     bool lookingAtBlock(glm::vec3& hit) 
     {
         if (!world) return false;
 
-        return traverseDDA(camera.Position, camera.Front, 
+        bool hasHit = traverseDDA(camera.Position, camera.Front, 
             [this](int x, int y, int z) { return world->isBlockSolid(glm::vec3(x, y, z)); }, hit);
+
+        if (hasHit) {
+            selectedBlock = hit;
+            hasSelectedBlock = true;
+            // std::cout << "Selected block: (" << hit.x << ", " << hit.y << ", " << hit.z << ")" << std::endl;
+        } else {
+            hasSelectedBlock = false;
+        }
+
+        return hasHit;
+    }
+
+    void highlightSelectedBlock() 
+    { 
+        if (hasSelectedBlock) { 
+            world->getBlock(selectedBlock)->isSelected = true; 
+        } else { 
+            std::cout << "no block is selected!" << std::endl; 
+        }
     }
 
     bool placeBlock()
@@ -50,12 +71,15 @@ public:
 
         RaycastHit3D rayHit = intersectRayAABB3D(camera.Position, camera.Front, hitBlock);
 
-        std::cout << "[placeBlock] rayHit.collided=" << rayHit.collided 
-                  << " face=" << static_cast<int>(rayHit.face) << std::endl;
-
-        if (!rayHit.collided) {
+        if (!rayHit.collided) 
+        {
             std::cout << "[placeBlock] failed: AABB raycast missed" << std::endl; 
             return false; 
+        } 
+        else 
+        {
+            std::cout << "[placeBlock] rayHit.collided=" << rayHit.collided 
+                << " face=" << static_cast<int>(rayHit.face) << std::endl;
         }
 
         glm::vec3 faceOffset = getFaceOffset(rayHit.face);
@@ -91,4 +115,7 @@ private:
 
     World* world;
     Camera camera;
+
+    bool hasSelectedBlock;
+    glm::vec3 selectedBlock;
 };

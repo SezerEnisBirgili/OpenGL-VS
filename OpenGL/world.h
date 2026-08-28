@@ -19,10 +19,10 @@
 
 class Block {
 public:
+    bool isSelected = false;
     bool isSolid;
     int d_texture;
     int s_texture;
-
 
     Block(bool solid, int diffuseTexture, int specularTexture) : isSolid(solid), d_texture(diffuseTexture), s_texture(specularTexture) {}
 };
@@ -39,6 +39,14 @@ private:
 
     unsigned int instanceVBO = 0;
     unsigned int activeBlockCount = 0;
+
+    // world is made up from only one type of block
+    glm::vec3 color = glm::vec3(1.0f);
+    int shininess = 32.0f;
+    int emissive = 0.0f;
+
+    // when player points to object
+    glm::vec3 outlineColor = glm::vec3(1.0f);
 
 void setupCubeMesh(const std::vector<Vertex>& verts, const std::vector<unsigned int>& indices)
     {
@@ -72,6 +80,13 @@ public:
         blocks.resize(x * y * z, block);
         platformBlock = Block(true, block.d_texture,block.s_texture);
     }
+
+    glm::vec3 getColor() const { return color; }
+    glm::vec3 getOutlineColor() const { return outlineColor; }
+    int getShininess() const { return shininess; }
+    int getEmissive() const { return emissive; }
+
+    void setOutlineColor(const glm::vec3& color) { outlineColor = color; }
 
     void initMesh(const std::vector<Vertex>& cubeVerts, const std::vector<unsigned int>& cubeIndices)
     {
@@ -121,6 +136,17 @@ public:
         glBindVertexArray(0);
     }
 
+    void drawSingleCube() const
+    {
+        if (cubeVAO == 0) return;
+
+        glBindVertexArray(cubeVAO);
+        glDisableVertexAttribArray(3);
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+        glEnableVertexAttribArray(3);
+        glBindVertexArray(0);
+    }
+
     int getBlockDiffuseTexture() const {
         return platformBlock.d_texture;
     }
@@ -159,12 +185,12 @@ public:
         return blocks[getIndex(v)].isSolid;
     }
 
-    Block getBlock(const glm::vec3& v)
+    Block* getBlock(const glm::vec3& v)
     {
         if (!isWithinBounds(v))
-            return Block(false, 0, 0);
+            return nullptr;
 
-        return blocks[getIndex(v)];
+        return &blocks[getIndex(v)];
     }
 
     void setBlock(const glm::vec3& v)

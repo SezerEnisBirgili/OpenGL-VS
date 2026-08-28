@@ -10,22 +10,17 @@
 #include <unordered_map>
 #include <string>
 
+#include "player.h"
 #include "shader.h"
 #include "mesh.h"
 #include "stb_image.h"
 #include "world.h"
+#include "settings.h"
 
 constexpr int NULL_ENTITY = 0;
 
 
 class Registry;
-
-struct GlobalLightSettings {
-    float ambientStrength = 0.03f;
-    glm::vec3 ambientColor = glm::vec3(1.0f);
-    bool dirLightEnabled = true;
-    bool pointLightsEnabled = true;
-};
 
 struct TransformComponent 
 {
@@ -172,6 +167,7 @@ public:
     std::unordered_map<int, MaterialComponent>     materials;
     std::unordered_map<int, Mesh>                  meshes;
     std::unordered_map<int, ShaderComponent>       shaders;
+    std::unordered_map<int, ShaderComponent>       outlineShaders;
     std::unordered_map<int, ScriptComponent>       scripts;
     std::unordered_map<std::string, unsigned int>  textures;
     std::unordered_map<int, PointLightComponent>   pointLights;
@@ -224,10 +220,11 @@ inline int getParent(const Registry& reg, int entity)
     return NULL_ENTITY;
 }
 
-inline void addWorld(Registry& reg, int e, World* world, Shader* shader)
+inline void addWorld(Registry& reg, int e, World* world, Shader* shader, Shader* outlineShader)
 {
     reg.worlds[e] = { world };
     reg.shaders[e] = { shader };
+    reg.outlineShaders[e] = { outlineShader };
 }
 
 // texure ids assume textures are already in the system, otherwise call loadTexture()
@@ -391,7 +388,10 @@ inline void renderWorldSystem(
         auto shaderIt = reg.shaders.find(e);
         if (shaderIt == reg.shaders.end() || !shaderIt->second.shader) continue;
 
-        Shader* shader = shaderIt->second.shader;
+        World * world = worldComp.world;
+        Shader* shader = shaderIt->second.shader;   
+        Shader* outlineShader = reg.outlineShaders[e].shader;
+
         shader->use();
 
         shader->setMat4("view", view);
@@ -402,9 +402,9 @@ inline void renderWorldSystem(
         shader->setBool("pointLightsEnabled", globalLights.pointLightsEnabled); 
 
         // Default platform material settings to match regular meshes
-        shader->setVec3("material.color", glm::vec3(1.0f));
-        shader->setFloat("material.shininess", 32.0f);
-        shader->setFloat("material.emissive", 0.0f);
+        shader->setVec3("material.color", world->getColor());
+        shader->setFloat("material.shininess", world->getShininess());
+        shader->setFloat("material.emissive", world->getEmissive());
 
         glm::mat4 model = reg.worldMatrices.count(e) ? reg.worldMatrices[e].value : glm::mat4(1.0f);
         shader->setMat4("model", model);
@@ -425,6 +425,44 @@ inline void renderWorldSystem(
         shader->setInt("material.specular", 1);
 
         // Execute instanced draw call
+        glStencilMask(0x00);
         worldComp.world->draw();
+
+        Player& player = *Player::getInstance();
+
+        if (player.getHasSelectedBlock() && outlineShader)
+        {
+            glm::mat4 targetModel  = glm::translate(glm::mat4(1.0f), player.getSelectedBlock() + glm::vec3(0.5f));
+            glm::mat4 outlineModel = glm::scale(targetModel, glm::vec3(1.05f));
+
+
+            glDepthFunc(GL_LEQUAL);
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            glStencilMask(0xFF);
+
+            shader->use();
+            shader->setMat4("model", targetModel);
+            worldComp.world->drawSingleCube();
+
+            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+            glStencilMask(0x00);
+            glDepthMask(GL_FALSE);
+
+            outlineShader->use();
+            outlineShader->setMat4("view", view);
+            outlineShader->setMat4("projection", projection);
+            outlineShader->setMat4("model", outlineModel);
+            outlineShader->setVec3("outlineColor", world->getOutlineColor());
+
+            worldComp.world->drawSingleCube();
+
+            glDepthFunc(GL_LESS);
+            glDepthMask(GL_TRUE);
+            glStencilMask(0xFF);
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+        }
+
     }
 }

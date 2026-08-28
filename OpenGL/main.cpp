@@ -9,6 +9,7 @@
 #include <assimp/defs.h>
 #include <assimp/version.h>
 
+#include "settings.h"
 #include "shader.h"
 #include "vertexData.h"
 #include "mesh.h"
@@ -41,10 +42,10 @@ const char* const mouseStateArr[] = { "FREE", "TANK" };
 MouseState mouseState = MouseState::FREE;
 
 GlobalLightSettings globalLights = {
-    0.2f,                   // ambientStrength
-    glm::vec3(1.0f),        // ambientColor
-    true,                   // dirLightEnabled
-    true                    // pointLightsEnabled
+    0.2f,                  // ambientStrength
+    glm::vec3(1.0f),  // ambientColor
+    true,                 // dirLightEnabled
+    true              // pointLightsEnabled
 };
 
 std::vector<Vertex> floatArrayToVertexVector(const float* data, size_t count);
@@ -86,6 +87,7 @@ int main()
 
     Shader litShader("lit.vert", "lit.frag");
     Shader worldShader("world.vert", "lit.frag");
+    Shader outlineShader("outline.vert", "outline.frag");
 
     std::vector<Vertex> cubeVerts  = floatArrayToVertexVector(basicCubeVertices,               std::size(basicCubeVertices));
     std::vector<Vertex> earthVerts = floatArrayToVertexVector(basicCubeWrappedTextureVertices, std::size(basicCubeWrappedTextureVertices));
@@ -98,19 +100,23 @@ int main()
     Mesh moonMesh (cubeVerts,  cubeIndices, texMoon,         texMoon);
     Mesh lampMesh (cubeVerts,  cubeIndices, fallbackDiffuse, 0);
 
+    Block platformBlock = Block(false, texContainer2, texContainer2Specular);
 
-    World world(16, 16, 16, Block(false, texContainer2, texContainer2Specular));
+    World world(16, 16, 16, platformBlock);
     world.initMesh(cubeVerts, cubeIndices); 
     world.platform(16, 16);
     world.updateInstanceBuffer();
 
+    world.setOutlineColor(settings.outlineColor);
+
     int worldEntity = spawnEntity(registry, "VoxelWorld");
-    addWorld(registry, worldEntity, &world, &worldShader);
+    addWorld(registry, worldEntity, &world, &worldShader, &outlineShader);
 
-    Player::getInstance().setWorld(&world);
+    Player::getInstance()->setWorld(&world);
 
-    Camera defaultCam(glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f); // <----- FIXED: Camera initialized on Player
-    Player::getInstance().setCamera(defaultCam);
+    Camera defaultCam(glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f);
+    Player::getInstance()->setCamera(defaultCam);
+
     // ------------------------------------------------------------------
     // Scene graph
     // ------------------------------------------------------------------
@@ -130,22 +136,33 @@ int main()
 
         glfwPollEvents();
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glStencilMask(0xFF);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         InputManager::processInput(window, deltaTime);
 
-        Camera& camera = Player::getInstance().getCamera();
+        Camera& camera = Player::getInstance()->getCamera();
         camera.UpdateRotation(deltaTime);
         camera.UpdatePosition(deltaTime);
 
-        glm::mat4 view = camera.GetViewMatrix();
+        glm::vec3 hitBlockPos;
+        Player::getInstance()->lookingAtBlock(hitBlockPos);
 
+        glm::mat4 view = camera.GetViewMatrix();
+        // scripts in game objects
         scriptSystem(registry, currentFrame, deltaTime);
+
+        // world view
         transformSystem(registry, root, glm::mat4(1.0f));
 
+        // game objects
         renderSystem(registry, view, projection, camera.Position, globalLights);
+
+        // voxel world
         renderWorldSystem(registry, view, projection, camera.Position, globalLights);
 
+        // menu
         renderImGui(registry, world, dirLight, lamp);
 
         glfwSwapBuffers(window);
@@ -207,6 +224,7 @@ GLFWwindow* initOpenGL()
     std::cout << "Revision:      " << aiGetVersionRevision() << std::endl;
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);   
 
     return window;
 }
@@ -267,7 +285,7 @@ void renderImGui(Registry& registry, World& world, int dirLight, int lamp)
     ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
     ImGui::Begin("Controls");
 
-    Camera& camera = Player::getInstance().getCamera();
+    Camera& camera = Player::getInstance()->getCamera();
 
     int selectedMouseState = (int)mouseState;
     if (ImGui::Combo("Mouse Mode", &selectedMouseState, mouseStateArr, IM_ARRAYSIZE(mouseStateArr)))
@@ -292,7 +310,7 @@ void renderImGui(Registry& registry, World& world, int dirLight, int lamp)
     if (ImGui::Button("Import World"))
     {
         world.importWorldFromPath(worldPath);
-        Player::getInstance().setWorld(&world);
+        Player::getInstance()->setWorld(&world);
         std::cout << "World imported from " << worldPath << std::endl;
     }
 
@@ -332,6 +350,14 @@ void renderImGui(Registry& registry, World& world, int dirLight, int lamp)
         {
             auto& lampMat = registry.materials[lamp];
             ImGui::SliderFloat("Lamp Emissive", &lampMat.emissive, 0.0f, 1.0f);
+        }
+    }
+
+    if (ImGui::CollapsingHeader("World", ImGuiTreeNodeFlags_DefaultOpen)) 
+    {
+        if (ImGui::ColorEdit3("Outline Color", glm::value_ptr(settings.outlineColor)))
+        {
+            world.setOutlineColor(settings.outlineColor);
         }
     }
 
