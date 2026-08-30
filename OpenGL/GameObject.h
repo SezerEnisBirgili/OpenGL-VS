@@ -1,94 +1,76 @@
 #pragma once
 
-
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/norm.hpp>
+
 #include <algorithm>
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <functional>
+#include <iostream>
+#include <map>
 
-#include "player.h"
-#include "shader.h"
-#include "mesh.h"
 #include "stb_image.h"
-#include "world.h"
+#include "mesh.h"
+#include "shader.h"
 #include "settings.h"
 
 constexpr int NULL_ENTITY = 0;
 
-
+// Forward Declarations
+class Mesh;
+class Shader;
+class World;
+class Player;
+class Camera;
 class Registry;
 
-struct TransformComponent 
-{
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 scale = glm::vec3(1.0f);
-    glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+struct TransformComponent {
+    glm::vec3 position{ 0.0f };
+    glm::quat rotation{ 1.0f, 0.0f, 0.0f, 0.0f };
+    glm::vec3 scale{ 1.0f };
 };
 
-inline glm::vec3 getEulerAngles(const TransformComponent& t) 
-{
-    return glm::degrees(glm::eulerAngles(t.rotation));
-}
+struct MaterialComponent {
 
-inline void setEulerAngles(TransformComponent& t, const glm::vec3& degrees) 
-{
-    t.rotation = glm::quat(glm::radians(degrees));
-}
+    bool isAir         = false;
+    bool isTransparent = false;
 
-inline void rotateAroundAxis(TransformComponent& t, const glm::vec3& axis, float radians) 
-{
-    t.rotation = glm::angleAxis(radians, glm::normalize(axis)) * t.rotation;
-}
+    int shader = 0;
+    int diffuseTexture = 0;
+    int specularTexture = 0;
 
-struct WorldMatrixComponent 
-{
-    glm::mat4 value = glm::mat4(1.0f);
-};
-
-struct WorldComponent 
-{
-    World* world = nullptr;
-};
-
-struct HierarchyComponent 
-{
-    int parent = 0;
-    std::vector<int> children;
-};
-
-struct MaterialComponent 
-{
-    glm::vec3 color = glm::vec3(1.0f);
-    float shininess = 32.0f;
-    float emissive = 0.0f;
-};
-
-struct ShaderComponent
-{
-    Shader* shader = nullptr;
-};
-
-struct ScriptComponent
-{
-    std::function<void(Registry&, int, float, float)> updateFn;
+    glm::vec3 color        = glm::vec3(1.0f);
+    float     shininess    = 32.0f;
+    float     emissive     = 0.0f;
+    float     alphaCutoff  = 0.5f;
+    float     alpha        = 1.0f;
+    bool      isMasked     = false;
 };
 
 struct PointLightComponent {
-    glm::vec3 color = glm::vec3(1.0f);
-    float intensity = 1.0f;
-    float constant = 1.0f;
-    float linear = 0.09f;
-    float quadratic = 0.032f;
+    glm::vec3 color{ 1.0f };
+    float intensity{ 1.0f };
+    float constant{ 1.0f };
+    float linear{ 0.09f };
+    float quadratic{ 0.032f };
 };
 
 struct DirLightComponent {
-    glm::vec3 direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.2f));
-    glm::vec3 color = glm::vec3(1.0f);
-    float intensity = 1.0f;
+    glm::vec3 direction{ -0.2f, -1.0f, -0.3f };
+    glm::vec3 color{ 1.0f };
+    float intensity{ 1.0f };
+};
+
+struct HierarchyComponent {
+    int parent = NULL_ENTITY;
+    std::vector<int> children;
 };
 
 struct GpuPointLight {
@@ -100,369 +82,110 @@ struct GpuPointLight {
     float quadratic;
 };
 
+struct WorldMatrixComponent {
+    glm::mat4 value = glm::mat4(1.0f);
+};
+
+struct ShaderComponent {
+    Shader* shader = nullptr;
+};
+
+struct MeshComponent {
+    Mesh* mesh = nullptr;
+};
+
+struct ScriptComponent {
+    std::function<void(Registry&, int, float, float)> updateFn;
+};
+
+struct TextureComponent {
+    int textureId;
+    std::string path;
+};
+
+// Math Helpers
+glm::vec3 getEulerAngles(const TransformComponent& t);
+void setEulerAngles(TransformComponent& t, const glm::vec3& degrees);
+void rotateAroundAxis(TransformComponent& t, const glm::vec3& axis, float radians);
+glm::mat4 composeMatrix(const TransformComponent& t);
 
 class Registry {
 public:
-    int create(const std::string& name = "") 
-    {
+    Registry() = default;
+    Registry(const Registry&) = delete;
+    Registry& operator=(const Registry&) = delete;
+    Registry(Registry&&) noexcept = default;
+    Registry& operator=(Registry&&) noexcept = default;
+
+    int getFallbackDiffuse() const { return fallbackDiffuse; }
+    int getFallbackSpecular() const { return fallbackSpecular; }
+
+    int create(const std::string& name = "") {
         int e = nextEntity++;
         names[e] = name;
         return e;
     }
 
-    unsigned int loadTexture(const std::string& path, unsigned int filter, bool genMipMaps)
-    {
-
-        // if already exists, give existing entry id
-        auto cached = textures.find(path);
-        if (cached != textures.end())  { return cached->second; }
-
-        int width, height, nrChannels;
-        stbi_set_flip_vertically_on_load(true);
-        unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
-        if (!data)
-        {
-            std::cout << "Failed to load texture '" << path << "': "
-                << stbi_failure_reason() << std::endl;
-            return 0;
-        }
-
-        GLenum format = GL_RGB;
-        if (nrChannels == 1) format = GL_RED;
-        else if (nrChannels == 4) format = GL_RGBA;
-
-        unsigned int id;
-        glGenTextures(1, &id);
-        glBindTexture(GL_TEXTURE_2D, id);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        if (filter == 0)
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, genMipMaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        }
-        else
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, genMipMaps ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        }
-
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        if (genMipMaps) glGenerateMipmap(GL_TEXTURE_2D);
-
-        stbi_image_free(data);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        textures[path] = id;
+    int registerMesh(const Mesh mesh) {
+        int id = nextMesh++;
+        meshStorage[id] = mesh;
         return id;
     }
 
-    std::unordered_map<int, TransformComponent>    transforms;
-    std::unordered_map<int, WorldMatrixComponent>  worldMatrices;
-    std::unordered_map<int, WorldComponent>        worlds;
-    std::unordered_map<int, HierarchyComponent>    hierarchy;
-    std::unordered_map<int, MaterialComponent>     materials;
-    std::unordered_map<int, Mesh>                  meshes;
-    std::unordered_map<int, ShaderComponent>       shaders;
-    std::unordered_map<int, ShaderComponent>       outlineShaders;
-    std::unordered_map<int, ScriptComponent>       scripts;
-    std::unordered_map<std::string, unsigned int>  textures;
-    std::unordered_map<int, PointLightComponent>   pointLights;
-    std::unordered_map<int, DirLightComponent>     dirLights;
-    std::unordered_map<int, std::string>           names;
+    std::unordered_map<int, TransformComponent>   transforms;
+    std::unordered_map<int, WorldMatrixComponent> worldMatrices;
+    std::unordered_map<int, World>                worlds;
+    std::unordered_map<int, HierarchyComponent>   hierarchy;
+    std::unordered_map<int, MaterialComponent>    materials;
+    std::unordered_map<int, MeshComponent>        meshes;
+    std::unordered_map<int, Mesh>                 meshStorage;
+    std::unordered_map<int, ShaderComponent>      shaders;
+    std::unordered_map<int, ShaderComponent>      outlineShaders;
+    std::unordered_map<int, ScriptComponent>      scripts;
+    std::unordered_map<int, TextureComponent>     textures;
+    std::unordered_map<std::string, int>          pathToEntity;
+    std::unordered_map<int, PointLightComponent>  pointLights;
+    std::unordered_map<int, DirLightComponent>    dirLights;
+    std::unordered_map<int, std::string>          names;
+
+    std::vector<int> renderableEntities;
+    std::vector<int> renderableWorlds;
 
 private:
-    int nextEntity = 1; // 0 reserved as NULL_ENTITY
+    int nextMesh = 1;
+    int nextEntity = 1;
+    int fallbackDiffuse = 1;
+    int fallbackSpecular = 2;
 };
 
-inline int spawnEntity(
-    Registry& reg,
-    const std::string& name,
-    const TransformComponent& transform = TransformComponent{},
-    int parent = NULL_ENTITY)
-{
-    int e = reg.create(name);
-    reg.transforms[e] = transform;
-    reg.hierarchy[e] = { parent, {} };
+struct EntityBuilder {
+    Registry& reg;
+    int id;
 
-    if (parent != NULL_ENTITY) {
-        reg.hierarchy[parent].children.push_back(e);
-    }
-    return e;
-}
+    static EntityBuilder create(Registry& reg, const std::string& name, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f), int parent = NULL_ENTITY);
+    EntityBuilder& mesh(int meshId, Shader* s, MaterialComponent mat = {});
+    EntityBuilder& script(std::function<void(Registry&, int, float, float)> func);
+    EntityBuilder& pointLight(PointLightComponent light);
+    EntityBuilder& dirLight(DirLightComponent light);
 
-inline void setParent(Registry& reg, int child, int parent)
-{
-    HierarchyComponent& childHierarchy = reg.hierarchy[child];
+    operator int() const { return id; }
+};
 
-    // detach from old parent's children list, if any
-    if (childHierarchy.parent != NULL_ENTITY) {
-        auto& oldSiblings = reg.hierarchy[childHierarchy.parent].children;
-        oldSiblings.erase(std::remove(oldSiblings.begin(), oldSiblings.end(), child),
-            oldSiblings.end());
-    }
+unsigned int loadTexture(Registry& reg, const std::string& path, unsigned int filter = 0, bool genMipMaps = true);
 
-    childHierarchy.parent = parent;
-    if (parent != NULL_ENTITY) {
-        reg.hierarchy[parent].children.push_back(child);
-    }
-}
+// Function Declarations
+int spawnEntity(Registry& reg, const std::string& name, const TransformComponent& transform = TransformComponent{}, int parent = NULL_ENTITY);
+void setParent(Registry& reg, int child, int parent);
+int getParent(const Registry& reg, int entity);
 
-inline int getParent(const Registry& reg, int entity)
-{
-    auto it = reg.hierarchy.find(entity);
-    if (it != reg.hierarchy.end()) {
-        return it->second.parent;
-    }
-    return NULL_ENTITY;
-}
-
-inline void addWorld(Registry& reg, int e, World* world, Shader* shader, Shader* outlineShader)
-{
-    reg.worlds[e] = { world };
-    reg.shaders[e] = { shader };
-    reg.outlineShaders[e] = { outlineShader };
-}
-
-// texure ids assume textures are already in the system, otherwise call loadTexture()
-inline void addMesh(
-    Registry& reg,
-    int e,
-    const Mesh mesh,
-    Shader* shader,
-    const MaterialComponent& material = MaterialComponent{})
-{
-    reg.shaders[e] = { shader };
-    reg.meshes[e] = std::move(mesh);
-    reg.materials[e] = material;
-}
-
-inline void addPointLight(
-    Registry& reg,
-    int e,
-    const PointLightComponent& light = PointLightComponent{})
-{
-    reg.pointLights[e] = light;
-}
-
-inline void addDirLight(
-    Registry& reg,
-    int e,
-    DirLightComponent light = DirLightComponent{})
-{
-    light.direction = glm::normalize(light.direction);
-    reg.dirLights[e] = light;
-}
-
-inline void addScript(Registry& reg, int e, std::function<void(Registry&, int, float, float)> fn)
-{
-    reg.scripts[e] = { std::move(fn) };
-}
-
-inline glm::mat4 composeMatrix(const TransformComponent& t) 
-{
-    glm::mat4 m = glm::translate(glm::mat4(1.0f), t.position);
-    m = m * glm::mat4_cast(t.rotation);
-    m = glm::scale(m, t.scale);
-    return m;
-}
-
-inline void transformSystem(Registry& reg, int e, const glm::mat4& parentWorld) 
-{
-    glm::mat4 local = composeMatrix(reg.transforms[e]);
-    glm::mat4 world = parentWorld * local;
-    reg.worldMatrices[e].value = world;
-
-    auto it = reg.hierarchy.find(e);
-    if (it != reg.hierarchy.end()) 
-    {
-        for (int child : it->second.children) 
-        {
-            transformSystem(reg, child, world);
-        }
-    }
-}
-
-inline void scriptSystem(Registry& reg, float time, float dt) 
-{
-    for (auto& [entity, script] : reg.scripts) 
-    {
-        if (script.updateFn) script.updateFn(reg, entity, time, dt);
-    }
-}
-
-inline std::vector<GpuPointLight> lightingSystem(Registry& reg) 
-{
-    std::vector<GpuPointLight> lights;
-
-    for (auto& [entity, light] : reg.pointLights) {
-        glm::vec3 worldPos = glm::vec3(reg.worldMatrices[entity].value[3]);
-        lights.push_back({ worldPos, light.color, light.intensity, light.constant, light.linear, light.quadratic});
-    }
-    return lights;
-}
-
-inline bool dirLightSystem(Registry& reg, glm::vec3& outDirection, glm::vec3& outColor, float& outIntensity) {
-    if (reg.dirLights.empty()) return false;
-    const auto& [entity, light] = *reg.dirLights.begin();
-    outDirection = light.direction;
-    outColor = light.color;
-    outIntensity = light.intensity;
-    return true;
-}
-
-inline void uploadLights(Shader& shader, const std::vector<GpuPointLight>& lights) {
-    shader.setInt("numPointLights", (int)lights.size());
-    for (size_t i = 0; i < lights.size(); ++i) {
-        std::string base = "pointLights[" + std::to_string(i) + "].";
-        shader.setVec3(base + "position", lights[i].position);
-        shader.setVec3(base + "color", lights[i].color);
-        shader.setFloat(base + "intensity", lights[i].intensity);
-        shader.setFloat(base + "constant", lights[i].constant);
-        shader.setFloat(base + "linear", lights[i].linear);
-        shader.setFloat(base + "quadratic", lights[i].quadratic);
-    }
-}
-
-inline void uploadDirLight(Shader& shader, Registry& reg, bool enabled) {
-    glm::vec3 direction, color;
-    float intensity;
-    bool hasSun = dirLightSystem(reg, direction, color, intensity) && enabled;
-
-    shader.setBool("hasDirLight", hasSun);
-    if (hasSun) {
-        shader.setVec3("dirLight.direction", direction);
-        shader.setVec3("dirLight.color", color);
-        shader.setFloat("dirLight.intensity", intensity);
-    }
-}
-
-inline void renderSystem(Registry& reg, const glm::mat4& view, const glm::mat4& projection,
-    const glm::vec3& viewPos, const GlobalLightSettings& globalLights = {}) {
-
-    std::vector<GpuPointLight> lights = lightingSystem(reg);
-
-    for (auto& [e, mesh] : reg.meshes) {
-
-        auto shaderIt = reg.shaders.find(e);
-        if (shaderIt == reg.shaders.end() || !shaderIt->second.shader) continue;
-
-        Shader* shader = shaderIt->second.shader;
-        const glm::mat4& world = reg.worldMatrices[e].value;
-        const MaterialComponent& mat = reg.materials[e];
-
-        shader->use();
-
-        shader->setVec3("viewPos", viewPos);
-        shader->setFloat("ambientStrength", globalLights.ambientStrength);
-        shader->setVec3("ambientColor", globalLights.ambientColor);
-        shader->setBool("pointLightsEnabled", globalLights.pointLightsEnabled);
-
-        uploadLights(*shader, lights);
-        uploadDirLight(*shader, reg, globalLights.dirLightEnabled);
-
-        shader->setMat4("model", world);
-        shader->setMat4("view", view);
-        shader->setMat4("projection", projection);
-        shader->setVec3("material.color", mat.color);
-        shader->setFloat("material.shininess", mat.shininess);
-        shader->setFloat("material.emissive", mat.emissive);
-
-        mesh.draw(*shader);
-    }
-}
-
-inline void renderWorldSystem(
-    Registry& reg, 
-    const glm::mat4& view, 
-    const glm::mat4& projection, 
-    const glm::vec3& viewPos, 
-    const GlobalLightSettings& globalLights = {}) 
-{
-    for (auto& [e, worldComp] : reg.worlds) {
-        if (!worldComp.world) continue;
-
-        auto shaderIt = reg.shaders.find(e);
-        if (shaderIt == reg.shaders.end() || !shaderIt->second.shader) continue;
-
-        World * world = worldComp.world;
-        Shader* shader = shaderIt->second.shader;   
-        Shader* outlineShader = reg.outlineShaders[e].shader;
-
-        shader->use();
-
-        shader->setMat4("view", view);
-        shader->setMat4("projection", projection);
-        shader->setVec3("viewPos", viewPos);
-        shader->setFloat("ambientStrength", globalLights.ambientStrength);
-        shader->setVec3("ambientColor", globalLights.ambientColor);
-        shader->setBool("pointLightsEnabled", globalLights.pointLightsEnabled); 
-
-        // Default platform material settings to match regular meshes
-        shader->setVec3("material.color", world->getColor());
-        shader->setFloat("material.shininess", world->getShininess());
-        shader->setFloat("material.emissive", world->getEmissive());
-
-        glm::mat4 model = reg.worldMatrices.count(e) ? reg.worldMatrices[e].value : glm::mat4(1.0f);
-        shader->setMat4("model", model);
-
-        std::vector<GpuPointLight> lights = lightingSystem(reg);
-        uploadLights(*shader, lights);
-        uploadDirLight(*shader, reg, globalLights.dirLightEnabled);
-
-        int diffTex = worldComp.world->getBlockDiffuseTexture();
-        int specTex = worldComp.world->getBlockSpecularTexture();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, diffTex);
-        shader->setInt("material.diffuse", 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, specTex);
-        shader->setInt("material.specular", 1);
-
-        // Execute instanced draw call
-        glStencilMask(0x00);
-        worldComp.world->draw();
-
-        Player& player = *Player::getInstance();
-
-        if (player.getHasSelectedBlock() && outlineShader)
-        {
-            glm::mat4 targetModel  = glm::translate(glm::mat4(1.0f), player.getSelectedBlock() + glm::vec3(0.5f));
-            glm::mat4 outlineModel = glm::scale(targetModel, glm::vec3(1.05f));
+void addMesh(Registry& reg, int e, int meshId, Shader* shader, const MaterialComponent& material);
+void addWorld(Registry& reg, int e, World& world, Shader* shader, Shader* outlineShader);
+void addTexture(Registry& reg, int e, const std::string& path);
+void addPointLight(Registry& reg, int e, const PointLightComponent& light = PointLightComponent{});
+void addDirLight(Registry& reg, int e, const DirLightComponent& light = DirLightComponent{});
+void addScript(Registry& reg, int e, std::function<void(Registry&, int, float, float)> fn);
 
 
-            glDepthFunc(GL_LEQUAL);
-            glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-            glStencilMask(0xFF);
-
-            shader->use();
-            shader->setMat4("model", targetModel);
-            worldComp.world->drawSingleCube();
-
-            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-            glStencilMask(0x00);
-            glDepthMask(GL_FALSE);
-
-            outlineShader->use();
-            outlineShader->setMat4("view", view);
-            outlineShader->setMat4("projection", projection);
-            outlineShader->setMat4("model", outlineModel);
-            outlineShader->setVec3("outlineColor", world->getOutlineColor());
-
-            worldComp.world->drawSingleCube();
-
-            glDepthFunc(GL_LESS);
-            glDepthMask(GL_TRUE);
-            glStencilMask(0xFF);
-            glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-        }
-
-    }
-}
+void transformSystem(Registry& reg);
+void transformEntity(Registry& reg, int e, const glm::mat4& parentWorld);
+void scriptSystem(Registry& reg, float time, float dt);

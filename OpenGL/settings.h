@@ -2,24 +2,30 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-struct EngineSettings 
+struct EngineSettings
 {
-    // Mouse / Cursor state
-    float lastX = 400.0f;
-    float lastY = 300.0f;
-    bool  firstMouse = true;
+    // Screen dimensions
+    unsigned int screenWidth = 1024;
+    unsigned int screenHeight = 1024;
 
-    // Input toggle flags
-    bool menuOpen = false;
-    bool ctrlPressedLastFrame = false;
-
-    // Camera settings
+    // Projection settings
     float fov = 45.0f;
     float nearPlane = 0.1f;
     float farPlane = 100.0f;
 
-    // selection outline color
-    glm::vec3 outlineColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    // Mouse state
+    float lastX = 400.0f;
+    float lastY = 300.0f;
+    bool  firstMouse = true;
+
+    // Toggle Flags
+    bool menuOpen = false;
+    bool ctrlPressedLastFrame = false;
+
+    // outline 
+    glm::vec3 outlineColor = glm::vec3(1.0f);
+
+    glm::mat4 getProjectionMatrix() const { return glm::perspective(glm::radians(fov), (float)screenWidth / screenHeight, nearPlane, farPlane); }
 };
 
 struct GlobalLightSettings {
@@ -29,5 +35,5 @@ struct GlobalLightSettings {
     bool pointLightsEnabled = true;
 };
 
-
-inline EngineSettings settings;
+inline EngineSettings engineSettings;
+inline GlobalLightSettings lightSettings;

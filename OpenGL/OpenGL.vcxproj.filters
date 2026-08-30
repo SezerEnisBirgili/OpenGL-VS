@@ -49,6 +49,15 @@
     <Filter Include="source\src\cpp">
       <UniqueIdentifier>{920a9914-3aa9-4f4c-b5f6-dd3c12717ae4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\resources\environment\backpack">
+      <UniqueIdentifier>{de087ae5-21cf-4586-aece-574328495375}</UniqueIdentifier>
+    </Filter>
+    <Filter Include=".cpp files">
+      <UniqueIdentifier>{873738d6-af76-4088-87a5-a8096bd147f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\resources\backpack">
+      <UniqueIdentifier>{c65f3bc7-13f6-43a4-afad-9deac5e7a020}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stb_image.cpp">
@@ -81,6 +90,12 @@
     <ClCompile Include="glad.c">
       <Filter>source\src\c</Filter>
     </ClCompile>
+    <ClCompile Include="gameObject.cpp">
+      <Filter>.cpp files</Filter>
+    </ClCompile>
+    <ClCompile Include="world.cpp">
+      <Filter>.cpp files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -89,16 +104,7 @@
     <ClInclude Include="camera.h">
       <Filter>.h files</Filter>
     </ClInclude>
-    <ClInclude Include="bufferSetup.h">
-      <Filter>.h files</Filter>
-    </ClInclude>
     <ClInclude Include="input.h">
-      <Filter>.h files</Filter>
-    </ClInclude>
-    <ClInclude Include="lightingSets.h">
-      <Filter>.h files</Filter>
-    </ClInclude>
-    <ClInclude Include="textureLoader.h">
       <Filter>.h files</Filter>
     </ClInclude>
     <ClInclude Include="vertexData.h">
@@ -140,13 +146,28 @@
     <ClInclude Include="GameObject.h">
       <Filter>.h files</Filter>
     </ClInclude>
-    <ClInclude Include="materialRegistry.h">
-      <Filter>.h files</Filter>
-    </ClInclude>
     <ClInclude Include="world.h">
       <Filter>.h files</Filter>
     </ClInclude>
     <ClInclude Include="scripts.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="Importer.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="player.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="settings.h">
       <Filter>.h files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -156,6 +177,18 @@
     </None>
     <None Include="lit.frag">
       <Filter>source\shaders\fragmentShader</Filter>
+    </None>
+    <None Include="outline.frag">
+      <Filter>source\shaders\fragmentShader</Filter>
+    </None>
+    <None Include="outline.vert">
+      <Filter>source\shaders\vertexShader</Filter>
+    </None>
+    <None Include="world.vert">
+      <Filter>source\shaders\vertexShader</Filter>
+    </None>
+    <None Include="backpack\backpack.mtl">
+      <Filter>source\resources\environment\backpack</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -186,10 +219,45 @@
     <Image Include="awesomeface.png">
       <Filter>source\resources\textures</Filter>
     </Image>
+    <Image Include="grass.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="moon.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="sun.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="backpack\ao.jpg">
+      <Filter>source\resources\environment\backpack</Filter>
+    </Image>
+    <Image Include="backpack\diffuse.jpg">
+      <Filter>source\resources\environment\backpack</Filter>
+    </Image>
+    <Image Include="backpack\normal.png">
+      <Filter>source\resources\environment\backpack</Filter>
+    </Image>
+    <Image Include="backpack\roughness.jpg">
+      <Filter>source\resources\environment\backpack</Filter>
+    </Image>
+    <Image Include="backpack\specular.jpg">
+      <Filter>source\resources\environment\backpack</Filter>
+    </Image>
+    <Image Include="white.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <Text Include="platform.txt">
       <Filter>source\resources\environment</Filter>
     </Text>
+    <Text Include="backpack\source_attribution.txt">
+      <Filter>source\resources\environment\backpack</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="backpack\backpack.obj">
+      <Filter>source\resources\backpack</Filter>
+    </Object>
   </ItemGroup>
 </Project>

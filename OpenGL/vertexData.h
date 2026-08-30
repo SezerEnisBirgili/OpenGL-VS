@@ -1,7 +1,9 @@
 #pragma once
 
-// Unique vertices: 4 vertices per face * 6 faces = 24 vertices total
+
 // Format: Position (3) | Normal (3) | TexCoord (2)
+
+
 inline float basicCubeVertices[] = {
     // Face 0 – back (-Z)
     -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f, // 0: Bottom-Left
@@ -96,4 +98,16 @@ inline float basicCubeWrappedTextureVertices[] = {
       0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.000f, 0.000f, // 21: Right Bottom
       0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.000f, 0.500f, // 22: Right Top
      -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.666f, 0.500f  // 23: Left Top
+};
+
+inline float basicSquareVertices[] = {
+    -0.5f, -0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
+    0.5f, -0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
+    0.5f, 0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
+    -0.5f, 0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f
+};
+
+inline unsigned int squareIndices[] = { 
+    0, 1, 2,
+    2, 3, 0
 };

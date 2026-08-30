@@ -2,6 +2,8 @@
 #define SHADER_H
 
 #include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <string>
 #include <iostream>
@@ -45,41 +47,34 @@ public:
 		const char* vShaderCode = vertexCode.c_str();
 		const char* fShaderCode = fragmentCode.c_str();
 
-		// 2. compile shaders
 		unsigned int vertex, fragment;
 		int success;
 		char infoLog[512];
 
-		// vertex Shader
 		vertex = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(vertex, 1, &vShaderCode, NULL);
 		glCompileShader(vertex);
-		// print compile errors if any
 		glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
 		if (!success)
 		{
 			glGetShaderInfoLog(vertex, 512, NULL, infoLog);
 			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-		};
+		}
 
-		// fragment Shader
 		fragment = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(fragment, 1, &fShaderCode, NULL);
 		glCompileShader(fragment);
-		// print compile errors if any
 		glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
 		if (!success)
 		{
 			glGetShaderInfoLog(fragment, 512, NULL, infoLog);
 			std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-		};
+		}
 
-		// shader Program
 		ID = glCreateProgram();
 		glAttachShader(ID, vertex);
 		glAttachShader(ID, fragment);
 		glLinkProgram(ID);
-		// print linking errors if any
 		glGetProgramiv(ID, GL_LINK_STATUS, &success);
 		if (!success)
 		{
@@ -87,7 +82,6 @@ public:
 			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
 		}
 
-		// delete the shaders as they're linked into our program now and no longer necessary
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);
 	}
@@ -115,18 +109,16 @@ public:
 	{
 		glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 	}
-	void setMat4(const std::string& name, const glm::mat4& matrix) const 
+	void setMat4(const std::string& name, const glm::mat4& matrix) const
 	{
 		glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
 	}
-	void setVec3(const std::string& name, const glm::vec3 vector) const 
+	void setVec3(const std::string& name, const glm::vec3& vector) const
 	{
 		glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, glm::value_ptr(vector));
 	}
 
 private:
-	// utility function for checking shader compilation/linking errors.
-	// ------------------------------------------------------------------------
 	void checkCompileErrors(unsigned int shader, std::string type)
 	{
 		int success;
@@ -152,6 +144,4 @@ private:
 	}
 };
 
-
-
-#endif	
+#endif

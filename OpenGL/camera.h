@@ -168,7 +168,7 @@ public:
 private:
     void updateCameraVectors()
     {
-        glm::vec3 front;
+        glm::vec3 front = glm::vec3(0.0f);
         front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
         front.y = sin(glm::radians(Pitch));
         front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));

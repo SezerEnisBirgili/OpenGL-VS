@@ -4,7 +4,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
-
 #include "settings.h"
 #include "player.h"
 
@@ -13,8 +12,10 @@ enum class MouseState { FREE, TANK };
 class InputManager
 {
 public:
+    InputManager(Registry& reg, Player& p) : player(p), registry(reg) {}
+
     // -------------------------------------------------------------------------
-    // GLFW Callbacks
+    // GLFW Callbacks (Must be static to match C-style function pointers)
     // -------------------------------------------------------------------------
 
     static void framebuffer_size_callback(GLFWwindow* /*window*/, int width, int height)
@@ -24,45 +25,54 @@ public:
 
     static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     {
+        auto* self = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+        if (!self) return;
+
         ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
 
-        if (settings.menuOpen) return;
+        if (engineSettings.menuOpen) return;
 
-        if (settings.firstMouse)
+        if (engineSettings.firstMouse)
         {
-            settings.lastX = static_cast<float>(xpos);
-            settings.lastY = static_cast<float>(ypos);
-            settings.firstMouse = false;
+            engineSettings.lastX = static_cast<float>(xpos);
+            engineSettings.lastY = static_cast<float>(ypos);
+            engineSettings.firstMouse = false;
             return;
         }
 
-        float xoffset = static_cast<float>(xpos) - settings.lastX;
-        float yoffset = settings.lastY - static_cast<float>(ypos);
-        
-        settings.lastX = static_cast<float>(xpos);
-        settings.lastY = static_cast<float>(ypos);
+        float xoffset = static_cast<float>(xpos) - engineSettings.lastX;
+        float yoffset = engineSettings.lastY - static_cast<float>(ypos);
 
-        Player::getInstance()->getCamera().ProcessMouseMovement(xoffset, yoffset);
+        engineSettings.lastX = static_cast<float>(xpos);
+        engineSettings.lastY = static_cast<float>(ypos);
+
+        self->player.getCamera().ProcessMouseMovement(xoffset, yoffset);
     }
 
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     {
+        auto* self = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+        if (!self) return;
+
         ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
         if (ImGui::GetIO().WantCaptureMouse) return;
 
-        Player::getInstance()->getCamera().ProcessMouseScroll(static_cast<float>(yoffset));
+        self->player.getCamera().ProcessMouseScroll(static_cast<float>(yoffset));
     }
 
     static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     {
+        auto* self = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+        if (!self) return;
+
         ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
         if (ImGui::GetIO().WantCaptureMouse) return;
 
-        if (settings.menuOpen) return;
+        if (engineSettings.menuOpen) return;
 
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
         {
-            Player::getInstance()->placeBlock();
+            self->player.placeBlock();
         }
     }
 
@@ -70,29 +80,26 @@ public:
     // Per-Frame Polling
     // -------------------------------------------------------------------------
 
-    static void processInput(GLFWwindow* window, float deltaTime)
+    void processInput(GLFWwindow* window, float deltaTime)
     {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
 
-        // Toggle UI Menu with Left Control key
         bool ctrlPressed = (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS);
 
-        if (ctrlPressed && !settings.ctrlPressedLastFrame)
+        if (ctrlPressed && !engineSettings.ctrlPressedLastFrame)
         {
-            settings.menuOpen = !settings.menuOpen;
-            settings.firstMouse = true; // Prevents camera snap upon closing menu
+            engineSettings.menuOpen = !engineSettings.menuOpen;
+            engineSettings.firstMouse = true;
 
-            glfwSetInputMode(window, GLFW_CURSOR, 
-                settings.menuOpen ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+            glfwSetInputMode(window, GLFW_CURSOR,
+                engineSettings.menuOpen ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
         }
-        settings.ctrlPressedLastFrame = ctrlPressed;
+        engineSettings.ctrlPressedLastFrame = ctrlPressed;
 
-        // Freeze movement when menu is open
-        if (settings.menuOpen) return;
+        if (engineSettings.menuOpen) return;
 
-        // Process WASD movement directly on Player's Camera
-        Camera& camera = Player::getInstance()->getCamera();
+        Camera& camera = player.getCamera();
 
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)          camera.ProcessKeyboard(FORWARD, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)          camera.ProcessKeyboard(BACKWARD, deltaTime);
@@ -102,11 +109,17 @@ public:
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) camera.ProcessKeyboard(DOWN, deltaTime);
     }
 
-    static void setupCallbacks(GLFWwindow* window)
+    void setupCallbacks(GLFWwindow* window)
     {
+        glfwSetWindowUserPointer(window, this);
+
         glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
         glfwSetCursorPosCallback(window, mouse_callback);
         glfwSetScrollCallback(window, scroll_callback);
         glfwSetMouseButtonCallback(window, mouse_button_callback);
     }
+
+private:
+    Player& player;
+    Registry& registry;
 };

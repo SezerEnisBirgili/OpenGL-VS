@@ -9,26 +9,20 @@
 #include <assimp/defs.h>
 #include <assimp/version.h>
 
-#include "settings.h"
+#include "engine.h"
 #include "shader.h"
-#include "vertexData.h"
 #include "mesh.h"
+#include "settings.h"
+#include "vertexData.h"
 #include "input.h"
-#include "player.h"
-#include "world.h"
-#include "scripts.h"
-#include "Importer.h"
 #include "GameObject.h"
+#include "world.h"
+#include "player.h"
+#include "scripts.h"
+#include "AssimpImporter.h"
 
 #include <iostream>
 #include <vector>
-// -------------------------------------------------------------------------
-// Screen
-// -------------------------------------------------------------------------
-const unsigned int SCR_WIDTH = 1024;
-const unsigned int SCR_HEIGHT = 1024;
-
-glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
 char worldPath[256] = "world.txt";
 
@@ -41,45 +35,51 @@ float lastFrame = 0.0f;
 const char* const mouseStateArr[] = { "FREE", "TANK" };
 MouseState mouseState = MouseState::FREE;
 
-GlobalLightSettings globalLights = {
-    0.2f,                  // ambientStrength
-    glm::vec3(1.0f),  // ambientColor
-    true,                 // dirLightEnabled
-    true              // pointLightsEnabled
-};
+std::vector<Vertex> floatArrayToVertexVector(const float* data, int count);
+Mesh createStaticMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 
-std::vector<Vertex> floatArrayToVertexVector(const float* data, size_t count);
+int main();
 
 GLFWwindow* initOpenGL();
 void initImGui(GLFWwindow* window);
-void renderImGui(Registry& registry, World& world, int dirLight, int lamp); // <----- FIXED: Removed AppState parameter
+void renderImGui(Registry& reg, World& world, Player& player, int dirLight, int lamp);
 
-// Scene Graph Helpers
-void setupSolarSystem(Registry& registry, Shader& litShader, int parentEntity, const Mesh& sunMesh, const Mesh& earthMesh, const Mesh& moonMesh);
-void setupLights     (Registry& registry, Shader& litShader, int parentEntity, const Mesh& lampMesh, int& outDirLight, int& outLamp);
-int  setupSceneGraph (Registry& registry, Shader& litShader, const Mesh& sunMesh, const Mesh& earthMesh,  const Mesh& moonMesh, const Mesh& lampMesh, int& outDirLight, int& outLamp);
+int setupSceneGraph(Registry& registry, Shader& litShader,
+    int sunMeshId, int earthMeshId, int moonMeshId, int lampMeshId, int grassMeshId, int cubeMeshId,
+    unsigned int texSun, unsigned int texWorld, unsigned int texMoon,
+    unsigned int fallbackDiffuse, unsigned int fallbackSpecular,
+    unsigned int grassTex, unsigned int whiteTex,
+    int& outDirLight, int& outLamp);
 
 int main()
 {
-
     GLFWwindow* window = initOpenGL();
     if (!window) return -1;
 
     initImGui(window);
 
-    Registry registry;
+    Engine engine(engineSettings);
+    Player& player = engine.getPlayer();
+    Camera defaultCam(glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f);
+    player.setCamera(defaultCam);
+    Registry& registry = engine.getRegistry();
 
-    InputManager::setupCallbacks(window);
+    engine.getInputManager().setupCallbacks(window);
 
     std::cout << "Loading textures..." << std::endl;
 
-    unsigned int fallbackDiffuse       = registry.loadTexture("missing_texture.png",     1, true);
-    unsigned int fallbackSpecular      = registry.loadTexture("missing_specular.png",    1, true);
-    unsigned int texContainer2         = registry.loadTexture("container2.png",          1, true);
-    unsigned int texContainer2Specular = registry.loadTexture("container2_specular.png", 1, true);
-    unsigned int texWorld              = registry.loadTexture("world.png",               1, true);
-    unsigned int texSun                = registry.loadTexture("sun.png",                 1, true);
-    unsigned int texMoon               = registry.loadTexture("moon.png",                1, true);
+    //-REQUIRED-//////////////////////////////////////////////////////////////////////////////////
+    unsigned int fallbackDiffuse = loadTexture(registry, "missing_texture.png", 0 /*gl_nearest*/, true);
+    unsigned int fallbackSpecular = loadTexture(registry, "missing_specular.png", 0, true);
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    unsigned int texContainer2 = loadTexture(registry, "container2.png", 1/*gl_linear*/, true);
+    unsigned int texContainer2Specular = loadTexture(registry, "container2_specular.png", 1, true);
+    unsigned int texWorld = loadTexture(registry, "world.png", 1, true);
+    unsigned int texSun = loadTexture(registry, "sun.png", 1, true);
+    unsigned int texMoon = loadTexture(registry, "moon.png", 1, true);
+    unsigned int grass = loadTexture(registry, "grass.png", 1, true);
+    unsigned int white = loadTexture(registry, "white.png", 1, true);
 
     if (!fallbackDiffuse || !fallbackSpecular || !texContainer2 || !texContainer2Specular || !texWorld || !texSun || !texMoon) {
         std::cerr << "One or more textures failed to load, continuing with fallbacks." << std::endl;
@@ -89,40 +89,60 @@ int main()
     Shader worldShader("world.vert", "lit.frag");
     Shader outlineShader("outline.vert", "outline.frag");
 
-    std::vector<Vertex> cubeVerts  = floatArrayToVertexVector(basicCubeVertices,               std::size(basicCubeVertices));
+    std::vector<Vertex> squareVerts = floatArrayToVertexVector(basicSquareVertices, std::size(basicSquareVertices));
+    std::vector<Vertex> cubeVerts = floatArrayToVertexVector(basicCubeVertices, std::size(basicCubeVertices));
     std::vector<Vertex> earthVerts = floatArrayToVertexVector(basicCubeWrappedTextureVertices, std::size(basicCubeWrappedTextureVertices));
+
+    std::vector<unsigned int> squareIndices(std::begin(::squareIndices), std::end(::squareIndices));
     std::vector<unsigned int> cubeIndices(std::begin(::cubeIndices), std::end(::cubeIndices));
-    
-    
-    // if emmisive no specular map
-    Mesh sunMesh  (cubeVerts,  cubeIndices, texSun,          0);
-    Mesh earthMesh(earthVerts, cubeIndices, texWorld,        texWorld);
-    Mesh moonMesh (cubeVerts,  cubeIndices, texMoon,         texMoon);
-    Mesh lampMesh (cubeVerts,  cubeIndices, fallbackDiffuse, 0);
 
-    Block platformBlock = Block(false, texContainer2, texContainer2Specular);
-
-    World world(16, 16, 16, platformBlock);
-    world.initMesh(cubeVerts, cubeIndices); 
-    world.platform(16, 16);
-    world.updateInstanceBuffer();
-
-    world.setOutlineColor(settings.outlineColor);
-
-    int worldEntity = spawnEntity(registry, "VoxelWorld");
-    addWorld(registry, worldEntity, &world, &worldShader, &outlineShader);
-
-    Player::getInstance()->setWorld(&world);
-
-    Camera defaultCam(glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f);
-    Player::getInstance()->setCamera(defaultCam);
+    // Mesh setup -- build GPU meshes, then register them in the Registry to get stable ids.
+    // The Registry now owns every Mesh; only the returned int id is passed around from here on.
+    int sunMesh = registry.registerMesh(createStaticMesh(cubeVerts, cubeIndices));
+    int earthMesh = registry.registerMesh(createStaticMesh(earthVerts, cubeIndices));
+    int moonMesh = registry.registerMesh(createStaticMesh(cubeVerts, cubeIndices));
+    int cubeMesh = registry.registerMesh(createStaticMesh(cubeVerts, cubeIndices));
+    int platformMesh = registry.registerMesh(createStaticMesh(cubeVerts, cubeIndices));
+    int lampMesh = registry.registerMesh(createStaticMesh(cubeVerts, cubeIndices));
+    int grassMesh = registry.registerMesh(createStaticMesh(squareVerts, squareIndices));
 
     // ------------------------------------------------------------------
     // Scene graph
     // ------------------------------------------------------------------
     int dirLight = NULL_ENTITY;
     int lamp = NULL_ENTITY;
-    int root = setupSceneGraph(registry, litShader, sunMesh, earthMesh, moonMesh, lampMesh, dirLight, lamp);
+    int root = setupSceneGraph(registry, litShader,
+        sunMesh, earthMesh, moonMesh, lampMesh, grassMesh, cubeMesh,
+        texSun, texWorld, texMoon,
+        fallbackDiffuse, fallbackSpecular,
+        grass, white,
+        dirLight, lamp);
+
+    int platformBlock = EntityBuilder::create(registry, "platformBlock", {}, glm::vec3(1.0f), root)
+        .mesh(platformMesh, &worldShader, {
+            .diffuseTexture = (int)texContainer2,
+            .specularTexture = (int)texContainer2Specular,
+            .color = glm::vec3(1.0f),
+            .shininess = 32.0f
+            });
+
+    // World holds a Registry& member, so it must be constructed in-place
+    // inside reg.worlds -- it can't be built locally and moved/copied in.
+    int worldEntity = spawnEntity(registry, "VoxelWorld");
+
+    World& world = registry.worlds.emplace(
+        std::piecewise_construct,
+        std::forward_as_tuple(worldEntity),
+        std::forward_as_tuple(registry, 16, 16, 16)
+    ).first->second;
+
+    world.createPlatform(platformBlock, 16, 16);
+    world.setOutlineColor(engineSettings.outlineColor);
+
+    addWorld(registry, worldEntity, world, &worldShader, &outlineShader);
+
+    player.setWorld(&world);
+    std::cout << "main: player @ " << &player << " world set to " << &world << std::endl;
 
     // ------------------------------------------------------------------
     // Main loop
@@ -140,30 +160,19 @@ int main()
         glStencilMask(0xFF);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        InputManager::processInput(window, deltaTime);
+        engine.getInputManager().processInput(window, deltaTime);
 
-        Camera& camera = Player::getInstance()->getCamera();
+        Camera& camera = player.getCamera();
         camera.UpdateRotation(deltaTime);
         camera.UpdatePosition(deltaTime);
 
         glm::vec3 hitBlockPos;
-        Player::getInstance()->lookingAtBlock(hitBlockPos);
+        player.lookingAtBlock(hitBlockPos);
 
-        glm::mat4 view = camera.GetViewMatrix();
-        // scripts in game objects
-        scriptSystem(registry, currentFrame, deltaTime);
+        engine.update(currentFrame, deltaTime);
+        engine.render();
 
-        // world view
-        transformSystem(registry, root, glm::mat4(1.0f));
-
-        // game objects
-        renderSystem(registry, view, projection, camera.Position, globalLights);
-
-        // voxel world
-        renderWorldSystem(registry, view, projection, camera.Position, globalLights);
-
-        // menu
-        renderImGui(registry, world, dirLight, lamp);
+        renderImGui(registry, world, player, dirLight, lamp);
 
         glfwSwapBuffers(window);
     }
@@ -176,12 +185,11 @@ int main()
     return 0;
 }
 
-
 GLFWwindow* initOpenGL()
 {
     glfwSetErrorCallback([](int error, const char* description) {
         std::cerr << "GLFW Error " << error << ": " << description << std::endl;
-    });
+        });
 
     std::cout << "Starting GLFW init..." << std::endl;
 
@@ -189,13 +197,13 @@ GLFWwindow* initOpenGL()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
+
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
     std::cout << "Creating window..." << std::endl;
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(engineSettings.screenWidth, engineSettings.screenHeight, "LearnOpenGL", NULL, NULL);
     if (!window)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -224,7 +232,9 @@ GLFWwindow* initOpenGL()
     std::cout << "Revision:      " << aiGetVersionRevision() << std::endl;
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_STENCIL_TEST);   
+    glEnable(GL_STENCIL_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     return window;
 }
@@ -240,31 +250,59 @@ void initImGui(GLFWwindow* window)
 
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    io.DisplayFramebufferScale = ImVec2((float)fbWidth / SCR_WIDTH, (float)fbHeight / SCR_HEIGHT);
+    io.DisplayFramebufferScale = ImVec2((float)fbWidth / engineSettings.screenWidth, (float)fbHeight / engineSettings.screenHeight);
 
     glViewport(0, 0, fbWidth, fbHeight);
 }
 
-std::vector<Vertex> floatArrayToVertexVector(const float* data, size_t count)
+std::vector<Vertex> floatArrayToVertexVector(const float* data, int count)
 {
     std::vector<Vertex> vertices;
-
-    // each vertex is 8 floats: pos(3) + normal(3) + uv(2)
     int vertCount = count / 8;
-    
+
     for (int i = 0; i < vertCount; i++)
     {
         Vertex v{};
         const float* base = data + i * 8;
-        v.Position  = { base[0], base[1], base[2] };
-        v.Normal    = { base[3], base[4], base[5] };
+        v.Position = { base[0], base[1], base[2] };
+        v.Normal = { base[3], base[4], base[5] };
         v.TexCoords = { base[6], base[7] };
         vertices.push_back(v);
     }
     return vertices;
 }
 
-void renderImGui(Registry& registry, World& world, int dirLight, int lamp)
+Mesh createStaticMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
+{
+    Mesh mesh;
+    mesh.indexCount = (int)indices.size();
+
+    glGenVertexArrays(1, &mesh.VAO);
+    glGenBuffers(1, &mesh.VBO);
+    glGenBuffers(1, &mesh.EBO);
+
+    glBindVertexArray(mesh.VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+    glBindVertexArray(0);
+
+    mesh.setupInstanceBuffer();
+    return mesh;
+}
+
+void renderImGui(Registry& reg, World& world, Player& player, int dirLight, int lamp)
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -285,7 +323,7 @@ void renderImGui(Registry& registry, World& world, int dirLight, int lamp)
     ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
     ImGui::Begin("Controls");
 
-    Camera& camera = Player::getInstance()->getCamera();
+    Camera& camera = player.getCamera();
 
     int selectedMouseState = (int)mouseState;
     if (ImGui::Combo("Mouse Mode", &selectedMouseState, mouseStateArr, IM_ARRAYSIZE(mouseStateArr)))
@@ -309,24 +347,24 @@ void renderImGui(Registry& registry, World& world, int dirLight, int lamp)
 
     if (ImGui::Button("Import World"))
     {
-        world.importWorldFromPath(worldPath);
-        Player::getInstance()->setWorld(&world);
+        world.importWorldFromPath(reg, worldPath);
+        player.setWorld(&world);
         std::cout << "World imported from " << worldPath << std::endl;
     }
 
     if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::SliderFloat("Ambient Strength", &globalLights.ambientStrength, 0.0f, 1.0f);
-        ImGui::ColorEdit3("Ambient Color", glm::value_ptr(globalLights.ambientColor));
+        ImGui::SliderFloat("Ambient Strength", &lightSettings.ambientStrength, 0.0f, 1.0f);
+        ImGui::ColorEdit3("Ambient Color", glm::value_ptr(lightSettings.ambientColor));
 
-        ImGui::Checkbox("Directional Light Enabled", &globalLights.dirLightEnabled);
-        ImGui::Checkbox("Point Lights Enabled", &globalLights.pointLightsEnabled);
+        ImGui::Checkbox("Directional Light Enabled", &lightSettings.dirLightEnabled);
+        ImGui::Checkbox("Point Lights Enabled", &lightSettings.pointLightsEnabled);
 
         ImGui::Separator();
         ImGui::Text("Sun");
-        if (registry.dirLights.count(dirLight))
+        if (reg.dirLights.count(dirLight))
         {
-            auto& globalLight = registry.dirLights[dirLight];
+            auto& globalLight = reg.dirLights[dirLight];
             if (ImGui::SliderFloat3("Sun Direction", glm::value_ptr(globalLight.direction), -1.0f, 1.0f))
             {
                 if (glm::length(globalLight.direction) > 0.0001f)
@@ -338,26 +376,26 @@ void renderImGui(Registry& registry, World& world, int dirLight, int lamp)
 
         ImGui::Separator();
         ImGui::Text("Lamp");
-        if (registry.pointLights.count(lamp))
+        if (reg.pointLights.count(lamp))
         {
-            auto& lampLight = registry.pointLights[lamp];
+            auto& lampLight = reg.pointLights[lamp];
             ImGui::ColorEdit3("Lamp Color", glm::value_ptr(lampLight.color));
             ImGui::SliderFloat("Lamp Intensity", &lampLight.intensity, 0.0f, 10.0f);
             ImGui::SliderFloat("Lamp Linear", &lampLight.linear, 0.0f, 1.0f);
             ImGui::SliderFloat("Lamp Quadratic", &lampLight.quadratic, 0.0f, 2.0f);
         }
-        if (registry.materials.count(lamp))
+        if (reg.materials.count(lamp))
         {
-            auto& lampMat = registry.materials[lamp];
+            auto& lampMat = reg.materials[lamp];
             ImGui::SliderFloat("Lamp Emissive", &lampMat.emissive, 0.0f, 1.0f);
         }
     }
 
-    if (ImGui::CollapsingHeader("World", ImGuiTreeNodeFlags_DefaultOpen)) 
+    if (ImGui::CollapsingHeader("World", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        if (ImGui::ColorEdit3("Outline Color", glm::value_ptr(settings.outlineColor)))
+        if (ImGui::ColorEdit3("Outline Color", glm::value_ptr(engineSettings.outlineColor)))
         {
-            world.setOutlineColor(settings.outlineColor);
+            world.setOutlineColor(engineSettings.outlineColor);
         }
     }
 
@@ -371,111 +409,97 @@ void renderImGui(Registry& registry, World& world, int dirLight, int lamp)
 // Scene Graph Creation Helpers
 // -------------------------------------------------------------------------
 
-void setupSolarSystem(Registry& registry, Shader& litShader, int parentEntity, const Mesh& sunMesh, const Mesh& earthMesh, const Mesh& moonMesh)
+void setupSolarSystem(Registry& registry, Shader& litShader, int parentEntity,
+    int sunMeshId, int earthMeshId, int moonMeshId,
+    unsigned int texSun, unsigned int texWorld, unsigned int texMoon,
+    unsigned int fallbackSpecular)
 {
-    TransformComponent solarSystemTransform{
-        .position = glm::vec3(13.0f, 2.0f, 3.0f),
-    };
-    int solarSystem = spawnEntity(registry, "solarSystem", solarSystemTransform, parentEntity);
+    int solarSystem = EntityBuilder::create(registry, "solarSystem", { 13.0f, 2.0f, 3.0f }, glm::vec3(1.0f), parentEntity);
 
-    // Sun
-    TransformComponent sunTransform{
-        .position = glm::vec3(0.0f, 0.0f, 0.0f),
-    };
-    int sun = spawnEntity(registry, "sun", sunTransform, solarSystem);
+    EntityBuilder::create(registry, "sun", { 0.0f, 0.0f, 0.0f }, glm::vec3(1.0f), solarSystem)
+        .mesh(sunMeshId, &litShader, {
+            .diffuseTexture = (int)texSun, .specularTexture = (int)fallbackSpecular,
+            .color = glm::vec3(1.0f), .emissive = 1.0f
+            })
+        .script(spinBehavior(0.2f))
+        .pointLight({ .color = glm::vec3(1.0f), .intensity = 1.0f });
 
-    MaterialComponent sunMaterial{
-        .color = glm::vec3(1.0f),
-        .emissive = 1.0f,
-    };
-    addMesh(registry, sun, sunMesh, &litShader, sunMaterial);
-    addScript(registry, sun, spinBehavior(0.2f));
+    int earth = EntityBuilder::create(registry, "earth", { 3.0f, 0.0f, 0.0f }, glm::vec3(0.5f), solarSystem)
+        .mesh(earthMeshId, &litShader, {
+            .diffuseTexture = (int)texWorld, .specularTexture = (int)texWorld,
+            .color = {0.2f, 0.4f, 0.9f}, .shininess = 16.0f
+            })
+        .script(earthOrbitBehavior(0.25f, 0.25f, 23.5f));
 
-    PointLightComponent sunLight{
-        .color = glm::vec3(1.0f, 1.0f, 1.0f),
-        .intensity = 1.0f,
-    };
-    addPointLight(registry, sun, sunLight);
-
-    // Earth
-    TransformComponent earthTransform{
-        .position = glm::vec3(3.0f, 0.0f, 0.0f),
-        .scale = glm::vec3(0.5f, 0.5f, 0.5f),
-    };
-    int earth = spawnEntity(registry, "earth", earthTransform, solarSystem);
-
-    MaterialComponent earthMaterial{
-        .color = glm::vec3(0.2f, 0.4f, 0.9f),
-        .shininess = 16.0f,
-    };
-    addMesh(registry, earth, earthMesh, &litShader, earthMaterial);
-    addScript(registry, earth, earthOrbitBehavior(0.25f, 0.25f, 23.5f));
-
-    // Moon
-    TransformComponent moonTransform{
-        .position = glm::vec3(1.5f, 0.0f, 0.0f),
-        .scale = glm::vec3(0.5f, 0.5f, 0.5f),
-    };
-    int moon = spawnEntity(registry, "moon", moonTransform, earth);
-
-    MaterialComponent moonMaterial{
-        .color = glm::vec3(0.2f, 0.4f, 0.9f),
-        .shininess = 0.0f,
-    };
-    addMesh(registry, moon, moonMesh, &litShader, moonMaterial);
-    addScript(registry, moon, moonBehavior(1.0f));
+    EntityBuilder::create(registry, "moon", { 1.5f, 0.0f, 0.0f }, glm::vec3(0.5f), earth)
+        .mesh(moonMeshId, &litShader, {
+            .diffuseTexture = (int)texMoon, .specularTexture = (int)texMoon,
+            .color = {0.2f, 0.4f, 0.9f}, .shininess = 0.0f
+            })
+        .script(moonBehavior(1.0f));
 }
 
-void setupLights(Registry& registry, Shader& litShader, int parentEntity, const Mesh& lampMesh, int& outDirLight, int& outLamp)
+void setupLights(Registry& registry, Shader& litShader, int parentEntity, int lampMeshId,
+    unsigned int fallbackDiffuse, unsigned int fallbackSpecular,
+    int& outDirLight, int& outLamp)
 {
-    // Point Light Lamp
-    TransformComponent lampTransform{
-        .position = glm::vec3(3.0f, 4.0f, 3.0f),
-    };
-    outLamp = spawnEntity(registry, "lamp", lampTransform, parentEntity);
+    outLamp = EntityBuilder::create(registry, "lamp", { 9.0f, 4.0f, 3.0f }, glm::vec3(1.0f), parentEntity)
+        .mesh(lampMeshId, &litShader, {
+            .diffuseTexture = (int)fallbackDiffuse, .specularTexture = (int)fallbackSpecular,
+            .color = glm::vec3(1.0f), .shininess = 32.0f, .emissive = 1.0f
+            })
+        .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 2.5f });
 
-    MaterialComponent lampMaterial{
-        .color = glm::vec3(1.0f, 1.0f, 1.0f),
-        .shininess = 32.0f,
-        .emissive = 1.0f,
-    };
-    addMesh(registry, outLamp, lampMesh, &litShader, lampMaterial);
-
-    PointLightComponent lampLight{
-        .color = glm::vec3(1.0f, 0.95f, 0.85f),
-        .intensity = 2.5f,
-    };
-    addPointLight(registry, outLamp, lampLight);
-
-    // Directional Light
-    TransformComponent dirLightTransform{
-        .position = glm::vec3(0.0f, 0.0f, 0.0f),
-    };
-    outDirLight = spawnEntity(registry, "dirLight", dirLightTransform, parentEntity);
-
-    DirLightComponent globalLight{
-        .direction = glm::normalize(glm::vec3(1.0f, -1.0f, -1.0f)),
-        .color = glm::vec3(1.0f, 0.98f, 0.9f),
-        .intensity = 1.2f,
-    };
-    addDirLight(registry, outDirLight, globalLight);
+    outDirLight = EntityBuilder::create(registry, "dirLight", glm::vec3(0.0f), glm::vec3(1.0f), parentEntity)
+        .dirLight({ .direction = glm::normalize(glm::vec3(-0.5f, -1.5f, -0.8f)), .color = {1.0f, 0.98f, 0.9f}, .intensity = 1.2f });
 }
 
-int setupSceneGraph(Registry& registry, Shader& litShader,  const Mesh& sunMesh, const Mesh& earthMesh, const Mesh& moonMesh, const Mesh& lampMesh, int& outDirLight, int& outLamp)
+void setupVegetation(Registry& registry, Shader& litShader, int parentEntity, int grassMeshId,
+    unsigned int grassTex, unsigned int fallbackSpecular)
 {
-    TransformComponent rootTransform{
-        .position = glm::vec3(0.0f, 0.0f, 0.0f),
+    const glm::vec3 positions[] = {
+        {3.1f, 2.0f, 3.1f}, {5.1f, 2.0f, 3.1f}, {3.1f, 2.0f, 5.1f}, {5.1f, 2.1f, 5.1f}
     };
-    int root = spawnEntity(registry, "root", rootTransform, /* parent */ NULL_ENTITY);
 
-    AssimpImporter importer(registry, "/home/sezer/OpenGL-VS/OpenGL/backpack/backpack.obj", &litShader);
-    TransformComponent backpackTransform{
-        .position = glm::vec3(0.0f, 5.0f, 0.0f),
-    };
-    int model = importer.loadModel("backpack", backpackTransform, root);
+    for (size_t i = 0; i < std::size(positions); ++i) {
+        std::string name = "grass" + std::to_string(i + 1);
+        EntityBuilder::create(registry, name, positions[i], glm::vec3(2.0f), parentEntity)
+            .mesh(grassMeshId, &litShader, {
+                .diffuseTexture = (int)grassTex, .specularTexture = (int)fallbackSpecular,
+                .isMasked = true
+                });
+    }
+}
 
-    setupSolarSystem(registry, litShader, root, sunMesh, earthMesh, moonMesh);
-    setupLights(registry, litShader, root, lampMesh, outDirLight, outLamp);
+void setupTransparentBlocks(Registry& registry, Shader& litShader, int parentEntity, int cubeMeshId,
+    unsigned int whiteTex, unsigned int fallbackSpecular)
+{
+    EntityBuilder::create(registry, "redTransparentBlock", glm::vec3(7.0f, 2.0f, 3.0f), glm::vec3(1.0f), parentEntity)
+        .mesh(cubeMeshId, &litShader, {
+            .isTransparent = true,
+            .diffuseTexture = (int)whiteTex,
+            .specularTexture = (int)fallbackSpecular,
+            .color = { 1.0f, 0.0f, 0.0f },
+            .alpha = 0.5f
+            });
+}
+
+int setupSceneGraph(Registry& registry, Shader& litShader,
+    int sunMeshId, int earthMeshId, int moonMeshId, int lampMeshId, int grassMeshId, int cubeMeshId,
+    unsigned int texSun, unsigned int texWorld, unsigned int texMoon,
+    unsigned int fallbackDiffuse, unsigned int fallbackSpecular,
+    unsigned int grassTex, unsigned int whiteTex,
+    int& outDirLight, int& outLamp)
+{
+    int root = EntityBuilder::create(registry, "root");
+
+    AssimpImporter importer(registry, "backpack/backpack.obj", &litShader);
+    importer.loadModel("backpack", { .position = {0.0f, 5.0f, 0.0f} }, root);
+
+    setupSolarSystem(registry, litShader, root, sunMeshId, earthMeshId, moonMeshId, texSun, texWorld, texMoon, fallbackSpecular);
+    setupLights(registry, litShader, root, lampMeshId, fallbackDiffuse, fallbackSpecular, outDirLight, outLamp);
+    setupVegetation(registry, litShader, root, grassMeshId, grassTex, fallbackSpecular);
+    setupTransparentBlocks(registry, litShader, root, cubeMeshId, whiteTex, fallbackSpecular);
 
     return root;
 }
