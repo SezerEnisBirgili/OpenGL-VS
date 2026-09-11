@@ -87,10 +87,8 @@ void addMesh(Registry & reg, int e, int meshId, Shader * shader, const MaterialC
     reg.renderableEntities.push_back(e);
 }
 
-void addWorld(Registry& reg, int e, World& world, Shader* shader, Shader* outlineShader) {
-    // `world` is expected to already live inside reg.worlds[e] (constructed in place,
-    // since World holds a Registry& member and can't be copied/moved in afterward).
-    // This just wires up its render-related side tables.
+void addWorld(Registry& reg, int e, int world, int shader, int outlineShader) {
+    reg.worlds[e] = {world};
     reg.shaders[e] = { shader };
     reg.outlineShaders[e] = { outlineShader };
     reg.renderableWorlds.push_back(e);

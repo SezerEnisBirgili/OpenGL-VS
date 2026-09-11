@@ -6,7 +6,7 @@
 #include <sstream>
 #include <glm/gtc/matrix_transform.hpp>
 
-World::World(Registry& registry, int x, int y, int z) : reg(registry), boundx(x), boundy(y), boundz(z) {
+World::World(int x, int y, int z) : boundx(x), boundy(y), boundz(z) {
     blocks.resize(x * y * z, 0);
 }
 

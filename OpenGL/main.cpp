@@ -36,7 +36,7 @@ const char* const mouseStateArr[] = { "FREE", "TANK" };
 MouseState mouseState = MouseState::FREE;
 
 std::vector<Vertex> floatArrayToVertexVector(const float* data, int count);
-Mesh createStaticMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
+Mesh vertexDataToMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 
 int main();
 
@@ -85,30 +85,46 @@ int main()
         std::cerr << "One or more textures failed to load, continuing with fallbacks." << std::endl;
     }
 
-    Shader litShader("lit.vert", "lit.frag");
-    Shader worldShader("world.vert", "lit.frag");
-    Shader outlineShader("outline.vert", "outline.frag");
+    int litShader = registry.registerShader("lit.vert", "lit.frag");
+    int worldShader = registry.registerShader("world.vert", "lit.frag");
+    int outlineShader = registry.registerOutlineShader("outline.vert", "outline.frag");
 
     std::vector<Vertex> squareVerts = floatArrayToVertexVector(basicSquareVertices, std::size(basicSquareVertices));
     std::vector<Vertex> cubeVerts = floatArrayToVertexVector(basicCubeVertices, std::size(basicCubeVertices));
     std::vector<Vertex> earthVerts = floatArrayToVertexVector(basicCubeWrappedTextureVertices, std::size(basicCubeWrappedTextureVertices));
 
+    // auto generate indices for compatbility, inefficient
     std::vector<unsigned int> squareIndices(std::begin(::squareIndices), std::end(::squareIndices));
     std::vector<unsigned int> cubeIndices(std::begin(::cubeIndices), std::end(::cubeIndices));
 
-    // Mesh setup -- build GPU meshes, then register them in the Registry to get stable ids.
-    // The Registry now owns every Mesh; only the returned int id is passed around from here on.
-    int sunMesh = registry.registerMesh(createStaticMesh(cubeVerts, cubeIndices));
-    int earthMesh = registry.registerMesh(createStaticMesh(earthVerts, cubeIndices));
-    int moonMesh = registry.registerMesh(createStaticMesh(cubeVerts, cubeIndices));
-    int cubeMesh = registry.registerMesh(createStaticMesh(cubeVerts, cubeIndices));
-    int platformMesh = registry.registerMesh(createStaticMesh(cubeVerts, cubeIndices));
-    int lampMesh = registry.registerMesh(createStaticMesh(cubeVerts, cubeIndices));
-    int grassMesh = registry.registerMesh(createStaticMesh(squareVerts, squareIndices));
+    int sunMesh = registry.registerMesh(cubeVerts, cubeIndices);
+    int earthMesh = registry.registerMesh(earthVerts, cubeIndices);
+    int moonMesh = registry.registerMesh(cubeVerts, cubeIndices);
+    int cubeMesh = registry.registerMesh(cubeVerts, cubeIndices);
+    int platformMesh = registry.registerMesh(cubeVerts, cubeIndices);
+    int lampMesh = registry.registerMesh(cubeVerts, cubeIndices);
+    int grassMesh = registry.registerMesh(squareVerts, squareIndices);
+
+    // for storage reference
+    int storedWorld = registry.registerWorld(16, 16, 16);
 
     // ------------------------------------------------------------------
     // Scene graph
     // ------------------------------------------------------------------
+    
+    int world = 0;
+    addWorld(registry, world, storedWorld, worldShader, outlineShader);
+
+    registry.worldStorage.at(registry.worlds.at(world).worldId).createPlatform(platformBlock, 16, 16);
+
+    world->createPlatform(platformBlock, 16, 16);
+    world->setOutlineColor(engineSettings.outlineColor);
+
+    addWorld(registry, worldEntity, world, &worldShader, &outlineShader);
+
+    player.setWorld(&world);
+    std::cout << "main: player @ " << &player << " world set to " << &world << std::endl;
+
     int dirLight = NULL_ENTITY;
     int lamp = NULL_ENTITY;
     int root = setupSceneGraph(registry, litShader,
@@ -126,23 +142,6 @@ int main()
             .shininess = 32.0f
             });
 
-    // World holds a Registry& member, so it must be constructed in-place
-    // inside reg.worlds -- it can't be built locally and moved/copied in.
-    int worldEntity = spawnEntity(registry, "VoxelWorld");
-
-    World& world = registry.worlds.emplace(
-        std::piecewise_construct,
-        std::forward_as_tuple(worldEntity),
-        std::forward_as_tuple(registry, 16, 16, 16)
-    ).first->second;
-
-    world.createPlatform(platformBlock, 16, 16);
-    world.setOutlineColor(engineSettings.outlineColor);
-
-    addWorld(registry, worldEntity, world, &worldShader, &outlineShader);
-
-    player.setWorld(&world);
-    std::cout << "main: player @ " << &player << " world set to " << &world << std::endl;
 
     // ------------------------------------------------------------------
     // Main loop
@@ -272,7 +271,7 @@ std::vector<Vertex> floatArrayToVertexVector(const float* data, int count)
     return vertices;
 }
 
-Mesh createStaticMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
+Mesh vertexDataToMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
 {
     Mesh mesh;
     mesh.indexCount = (int)indices.size();

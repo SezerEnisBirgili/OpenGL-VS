@@ -87,11 +87,11 @@ struct WorldMatrixComponent {
 };
 
 struct ShaderComponent {
-    Shader* shader = nullptr;
+    int ShaderId;
 };
 
 struct MeshComponent {
-    Mesh* mesh = nullptr;
+    int MeshId;
 };
 
 struct ScriptComponent {
@@ -101,6 +101,12 @@ struct ScriptComponent {
 struct TextureComponent {
     int textureId;
     std::string path;
+};
+
+struct WorldComponent {
+    int worldId;
+    int shaderId;
+    int outlineShaderId;
 };
 
 // Math Helpers
@@ -126,19 +132,74 @@ public:
         return e;
     }
 
-    int registerMesh(const Mesh mesh) {
+    int registerMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
+    {
+        Mesh mesh;
+        mesh.indexCount = (int)indices.size();
+
+        glGenVertexArrays(1, &mesh.VAO);
+        glGenBuffers(1, &mesh.VBO);
+        glGenBuffers(1, &mesh.EBO);
+
+        glBindVertexArray(mesh.VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+        glBindVertexArray(0);
+
+        mesh.setupInstanceBuffer();
+
         int id = nextMesh++;
         meshStorage[id] = mesh;
         return id;
     }
 
+    int registerShader(const char* vertexPath, const char* fragmentPath)
+    {
+        Shader shader = Shader(vertexPath, fragmentPath);
+        int id = nextShader++;
+        shaderStorage[id] = shader;
+        return id;
+    }
+
+    int registerOutlineShader(const char* vertexPath, const char* fragmentPath)
+    {
+        Shader shader = Shader(vertexPath, fragmentPath);
+        int id = nextOutlineShader++;
+        outlineShaderStorage[id] = shader;
+        return id;
+    }
+
+    int registerWorld(int x, int y, int z)
+    {
+        World world(x,y,z);
+        int id = nextWorld++;
+        worldStorage[id] = world;
+        return id;
+    }
+
+    std::unordered_map<int, World>                worldStorage;
+    std::unordered_map<int, Mesh>                 meshStorage;
+    std::unordered_map<int, Shader>               shaderStorage;
+    std::unordered_map<int, Shader>               outlineShaderStorage;
+
     std::unordered_map<int, TransformComponent>   transforms;
     std::unordered_map<int, WorldMatrixComponent> worldMatrices;
-    std::unordered_map<int, World>                worlds;
+    std::unordered_map<int, WorldComponent>       worlds;
     std::unordered_map<int, HierarchyComponent>   hierarchy;
     std::unordered_map<int, MaterialComponent>    materials;
     std::unordered_map<int, MeshComponent>        meshes;
-    std::unordered_map<int, Mesh>                 meshStorage;
     std::unordered_map<int, ShaderComponent>      shaders;
     std::unordered_map<int, ShaderComponent>      outlineShaders;
     std::unordered_map<int, ScriptComponent>      scripts;
@@ -152,6 +213,9 @@ public:
     std::vector<int> renderableWorlds;
 
 private:
+    int nextOutlineShader = 1;
+    int nextShader = 1;
+    int nextWorld = 1;
     int nextMesh = 1;
     int nextEntity = 1;
     int fallbackDiffuse = 1;
@@ -179,7 +243,7 @@ void setParent(Registry& reg, int child, int parent);
 int getParent(const Registry& reg, int entity);
 
 void addMesh(Registry& reg, int e, int meshId, Shader* shader, const MaterialComponent& material);
-void addWorld(Registry& reg, int e, World& world, Shader* shader, Shader* outlineShader);
+void addWorld(Registry& reg, int e, int world, int shader, int outlineShader);
 void addTexture(Registry& reg, int e, const std::string& path);
 void addPointLight(Registry& reg, int e, const PointLightComponent& light = PointLightComponent{});
 void addDirLight(Registry& reg, int e, const DirLightComponent& light = DirLightComponent{});
