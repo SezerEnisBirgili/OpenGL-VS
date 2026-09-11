@@ -1,4 +1,5 @@
 #include "GameObject.h"
+#include "mesh.h"
 #include "world.h"
 
 #include <algorithm>
@@ -68,7 +69,7 @@ int getParent(const Registry& reg, int entity) {
 // ==========================================
 
 
-void addMesh(Registry & reg, int e, int meshId, Shader * shader, const MaterialComponent & material) {
+void addMesh(Registry & reg, int e, int meshId, int shader, const MaterialComponent & material) {
     MaterialComponent mat = material;
 
     if (mat.diffuseTexture == 0) {
@@ -81,17 +82,15 @@ void addMesh(Registry & reg, int e, int meshId, Shader * shader, const MaterialC
         mat.specularTexture = reg.getFallbackSpecular();
     }
 
-    reg.meshes[e] = { &reg.meshStorage.at(meshId) };
+    reg.meshes[e] = { meshId};
     reg.shaders[e] = { shader };
     reg.materials[e] = mat;
     reg.renderableEntities.push_back(e);
 }
 
 void addWorld(Registry& reg, int e, int world, int shader, int outlineShader) {
-    reg.worlds[e] = {world};
-    reg.shaders[e] = { shader };
-    reg.outlineShaders[e] = { outlineShader };
-    reg.renderableWorlds.push_back(e);
+    reg.worlds[e] = {world, .shaderId=shader, .outlineShaderId=outlineShader};
+    reg.renderableWorlds.push_back(e); 
 }
 
 void addTexture(Registry& reg, int e, const std::string& path) {
@@ -121,7 +120,7 @@ EntityBuilder EntityBuilder::create(Registry& reg, const std::string& name, glm:
     return EntityBuilder{ reg, spawnEntity(reg, name, t, parent) };
 }
 
-EntityBuilder& EntityBuilder::mesh(int meshId, Shader* s, MaterialComponent mat) {
+EntityBuilder& EntityBuilder::mesh(int meshId, int s, MaterialComponent mat) {
     addMesh(reg, id, meshId, s, mat);
     return *this;
 }

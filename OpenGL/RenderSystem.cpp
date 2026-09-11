@@ -1,15 +1,24 @@
 #include "RenderSystem.h"
+#include "IRenderable.h"
 
 #include <algorithm>
 #include <unordered_map>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>   // glm::distance2
 
-void RenderSystem::render(int e, Shader* shader) {
+void RenderSystem::render(int e, int s) {
 
-    if (!shader) shader = reg.shaders.at(e).shader;
+    Shader* shader;
+
+    // if shader is not given, use shader assigned to entity
+    if (!s) {
+        shader = reg.getShader(e);
+    } else {
+        shader = reg.getShaderWithId(s);
+    }
+
+    const Mesh* mesh = reg.getMesh(e);
     const auto& camera = player.getCamera();
-    const Mesh* mesh = reg.meshes.at(e).mesh;
     const glm::mat4& world = reg.worldMatrices.at(e).value;
     const MaterialComponent& mat = reg.materials.at(e);
 
@@ -40,18 +49,18 @@ void RenderSystem::render(int e, Shader* shader) {
     uploadLights(reg, *shader);
     uploadDirLights(reg, *shader, lightSettings.dirLightEnabled);
 
-    drawMesh(reg.meshes.at(e).mesh);
+    drawMesh(reg.getMeshId(e));
 }
 
-void RenderSystem::renderInstanced(const std::vector<InstancedRenderItem>& items, Shader* shader) {
-    for (const auto& batch : items) {
+void RenderSystem::renderInstanced(const std::vector<InstancedRenderItem>& items, int shader) {
+    for (const InstancedRenderItem& batch : items) {
         if (batch.positions.empty()) {
             std::cout << "[RenderSystem] skipping empty batch e=" << batch.e << std::endl;
             continue;
         }
 
-        Shader* s = shader ? shader : reg.shaders.at(batch.e).shader;
-        Mesh* mesh = reg.meshes.at(batch.e).mesh;
+        Shader* s = shader ? reg.getShaderWithId(shader) : reg.getShader(batch.e);
+        Mesh* mesh = reg.getMesh(batch.e);
         const glm::mat4& world = reg.worldMatrices.at(batch.e).value;
         const MaterialComponent& mat = reg.materials.at(batch.e);
 
@@ -99,7 +108,10 @@ void RenderSystem::uploadInstancePositions(Mesh* mesh, const std::vector<glm::ve
     glBindVertexArray(0);
 }
 
-void RenderSystem::drawMesh(Mesh* mesh) {
+void RenderSystem::drawMesh(int meshId) {
+
+    Mesh* mesh = reg.getMeshWithId(meshId);
+
     glBindVertexArray(mesh->VAO);
     glDisableVertexAttribArray(3);   // don't let non-instanced draws read leftover aInstancePos
     glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, 0);
@@ -167,8 +179,8 @@ void RenderSystem::collectRenderItems() {
     for (auto& [e, positions] : entityOpaqueGroups)
         opaque.push_back({ e, std::move(positions) });
 
-    for (int w : reg.renderableWorlds) {
-        World& world = reg.worlds.at(w);
+    for (int e : reg.renderableWorlds) {
+        World& world = *reg.getWorld(e);
         world.collectInstancedRenderItems(opaque, glm::mat4(1.0f));
         world.collectRenderItems(transparent, glm::mat4(1.0f));
     }
@@ -217,16 +229,17 @@ void RenderSystem::renderFrame() {
 void RenderSystem::drawOutline() {
     const auto& camera = player.getCamera();
 
-    for (auto& [e, world] : reg.worlds) {
+    for (auto& [e, worldComp] : reg.worlds) {
 
-        Shader* shader = reg.shaders.at(e).shader;
-        Shader* outlineShader = reg.outlineShaders.at(e).shader;
+        Shader* shader = reg.getShader(e);
+        Shader* outlineShader = reg.getOutlineShader(e);
+        World& world = *reg.getWorld(e);
 
         if (player.getHasSelectedBlock() && outlineShader) {
 
             glm::vec3 selectedPos = player.getSelectedBlockPos();
             int selectedBlock = world.getBlock(selectedPos);
-            Mesh* mesh = reg.meshes.at(selectedBlock).mesh;
+            int meshId = reg.getMeshId(selectedBlock);
 
             glm::mat4 targetModel = glm::translate(glm::mat4(1.0f), blockCenter(selectedPos));
             glm::mat4 outlineModel = glm::scale(targetModel, glm::vec3(1.05f));
@@ -243,7 +256,7 @@ void RenderSystem::drawOutline() {
             shader->setMat4("view", camera.GetViewMatrix());
             shader->setMat4("projection", engineSettings.getProjectionMatrix());
             shader->setMat4("model", targetModel);
-            drawMesh(mesh);
+            drawMesh(meshId);
 
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
@@ -257,7 +270,7 @@ void RenderSystem::drawOutline() {
             outlineShader->setMat4("model", outlineModel);
             outlineShader->setVec3("outlineColor", world.getOutlineColor());
 
-            drawMesh(mesh);
+            drawMesh(meshId);
 
             glDepthFunc(GL_LESS);
             glDepthMask(GL_TRUE);

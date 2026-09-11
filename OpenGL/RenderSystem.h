@@ -19,10 +19,10 @@ private:
     std::vector<RenderItem> transparent;
 
     void uploadInstancePositions(Mesh* mesh, const std::vector<glm::vec3>& positions);
-    void drawMesh(Mesh* mesh);
+    void drawMesh(int m);
     void drawMeshInstanced(Mesh* mesh, int count);
-    void render(int e, Shader* shader = nullptr);
-    void renderInstanced(const std::vector<InstancedRenderItem>& items, Shader* shader = nullptr);
+    void render(int e, int shader = 0);
+    void renderInstanced(const std::vector<InstancedRenderItem>& items, int shader = 0);
     void uploadLights(const Registry& reg, Shader& shader);
     void uploadDirLights(const Registry& reg, Shader& shader, bool enabled);
     void collectRenderItems();

@@ -23,11 +23,13 @@ private:
     std::vector<int> blocks;
     glm::vec3 outlineColor = glm::vec3(1.0f);
 
+    Registry* reg;
+
 public:
     std::unordered_map<int, std::vector<glm::vec3>> opaque;
     std::unordered_map<int, std::vector<glm::vec3>> transparent;
 
-    World(int x, int y, int z);
+    World(Registry* registry, int x, int y, int z);
 
     glm::vec3 getOutlineColor() const { return outlineColor; }
     void setOutlineColor(const glm::vec3& color) { outlineColor = color; }

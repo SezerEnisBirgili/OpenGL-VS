@@ -3,8 +3,7 @@
 #include <iostream>
 #include <algorithm>
 
-AssimpImporter::AssimpImporter(Registry& registry, const std::string& modelPath, Shader* shader)
-    : reg(registry), path(modelPath), shader(shader)
+AssimpImporter::AssimpImporter(Registry& registry, const std::string& modelPath, int shader) : reg(registry), path(modelPath), shader(shader)
 {
     std::replace(path.begin(), path.end(), '\\', '/');
 
@@ -25,34 +24,38 @@ int AssimpImporter::loadModel(const std::string& rootName, const TransformCompon
     return processNode(scene->mRootNode, scene, rootName, transform, parent);
 }
 
-int AssimpImporter::processNode(aiNode* node, const aiScene* scene, const std::string& name,
-    const TransformComponent& transform, int parent)
+int AssimpImporter::processNode(aiNode* node, const aiScene* scene, const std::string& name, const TransformComponent& transform, int parent)
 {
-    int nodeEntity = spawnEntity(reg, name, transform, parent);
+    int nodeEntity = EntityBuilder::create(reg, name, transform.position, transform.scale, parent);
 
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh* aMesh = scene->mMeshes[node->mMeshes[i]];
-
+        std::string meshName = name + "_mesh" + std::to_string(i);
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
         MaterialComponent material{};
-        Mesh mesh = processMesh(aMesh, scene, material);
 
-        int meshId = reg.registerMesh(mesh);
+        // unpack mesh data from aMesh
+        // does not create mesh
+        processMesh(aMesh, scene, material, vertices, indices);
 
-        int meshEntity = spawnEntity(reg, name + "_mesh" + std::to_string(i), TransformComponent{}, nodeEntity);
-        addMesh(reg, meshEntity, meshId, shader, material);
+        // create and register mesh in this scope
+        int meshId = reg.registerMesh(vertices, indices, meshName);
+
+        EntityBuilder::create(reg, meshName, glm::vec3(0.0f), glm::vec3(1.0f), nodeEntity)
+            .mesh(meshId, shader, material);
     }
 
-    for (unsigned int i = 0; i < node->mNumChildren; i++)
+    // 4. Recursively process child nodes
+    for (unsigned int i = 0; i < node->mNumChildren; i++) {
         processNode(node->mChildren[i], scene, name, TransformComponent{}, nodeEntity);
+    }
 
     return nodeEntity;
 }
 
-Mesh AssimpImporter::processMesh(aiMesh* aMesh, const aiScene* scene, MaterialComponent& outMaterial)
+void AssimpImporter::processMesh(aiMesh* aMesh, const aiScene* scene, MaterialComponent& outMaterial, std::vector<Vertex> &vertices, std::vector<unsigned int> &indices)
 {
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
-
     for (unsigned int i = 0; i < aMesh->mNumVertices; i++) {
         Vertex v{};
         v.Position = { aMesh->mVertices[i].x, aMesh->mVertices[i].y, aMesh->mVertices[i].z };
@@ -75,37 +78,6 @@ Mesh AssimpImporter::processMesh(aiMesh* aMesh, const aiScene* scene, MaterialCo
         outMaterial.diffuseTexture  = loadMaterialTexture(material, aiTextureType_DIFFUSE);
         outMaterial.specularTexture = loadMaterialTexture(material, aiTextureType_SPECULAR);
     }
-
-    // --- build the GPU-side Mesh manually; no constructor to call anymore ---
-    Mesh mesh;
-    mesh.indexCount = (int)indices.size();
-
-    glGenVertexArrays(1, &mesh.VAO);
-    glGenBuffers(1, &mesh.VBO);
-    glGenBuffers(1, &mesh.EBO);
-
-    glBindVertexArray(mesh.VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);   // position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
-
-    glEnableVertexAttribArray(1);   // normal
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-
-    glEnableVertexAttribArray(2);   // texcoords
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-
-    glBindVertexArray(0);
-
-    mesh.setupInstanceBuffer();   // pre-create instanceVBO so it's ready if this mesh is ever instanced
-
-    return mesh;
 }
 
 unsigned int AssimpImporter::loadMaterialTexture(aiMaterial* mat, aiTextureType type)

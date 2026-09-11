@@ -20,6 +20,7 @@
 #include "mesh.h"
 #include "shader.h"
 #include "settings.h"
+#include "world.h"
 
 constexpr int NULL_ENTITY = 0;
 
@@ -72,14 +73,13 @@ struct HierarchyComponent {
     int parent = NULL_ENTITY;
     std::vector<int> children;
 };
-
 struct GpuPointLight {
-    glm::vec3 position;
-    glm::vec3 color;
-    float intensity;
-    float constant;
-    float linear;
-    float quadratic;
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 color    = glm::vec3(1.0f);
+    float intensity    = 1.0f;
+    float constant     = 1.0f;
+    float linear       = 0.09f;
+    float quadratic    = 0.032f;
 };
 
 struct WorldMatrixComponent {
@@ -87,11 +87,11 @@ struct WorldMatrixComponent {
 };
 
 struct ShaderComponent {
-    int ShaderId;
+    int ShaderId = 0;
 };
 
 struct MeshComponent {
-    int MeshId;
+    int MeshId = 0;
 };
 
 struct ScriptComponent {
@@ -99,14 +99,14 @@ struct ScriptComponent {
 };
 
 struct TextureComponent {
-    int textureId;
-    std::string path;
+    int textureId = 0;
+    std::string path = "";
 };
 
 struct WorldComponent {
-    int worldId;
-    int shaderId;
-    int outlineShaderId;
+    int worldId = 0;
+    int shaderId = 0;
+    int outlineShaderId = 0;
 };
 
 // Math Helpers
@@ -114,6 +114,25 @@ glm::vec3 getEulerAngles(const TransformComponent& t);
 void setEulerAngles(TransformComponent& t, const glm::vec3& degrees);
 void rotateAroundAxis(TransformComponent& t, const glm::vec3& axis, float radians);
 glm::mat4 composeMatrix(const TransformComponent& t);
+
+unsigned int loadTexture(Registry& reg, const std::string& path, unsigned int filter = 0, bool genMipMaps = true);
+
+// Function Declarations
+int spawnEntity(Registry& reg, const std::string& name, const TransformComponent& transform = TransformComponent{}, int parent = NULL_ENTITY);
+void setParent(Registry& reg, int child, int parent);
+int getParent(const Registry& reg, int entity);
+
+void addMesh(Registry & reg, int e, int meshId, int shader, const MaterialComponent & material);
+void addWorld(Registry& reg, int e, int world, int shader, int outlineShader);
+void addTexture(Registry& reg, int e, const std::string& path);
+void addPointLight(Registry& reg, int e, const PointLightComponent& light = PointLightComponent{});
+void addDirLight(Registry& reg, int e, const DirLightComponent& light = DirLightComponent{});
+void addScript(Registry& reg, int e, std::function<void(Registry&, int, float, float)> fn);
+
+
+void transformSystem(Registry& reg);
+void transformEntity(Registry& reg, int e, const glm::mat4& parentWorld);
+void scriptSystem(Registry& reg, float time, float dt);
 
 class Registry {
 public:
@@ -132,67 +151,82 @@ public:
         return e;
     }
 
-    int registerMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
+    int registerMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices, std::string meshName)
     {
-        Mesh mesh;
-        mesh.indexCount = (int)indices.size();
+        // implement either hashing or file based cache
+        if (auto it = meshCache.find(meshName); it != meshCache.end()) { return it->second; }
 
-        glGenVertexArrays(1, &mesh.VAO);
-        glGenBuffers(1, &mesh.VBO);
-        glGenBuffers(1, &mesh.EBO);
-
-        glBindVertexArray(mesh.VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-
-        glBindVertexArray(0);
-
-        mesh.setupInstanceBuffer();
+        Mesh mesh(vertices, indices);
 
         int id = nextMesh++;
         meshStorage[id] = mesh;
+        meshCache[meshName] = id;
+
         return id;
     }
 
     int registerShader(const char* vertexPath, const char* fragmentPath)
     {
+        std::string combined = std::string(vertexPath) + " | " + std::string(fragmentPath);
+        if (auto it = shaderCache.find(combined); it != shaderCache.end()) { return it->second; }
+
         Shader shader = Shader(vertexPath, fragmentPath);
+
         int id = nextShader++;
         shaderStorage[id] = shader;
+        shaderCache[combined] = id;
+
         return id;
     }
 
     int registerOutlineShader(const char* vertexPath, const char* fragmentPath)
     {
+        std::string combined = std::string(vertexPath) + " | " + std::string(fragmentPath);
+        if (auto it = outlineShaderCache.find(combined); it != outlineShaderCache.end()) { return it->second; }
+
         Shader shader = Shader(vertexPath, fragmentPath);
+
         int id = nextOutlineShader++;
         outlineShaderStorage[id] = shader;
+        outlineShaderCache[combined] = id;
+
         return id;
     }
 
     int registerWorld(int x, int y, int z)
     {
-        World world(x,y,z);
+        World world = World(this, x,y,z);
         int id = nextWorld++;
         worldStorage[id] = world;
         return id;
     }
 
+    World* getWorld(int e) { return &worldStorage.at(getWorldId(e)); }
+    int getWorldId(int e) { return worlds.at(e).worldId; }
+    World* getWorldWithId(int w) {return &worldStorage.at(w); }
+
+    Shader* getShader(int e) { return &outlineShaderStorage.at(getShaderId(e)); }
+    int getShaderId(int e) { return outlineShaders.at(e).ShaderId; }
+    Shader* getShaderWithId(int s) {return &outlineShaderStorage.at(s); }
+
+    Shader* getOutlineShader(int e) { return &shaderStorage.at(getOutlineShaderId(e)); }
+    int getOutlineShaderId(int e) { return shaders.at(e).ShaderId; }
+    Shader* getOutlineShaderWithId(int s) {return &shaderStorage.at(s); }
+
+    Mesh* getMesh(int e) { return &meshStorage.at(getMeshId(e)); }
+    int getMeshId(int e) { return meshes.at(e).MeshId; }
+    Mesh* getMeshWithId(int m) {return &meshStorage.at(m); }
+
+    MaterialComponent getMaterial(int e) { return materials.at(e); }
+
     std::unordered_map<int, World>                worldStorage;
     std::unordered_map<int, Mesh>                 meshStorage;
     std::unordered_map<int, Shader>               shaderStorage;
     std::unordered_map<int, Shader>               outlineShaderStorage;
+
+    std::unordered_map<std::string, int>          meshCache; 
+    std::unordered_map<std::string, int>          shaderCache; 
+    std::unordered_map<std::string, int>          outlineShaderCache; 
 
     std::unordered_map<int, TransformComponent>   transforms;
     std::unordered_map<int, WorldMatrixComponent> worldMatrices;
@@ -227,7 +261,7 @@ struct EntityBuilder {
     int id;
 
     static EntityBuilder create(Registry& reg, const std::string& name, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f), int parent = NULL_ENTITY);
-    EntityBuilder& mesh(int meshId, Shader* s, MaterialComponent mat = {});
+    EntityBuilder& mesh(int meshId, int s, MaterialComponent mat = {});
     EntityBuilder& script(std::function<void(Registry&, int, float, float)> func);
     EntityBuilder& pointLight(PointLightComponent light);
     EntityBuilder& dirLight(DirLightComponent light);
@@ -235,21 +269,30 @@ struct EntityBuilder {
     operator int() const { return id; }
 };
 
-unsigned int loadTexture(Registry& reg, const std::string& path, unsigned int filter = 0, bool genMipMaps = true);
+struct WorldBuilder {
+    Registry& reg;
+    int e;
+    World* worldPtr;
 
-// Function Declarations
-int spawnEntity(Registry& reg, const std::string& name, const TransformComponent& transform = TransformComponent{}, int parent = NULL_ENTITY);
-void setParent(Registry& reg, int child, int parent);
-int getParent(const Registry& reg, int entity);
+    static WorldBuilder create(Registry& reg, const std::string& name, int chunkX = 16, int chunkY = 16, int chunkZ = 16, int worldShader = 0, int outlineShader = 0) {
+        int storedWorldId = reg.registerWorld(chunkX, chunkY, chunkZ);
+        int worldEntityId = reg.create(name);
 
-void addMesh(Registry& reg, int e, int meshId, Shader* shader, const MaterialComponent& material);
-void addWorld(Registry& reg, int e, int world, int shader, int outlineShader);
-void addTexture(Registry& reg, int e, const std::string& path);
-void addPointLight(Registry& reg, int e, const PointLightComponent& light = PointLightComponent{});
-void addDirLight(Registry& reg, int e, const DirLightComponent& light = DirLightComponent{});
-void addScript(Registry& reg, int e, std::function<void(Registry&, int, float, float)> fn);
+        addWorld(reg, worldEntityId, storedWorldId, worldShader, outlineShader);
 
+        World* ptr = reg.getWorld(worldEntityId);
+        return WorldBuilder{ reg, worldEntityId, ptr };
+    }
 
-void transformSystem(Registry& reg);
-void transformEntity(Registry& reg, int e, const glm::mat4& parentWorld);
-void scriptSystem(Registry& reg, float time, float dt);
+    WorldBuilder& platform(int blockEntityId, int width, int length) {
+        if (worldPtr) { worldPtr->createPlatform(blockEntityId, width, length); }
+        return *this;
+    }
+
+    WorldBuilder& outlineColor(const glm::vec3& color) {
+        if (worldPtr) { worldPtr->setOutlineColor(color); }
+        return *this;
+    }
+
+    operator int() const { return e; }
+};

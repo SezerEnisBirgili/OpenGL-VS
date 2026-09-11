@@ -10,8 +10,6 @@
 #include <assimp/version.h>
 
 #include "engine.h"
-#include "shader.h"
-#include "mesh.h"
 #include "settings.h"
 #include "vertexData.h"
 #include "input.h"
@@ -36,15 +34,14 @@ const char* const mouseStateArr[] = { "FREE", "TANK" };
 MouseState mouseState = MouseState::FREE;
 
 std::vector<Vertex> floatArrayToVertexVector(const float* data, int count);
-Mesh vertexDataToMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 
 int main();
 
 GLFWwindow* initOpenGL();
 void initImGui(GLFWwindow* window);
-void renderImGui(Registry& reg, World& world, Player& player, int dirLight, int lamp);
+void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp);
 
-int setupSceneGraph(Registry& registry, Shader& litShader,
+int setupSceneGraph(Registry& registry, int litShader,
     int sunMeshId, int earthMeshId, int moonMeshId, int lampMeshId, int grassMeshId, int cubeMeshId,
     unsigned int texSun, unsigned int texWorld, unsigned int texMoon,
     unsigned int fallbackDiffuse, unsigned int fallbackSpecular,
@@ -69,41 +66,43 @@ int main()
     std::cout << "Loading textures..." << std::endl;
 
     //-REQUIRED-//////////////////////////////////////////////////////////////////////////////////
-    unsigned int fallbackDiffuse = loadTexture(registry, "missing_texture.png", 0 /*gl_nearest*/, true);
-    unsigned int fallbackSpecular = loadTexture(registry, "missing_specular.png", 0, true);
+    unsigned int fallbackDiffuse       = loadTexture(registry, "missing_texture.png",     0, true);
+    unsigned int fallbackSpecular      = loadTexture(registry, "missing_specular.png",    0, true);
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    unsigned int texContainer2 = loadTexture(registry, "container2.png", 1/*gl_linear*/, true);
+    unsigned int texContainer2         = loadTexture(registry, "container2.png",          1, true);
     unsigned int texContainer2Specular = loadTexture(registry, "container2_specular.png", 1, true);
-    unsigned int texWorld = loadTexture(registry, "world.png", 1, true);
-    unsigned int texSun = loadTexture(registry, "sun.png", 1, true);
-    unsigned int texMoon = loadTexture(registry, "moon.png", 1, true);
-    unsigned int grass = loadTexture(registry, "grass.png", 1, true);
-    unsigned int white = loadTexture(registry, "white.png", 1, true);
+    unsigned int texWorld              = loadTexture(registry, "world.png",               1, true);
+    unsigned int texSun                = loadTexture(registry, "sun.png",                 1, true);
+    unsigned int texMoon               = loadTexture(registry, "moon.png",                1, true);
+    unsigned int grass                 = loadTexture(registry, "grass.png",               1, true);
+    unsigned int white                 = loadTexture(registry, "white.png",               1, true);
 
     if (!fallbackDiffuse || !fallbackSpecular || !texContainer2 || !texContainer2Specular || !texWorld || !texSun || !texMoon) {
         std::cerr << "One or more textures failed to load, continuing with fallbacks." << std::endl;
     }
 
-    int litShader = registry.registerShader("lit.vert", "lit.frag");
-    int worldShader = registry.registerShader("world.vert", "lit.frag");
+    int litShader     = registry.registerShader       ("lit.vert",     "lit.frag");
+    int worldShader   = registry.registerShader       ("world.vert",   "lit.frag");
     int outlineShader = registry.registerOutlineShader("outline.vert", "outline.frag");
 
-    std::vector<Vertex> squareVerts = floatArrayToVertexVector(basicSquareVertices, std::size(basicSquareVertices));
-    std::vector<Vertex> cubeVerts = floatArrayToVertexVector(basicCubeVertices, std::size(basicCubeVertices));
-    std::vector<Vertex> earthVerts = floatArrayToVertexVector(basicCubeWrappedTextureVertices, std::size(basicCubeWrappedTextureVertices));
+    std::vector<Vertex> squareVerts = floatArrayToVertexVector(basicSquareVertices,             std::size(basicSquareVertices));
+    std::vector<Vertex> cubeVerts   = floatArrayToVertexVector(basicCubeVertices,               std::size(basicCubeVertices));
+    std::vector<Vertex> earthVerts  = floatArrayToVertexVector(basicCubeWrappedTextureVertices, std::size(basicCubeWrappedTextureVertices));
 
     // auto generate indices for compatbility, inefficient
-    std::vector<unsigned int> squareIndices(std::begin(::squareIndices), std::end(::squareIndices));
-    std::vector<unsigned int> cubeIndices(std::begin(::cubeIndices), std::end(::cubeIndices));
+    std::vector<unsigned int> squareIndices (std::begin(::squareIndices), std::end(::squareIndices));
+    std::vector<unsigned int> cubeIndices   (std::begin(::cubeIndices),   std::end(::cubeIndices));
 
-    int sunMesh = registry.registerMesh(cubeVerts, cubeIndices);
-    int earthMesh = registry.registerMesh(earthVerts, cubeIndices);
-    int moonMesh = registry.registerMesh(cubeVerts, cubeIndices);
-    int cubeMesh = registry.registerMesh(cubeVerts, cubeIndices);
-    int platformMesh = registry.registerMesh(cubeVerts, cubeIndices);
-    int lampMesh = registry.registerMesh(cubeVerts, cubeIndices);
-    int grassMesh = registry.registerMesh(squareVerts, squareIndices);
+    int cubeMesh     = registry.registerMesh(cubeVerts,   cubeIndices,   "cube");
+
+    int sunMesh      = registry.registerMesh(cubeVerts,   cubeIndices,   "cube");
+    int earthMesh    = registry.registerMesh(earthVerts,  cubeIndices,   "earth");
+    int moonMesh     = registry.registerMesh(cubeVerts,   cubeIndices,   "cube");
+
+    int platformMesh = registry.registerMesh(cubeVerts,   cubeIndices,   "cube");
+    int lampMesh     = registry.registerMesh(cubeVerts,   cubeIndices,   "cube");
+    int grassMesh    = registry.registerMesh(squareVerts, squareIndices, "square");
 
     // for storage reference
     int storedWorld = registry.registerWorld(16, 16, 16);
@@ -111,20 +110,6 @@ int main()
     // ------------------------------------------------------------------
     // Scene graph
     // ------------------------------------------------------------------
-    
-    int world = 0;
-    addWorld(registry, world, storedWorld, worldShader, outlineShader);
-
-    registry.worldStorage.at(registry.worlds.at(world).worldId).createPlatform(platformBlock, 16, 16);
-
-    world->createPlatform(platformBlock, 16, 16);
-    world->setOutlineColor(engineSettings.outlineColor);
-
-    addWorld(registry, worldEntity, world, &worldShader, &outlineShader);
-
-    player.setWorld(&world);
-    std::cout << "main: player @ " << &player << " world set to " << &world << std::endl;
-
     int dirLight = NULL_ENTITY;
     int lamp = NULL_ENTITY;
     int root = setupSceneGraph(registry, litShader,
@@ -135,12 +120,20 @@ int main()
         dirLight, lamp);
 
     int platformBlock = EntityBuilder::create(registry, "platformBlock", {}, glm::vec3(1.0f), root)
-        .mesh(platformMesh, &worldShader, {
+        .mesh(platformMesh, worldShader, {
             .diffuseTexture = (int)texContainer2,
             .specularTexture = (int)texContainer2Specular,
             .color = glm::vec3(1.0f),
             .shininess = 32.0f
             });
+
+    
+    int world = WorldBuilder::create(registry, "world", 16, 16, 16, worldShader, outlineShader)
+        .platform(platformBlock, 16, 16)
+        .outlineColor(engineSettings.outlineColor);
+
+    player.setWorld(registry.getWorld(world));
+    std::cout << "main: player @ " << &player << " world set to " << &world << std::endl;
 
 
     // ------------------------------------------------------------------
@@ -171,7 +164,7 @@ int main()
         engine.update(currentFrame, deltaTime);
         engine.render();
 
-        renderImGui(registry, world, player, dirLight, lamp);
+        renderImGui(registry, player, world, dirLight, lamp);
 
         glfwSwapBuffers(window);
     }
@@ -271,41 +264,13 @@ std::vector<Vertex> floatArrayToVertexVector(const float* data, int count)
     return vertices;
 }
 
-Mesh vertexDataToMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
-{
-    Mesh mesh;
-    mesh.indexCount = (int)indices.size();
-
-    glGenVertexArrays(1, &mesh.VAO);
-    glGenBuffers(1, &mesh.VBO);
-    glGenBuffers(1, &mesh.EBO);
-
-    glBindVertexArray(mesh.VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-
-    glBindVertexArray(0);
-
-    mesh.setupInstanceBuffer();
-    return mesh;
-}
-
-void renderImGui(Registry& reg, World& world, Player& player, int dirLight, int lamp)
+void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp)
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    World& world = *reg.getWorld(e);
 
     {
         ImGuiIO& io = ImGui::GetIO();
@@ -408,7 +373,8 @@ void renderImGui(Registry& reg, World& world, Player& player, int dirLight, int 
 // Scene Graph Creation Helpers
 // -------------------------------------------------------------------------
 
-void setupSolarSystem(Registry& registry, Shader& litShader, int parentEntity,
+void setupSolarSystem(Registry& registry, 
+    int litShader, int parentEntity,
     int sunMeshId, int earthMeshId, int moonMeshId,
     unsigned int texSun, unsigned int texWorld, unsigned int texMoon,
     unsigned int fallbackSpecular)
@@ -416,7 +382,7 @@ void setupSolarSystem(Registry& registry, Shader& litShader, int parentEntity,
     int solarSystem = EntityBuilder::create(registry, "solarSystem", { 13.0f, 2.0f, 3.0f }, glm::vec3(1.0f), parentEntity);
 
     EntityBuilder::create(registry, "sun", { 0.0f, 0.0f, 0.0f }, glm::vec3(1.0f), solarSystem)
-        .mesh(sunMeshId, &litShader, {
+        .mesh(sunMeshId, litShader, {
             .diffuseTexture = (int)texSun, .specularTexture = (int)fallbackSpecular,
             .color = glm::vec3(1.0f), .emissive = 1.0f
             })
@@ -424,26 +390,24 @@ void setupSolarSystem(Registry& registry, Shader& litShader, int parentEntity,
         .pointLight({ .color = glm::vec3(1.0f), .intensity = 1.0f });
 
     int earth = EntityBuilder::create(registry, "earth", { 3.0f, 0.0f, 0.0f }, glm::vec3(0.5f), solarSystem)
-        .mesh(earthMeshId, &litShader, {
+        .mesh(earthMeshId, litShader, {
             .diffuseTexture = (int)texWorld, .specularTexture = (int)texWorld,
             .color = {0.2f, 0.4f, 0.9f}, .shininess = 16.0f
             })
         .script(earthOrbitBehavior(0.25f, 0.25f, 23.5f));
 
     EntityBuilder::create(registry, "moon", { 1.5f, 0.0f, 0.0f }, glm::vec3(0.5f), earth)
-        .mesh(moonMeshId, &litShader, {
+        .mesh(moonMeshId, litShader, {
             .diffuseTexture = (int)texMoon, .specularTexture = (int)texMoon,
             .color = {0.2f, 0.4f, 0.9f}, .shininess = 0.0f
             })
         .script(moonBehavior(1.0f));
 }
 
-void setupLights(Registry& registry, Shader& litShader, int parentEntity, int lampMeshId,
-    unsigned int fallbackDiffuse, unsigned int fallbackSpecular,
-    int& outDirLight, int& outLamp)
+void setupLights(Registry& registry, int litShader, int parentEntity, int lampMeshId, unsigned int fallbackDiffuse, unsigned int fallbackSpecular, int& outDirLight, int& outLamp)
 {
     outLamp = EntityBuilder::create(registry, "lamp", { 9.0f, 4.0f, 3.0f }, glm::vec3(1.0f), parentEntity)
-        .mesh(lampMeshId, &litShader, {
+        .mesh(lampMeshId, litShader, {
             .diffuseTexture = (int)fallbackDiffuse, .specularTexture = (int)fallbackSpecular,
             .color = glm::vec3(1.0f), .shininess = 32.0f, .emissive = 1.0f
             })
@@ -453,8 +417,7 @@ void setupLights(Registry& registry, Shader& litShader, int parentEntity, int la
         .dirLight({ .direction = glm::normalize(glm::vec3(-0.5f, -1.5f, -0.8f)), .color = {1.0f, 0.98f, 0.9f}, .intensity = 1.2f });
 }
 
-void setupVegetation(Registry& registry, Shader& litShader, int parentEntity, int grassMeshId,
-    unsigned int grassTex, unsigned int fallbackSpecular)
+void setupVegetation(Registry& registry, int litShader, int parentEntity, int grassMeshId, unsigned int grassTex, unsigned int fallbackSpecular)
 {
     const glm::vec3 positions[] = {
         {3.1f, 2.0f, 3.1f}, {5.1f, 2.0f, 3.1f}, {3.1f, 2.0f, 5.1f}, {5.1f, 2.1f, 5.1f}
@@ -463,18 +426,17 @@ void setupVegetation(Registry& registry, Shader& litShader, int parentEntity, in
     for (size_t i = 0; i < std::size(positions); ++i) {
         std::string name = "grass" + std::to_string(i + 1);
         EntityBuilder::create(registry, name, positions[i], glm::vec3(2.0f), parentEntity)
-            .mesh(grassMeshId, &litShader, {
+            .mesh(grassMeshId, litShader, {
                 .diffuseTexture = (int)grassTex, .specularTexture = (int)fallbackSpecular,
                 .isMasked = true
                 });
     }
 }
 
-void setupTransparentBlocks(Registry& registry, Shader& litShader, int parentEntity, int cubeMeshId,
-    unsigned int whiteTex, unsigned int fallbackSpecular)
+void setupTransparentBlocks(Registry& registry, int litShader, int parentEntity, int cubeMeshId, unsigned int whiteTex, unsigned int fallbackSpecular)
 {
     EntityBuilder::create(registry, "redTransparentBlock", glm::vec3(7.0f, 2.0f, 3.0f), glm::vec3(1.0f), parentEntity)
-        .mesh(cubeMeshId, &litShader, {
+        .mesh(cubeMeshId, litShader, {
             .isTransparent = true,
             .diffuseTexture = (int)whiteTex,
             .specularTexture = (int)fallbackSpecular,
@@ -483,7 +445,7 @@ void setupTransparentBlocks(Registry& registry, Shader& litShader, int parentEnt
             });
 }
 
-int setupSceneGraph(Registry& registry, Shader& litShader,
+int setupSceneGraph(Registry& registry, int litShader,
     int sunMeshId, int earthMeshId, int moonMeshId, int lampMeshId, int grassMeshId, int cubeMeshId,
     unsigned int texSun, unsigned int texWorld, unsigned int texMoon,
     unsigned int fallbackDiffuse, unsigned int fallbackSpecular,
@@ -492,7 +454,7 @@ int setupSceneGraph(Registry& registry, Shader& litShader,
 {
     int root = EntityBuilder::create(registry, "root");
 
-    AssimpImporter importer(registry, "backpack/backpack.obj", &litShader);
+    AssimpImporter importer(registry, "backpack/backpack.obj", litShader);
     importer.loadModel("backpack", { .position = {0.0f, 5.0f, 0.0f} }, root);
 
     setupSolarSystem(registry, litShader, root, sunMeshId, earthMeshId, moonMeshId, texSun, texWorld, texMoon, fallbackSpecular);

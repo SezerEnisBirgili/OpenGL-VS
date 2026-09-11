@@ -6,7 +6,7 @@
 #include <sstream>
 #include <glm/gtc/matrix_transform.hpp>
 
-World::World(int x, int y, int z) : boundx(x), boundy(y), boundz(z) {
+World::World(Registry* registry, int x, int y, int z) : reg(registry), boundx(x), boundy(y), boundz(z) {
     blocks.resize(x * y * z, 0);
 }
 
@@ -18,12 +18,8 @@ bool World::isBlockSolid(const glm::vec3& v) const {
     if (!isWithinBounds(v)) return false;
 
     int e = blocks[getIndex(v)];
-    if (e == NULL_ENTITY) return false;   // empty space is never solid — skip the lookup entirely
 
-    auto it = reg.materials.find(e);
-    if (it == reg.materials.end()) return false;   // defensive: unregistered id, treat as non-solid
-
-    return !it->second.isAir;
+    return !reg->getMaterial(e).isAir;
 }
 
 int World::getBlock(const glm::vec3& v) const {
@@ -36,7 +32,7 @@ void World::setBlock(int e, const glm::vec3& v) {
         blocks[getIndex(v)] = e;
 
         // danger: std out of range
-        if (reg.materials.at(e).isTransparent) {
+        if (reg->getMaterial(e).isTransparent) {
             transparent[e].push_back(v);
         } else {
             opaque[e].push_back(v);
