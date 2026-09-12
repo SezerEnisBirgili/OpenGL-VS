@@ -8,10 +8,11 @@
 
 class Mesh {
 public:
-
     unsigned int VAO = 0, VBO = 0, EBO = 0;
     unsigned int instanceVBO = 0;
     int indexCount = 0;
+
+    Mesh() = default;
 
     Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) 
     {
@@ -38,6 +39,47 @@ public:
 
         glGenBuffers(1, &instanceVBO);
 
-        indexCount = (int)indices.size();
+        indexCount = static_cast<int>(indices.size());
+    }
+
+    ~Mesh() {
+        cleanup();
+    }
+
+    Mesh(const Mesh&) = delete;
+    Mesh& operator=(const Mesh&) = delete;
+
+    Mesh(Mesh&& other) noexcept {
+        *this = std::move(other);
+    }
+
+    Mesh& operator=(Mesh&& other) noexcept {
+        if (this != &other) {
+            cleanup(); // Release existing resources on this object
+
+            VAO = other.VAO;
+            VBO = other.VBO;
+            EBO = other.EBO;
+            instanceVBO = other.instanceVBO;
+            indexCount = other.indexCount;
+
+            other.VAO = 0;
+            other.VBO = 0;
+            other.EBO = 0;
+            other.instanceVBO = 0;
+            other.indexCount = 0;
+        }
+        return *this;
+    }
+
+private:
+    void cleanup() {
+        if (VAO) glDeleteVertexArrays(1, &VAO);
+        if (VBO) glDeleteBuffers(1, &VBO);
+        if (EBO) glDeleteBuffers(1, &EBO);
+        if (instanceVBO) glDeleteBuffers(1, &instanceVBO);
+
+        VAO = VBO = EBO = instanceVBO = 0;
+        indexCount = 0;
     }
 };

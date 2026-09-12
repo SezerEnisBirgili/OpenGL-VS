@@ -231,9 +231,10 @@ void RenderSystem::drawOutline() {
 
     for (auto& [e, worldComp] : reg.worlds) {
 
-        Shader* shader = reg.getShader(e);
-        Shader* outlineShader = reg.getOutlineShader(e);
-        World& world = *reg.getWorld(e);
+        // Warning: entity does not have shader, must use worldComp ids
+        Shader* shader = reg.getShaderWithId(worldComp.shaderId);
+        Shader* outlineShader = reg.getOutlineShaderWithId(worldComp.outlineShaderId);
+        World& world = *reg.getWorldWithId(worldComp.worldId);
 
         if (player.getHasSelectedBlock() && outlineShader) {
 

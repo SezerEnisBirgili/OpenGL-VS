@@ -18,8 +18,15 @@ bool World::isBlockSolid(const glm::vec3& v) const {
     if (!isWithinBounds(v)) return false;
 
     int e = blocks[getIndex(v)];
+    if (e == NULL_ENTITY) return false;
 
-    return !reg->getMaterial(e).isAir;
+    auto it = reg->materials.find(e);
+    if (it == reg->materials.end()) {
+        std::cerr << "[World::isBlockSolid] Error: Entity " << e << " at block position (" << v.x << ", " << v.y << ", " << v.z << ") has no MaterialComponent!\n";
+        return false;
+    }
+
+    return !it->second.isAir;
 }
 
 int World::getBlock(const glm::vec3& v) const {

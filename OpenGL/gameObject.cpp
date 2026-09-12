@@ -1,5 +1,4 @@
 #include "GameObject.h"
-#include "mesh.h"
 #include "world.h"
 
 #include <algorithm>
@@ -89,7 +88,7 @@ void addMesh(Registry & reg, int e, int meshId, int shader, const MaterialCompon
 }
 
 void addWorld(Registry& reg, int e, int world, int shader, int outlineShader) {
-    reg.worlds[e] = {world, .shaderId=shader, .outlineShaderId=outlineShader};
+    reg.worlds[e] = { .worldId = world, .shaderId = shader, .outlineShaderId = outlineShader };
     reg.renderableWorlds.push_back(e); 
 }
 

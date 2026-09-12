@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <filesystem>
+#include <utility>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
@@ -23,13 +24,55 @@ private:
     std::vector<int> blocks;
     glm::vec3 outlineColor = glm::vec3(1.0f);
 
-    Registry* reg;
+    Registry* reg = nullptr;
 
 public:
     std::unordered_map<int, std::vector<glm::vec3>> opaque;
     std::unordered_map<int, std::vector<glm::vec3>> transparent;
 
+    World() = default;
+
     World(Registry* registry, int x, int y, int z);
+
+    ~World() = default;
+
+    World(const World&) = delete;
+    World& operator=(const World&) = delete;
+
+    World(World&& other) noexcept {
+        boundx = other.boundx;
+        boundy = other.boundy;
+        boundz = other.boundz;
+        blocks = std::move(other.blocks);
+        outlineColor = other.outlineColor;
+        reg = other.reg;
+        opaque = std::move(other.opaque);
+        transparent = std::move(other.transparent);
+
+        other.boundx = 0;
+        other.boundy = 0;
+        other.boundz = 0;
+        other.reg = nullptr;
+    }
+
+    World& operator=(World&& other) noexcept {
+        if (this != &other) {
+            boundx = other.boundx;
+            boundy = other.boundy;
+            boundz = other.boundz;
+            blocks = std::move(other.blocks);
+            outlineColor = other.outlineColor;
+            reg = other.reg;
+            opaque = std::move(other.opaque);
+            transparent = std::move(other.transparent);
+
+            other.boundx = 0;
+            other.boundy = 0;
+            other.boundz = 0;
+            other.reg = nullptr;
+        }
+        return *this;
+    }
 
     glm::vec3 getOutlineColor() const { return outlineColor; }
     void setOutlineColor(const glm::vec3& color) { outlineColor = color; }

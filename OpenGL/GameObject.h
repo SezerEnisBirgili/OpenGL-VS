@@ -156,10 +156,8 @@ public:
         // implement either hashing or file based cache
         if (auto it = meshCache.find(meshName); it != meshCache.end()) { return it->second; }
 
-        Mesh mesh(vertices, indices);
-
         int id = nextMesh++;
-        meshStorage[id] = mesh;
+        meshStorage[id] = Mesh(vertices, indices);
         meshCache[meshName] = id;
 
         return id;
@@ -170,10 +168,8 @@ public:
         std::string combined = std::string(vertexPath) + " | " + std::string(fragmentPath);
         if (auto it = shaderCache.find(combined); it != shaderCache.end()) { return it->second; }
 
-        Shader shader = Shader(vertexPath, fragmentPath);
-
         int id = nextShader++;
-        shaderStorage[id] = shader;
+        shaderStorage[id] = Shader(vertexPath, fragmentPath);
         shaderCache[combined] = id;
 
         return id;
@@ -184,10 +180,8 @@ public:
         std::string combined = std::string(vertexPath) + " | " + std::string(fragmentPath);
         if (auto it = outlineShaderCache.find(combined); it != outlineShaderCache.end()) { return it->second; }
 
-        Shader shader = Shader(vertexPath, fragmentPath);
-
         int id = nextOutlineShader++;
-        outlineShaderStorage[id] = shader;
+        outlineShaderStorage[id] = Shader(vertexPath, fragmentPath);
         outlineShaderCache[combined] = id;
 
         return id;
@@ -195,9 +189,8 @@ public:
 
     int registerWorld(int x, int y, int z)
     {
-        World world = World(this, x,y,z);
         int id = nextWorld++;
-        worldStorage[id] = world;
+        worldStorage[id] = World(this, x,y,z);;
         return id;
     }
 
@@ -205,13 +198,13 @@ public:
     int getWorldId(int e) { return worlds.at(e).worldId; }
     World* getWorldWithId(int w) {return &worldStorage.at(w); }
 
-    Shader* getShader(int e) { return &outlineShaderStorage.at(getShaderId(e)); }
-    int getShaderId(int e) { return outlineShaders.at(e).ShaderId; }
-    Shader* getShaderWithId(int s) {return &outlineShaderStorage.at(s); }
+    Shader* getShader(int e) { return &shaderStorage.at(getShaderId(e)); }
+    int getShaderId(int e) { return shaders.at(e).ShaderId; }
+    Shader* getShaderWithId(int s) { return &shaderStorage.at(s); }
 
-    Shader* getOutlineShader(int e) { return &shaderStorage.at(getOutlineShaderId(e)); }
-    int getOutlineShaderId(int e) { return shaders.at(e).ShaderId; }
-    Shader* getOutlineShaderWithId(int s) {return &shaderStorage.at(s); }
+    Shader* getOutlineShader(int e) { return &outlineShaderStorage.at(getOutlineShaderId(e)); }
+    int getOutlineShaderId(int e) { return outlineShaders.at(e).ShaderId; }
+    Shader* getOutlineShaderWithId(int s) { return &outlineShaderStorage.at(s); }
 
     Mesh* getMesh(int e) { return &meshStorage.at(getMeshId(e)); }
     int getMeshId(int e) { return meshes.at(e).MeshId; }

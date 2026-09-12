@@ -120,7 +120,7 @@ public:
         float speed = 90.0f * deltaTime;
         float diff = TargetYaw - Yaw;
 
-        if (abs(diff) <= speed)
+        if (std::abs(diff) <= speed)
         {
             Yaw = TargetYaw;
             IsRotating = false;
