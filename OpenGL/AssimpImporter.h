@@ -26,4 +26,5 @@ private:
     std::string path;
     std::string directory;
     int shader = 0;
+    int meshCounter = 0;
 };

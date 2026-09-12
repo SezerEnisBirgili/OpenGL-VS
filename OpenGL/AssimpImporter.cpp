@@ -30,16 +30,13 @@ int AssimpImporter::processNode(aiNode* node, const aiScene* scene, const std::s
 
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh* aMesh = scene->mMeshes[node->mMeshes[i]];
-        std::string meshName = name + "_mesh" + std::to_string(i);
+        std::string meshName = name + "_mesh" + std::to_string(meshCounter++);  // globally unique now
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         MaterialComponent material{};
 
-        // unpack mesh data from aMesh
-        // does not create mesh
         processMesh(aMesh, scene, material, vertices, indices);
 
-        // create and register mesh in this scope
         int meshId = reg.registerMesh(vertices, indices, meshName);
 
         EntityBuilder::create(reg, meshName, glm::vec3(0.0f), glm::vec3(1.0f), nodeEntity)

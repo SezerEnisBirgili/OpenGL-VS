@@ -456,8 +456,8 @@ int setupSceneGraph(Registry& registry, int litShader,
 {
     int root = EntityBuilder::create(registry, "root");
 
-    //AssimpImporter importer(registry, "backpack/backpack.obj", litShader);
-    //importer.loadModel("backpack", { .position = {0.0f, 5.0f, 0.0f} }, root);
+    AssimpImporter importer(registry, "backpack/backpack.obj", litShader);
+    importer.loadModel("backpack", { .position = {0.0f, 5.0f, 0.0f} }, root);
 
     setupSolarSystem(registry, litShader, root, sunMeshId, earthMeshId, moonMeshId, texSun, texWorld, texMoon, fallbackSpecular);
     setupLights(registry, litShader, root, lampMeshId, fallbackDiffuse, fallbackSpecular, outDirLight, outLamp);
