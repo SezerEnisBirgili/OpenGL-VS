@@ -68,23 +68,33 @@ int getParent(const Registry& reg, int entity) {
 // ==========================================
 
 
-void addMesh(Registry & reg, int e, int meshId, int shader, const MaterialComponent & material) {
-    MaterialComponent mat = material;
-
-    if (mat.diffuseTexture == 0) {
-        std::cerr << "[RenderSystem] entity " << e << " (mesh " << meshId << ") has no diffuseTexture set — " << "using fallback diffuse (" << reg.getFallbackDiffuse() << ")\n";
-        mat.diffuseTexture = reg.getFallbackDiffuse();
-    }
-
-    if (mat.specularTexture == 0) {
-        std::cerr << "[RenderSystem] entity " << e << " (mesh " << meshId << ") has no specularTexture set — " << "using fallback specular (" << reg.getFallbackSpecular() << ")\n";
-        mat.specularTexture = reg.getFallbackSpecular();
-    }
-
-    reg.meshes[e] = { meshId};
-    reg.shaders[e] = { shader };
-    reg.materials[e] = mat;
+void addRenderable(Registry& reg, int e, int meshId, int shader, MaterialComponent & material) {
+    addMesh(reg, e, meshId, material);
+    addShader(reg, e, shader);
+    addMaterial(reg, e, material);
     reg.renderableEntities.push_back(e);
+}
+
+void addMesh(Registry& reg, int e, int meshId, MaterialComponent& material) {
+    if (material.diffuseTexture == 0) {
+        std::cout << "[RenderSystem] entity " << e << " (mesh " << meshId << ") has no diffuseTexture set — " << "using fallback diffuse (" << reg.getFallbackDiffuse() << ")\n";
+        material.diffuseTexture = reg.getFallbackDiffuse();
+    }
+
+    if (material.specularTexture == 0) {
+        std::cout << "[RenderSystem] entity " << e << " (mesh " << meshId << ") has no specularTexture set — " << "using fallback specular (" << reg.getFallbackSpecular() << ")\n";
+        material.specularTexture = reg.getFallbackSpecular();
+    }
+
+    reg.meshes[e] = { meshId };
+}
+
+void addShader(Registry& reg, int e, int shader) {
+    reg.shaders[e] = { shader };
+}
+
+void addMaterial(Registry& reg, int e, const MaterialComponent& material) {
+    reg.materials[e] = material;
 }
 
 void addWorld(Registry& reg, int e, int world, int shader, int outlineShader) {
@@ -119,8 +129,15 @@ EntityBuilder EntityBuilder::create(Registry& reg, const std::string& name, glm:
     return EntityBuilder{ reg, spawnEntity(reg, name, t, parent) };
 }
 
+EntityBuilder& EntityBuilder::renderable(int meshId, int s, MaterialComponent mat) {
+    addRenderable(reg, id, meshId, s, mat);
+    return *this;
+}
+
 EntityBuilder& EntityBuilder::mesh(int meshId, int s, MaterialComponent mat) {
-    addMesh(reg, id, meshId, s, mat);
+    addMesh(reg, id, meshId, mat);
+    addShader(reg, id, s);
+    addMaterial(reg, id, mat);
     return *this;
 }
 

@@ -43,7 +43,7 @@ int AssimpImporter::processNode(aiNode* node, const aiScene* scene, const std::s
         int meshId = reg.registerMesh(vertices, indices, meshName);
 
         EntityBuilder::create(reg, meshName, glm::vec3(0.0f), glm::vec3(1.0f), nodeEntity)
-            .mesh(meshId, shader, material);
+            .renderable(meshId, shader, material);
     }
 
     // 4. Recursively process child nodes

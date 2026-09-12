@@ -122,7 +122,10 @@ int spawnEntity(Registry& reg, const std::string& name, const TransformComponent
 void setParent(Registry& reg, int child, int parent);
 int getParent(const Registry& reg, int entity);
 
-void addMesh(Registry & reg, int e, int meshId, int shader, const MaterialComponent & material);
+void addRenderable(Registry & reg, int e, int meshId, int shader, MaterialComponent & material);
+void addMesh(Registry& reg, int e, int meshId, MaterialComponent& material);
+void addShader(Registry& reg, int e, int shader);
+void addMaterial(Registry& reg, int e, const MaterialComponent& material);
 void addWorld(Registry& reg, int e, int world, int shader, int outlineShader);
 void addTexture(Registry& reg, int e, const std::string& path);
 void addPointLight(Registry& reg, int e, const PointLightComponent& light = PointLightComponent{});
@@ -254,6 +257,7 @@ struct EntityBuilder {
     int id;
 
     static EntityBuilder create(Registry& reg, const std::string& name, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f), int parent = NULL_ENTITY);
+    EntityBuilder& renderable(int meshId, int s, MaterialComponent mat = {});
     EntityBuilder& mesh(int meshId, int s, MaterialComponent mat = {});
     EntityBuilder& script(std::function<void(Registry&, int, float, float)> func);
     EntityBuilder& pointLight(PointLightComponent light);

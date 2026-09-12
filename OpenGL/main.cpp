@@ -118,7 +118,9 @@ int main()
         fallbackDiffuse, fallbackSpecular,
         grass, white,
         dirLight, lamp);
+    
 
+    // .mesh vs .renderable : .mesh doesnt add to renderables list
     int platformBlock = EntityBuilder::create(registry, "platformBlock", {}, glm::vec3(1.0f), root)
         .mesh(platformMesh, worldShader, {
             .diffuseTexture = (int)texContainer2,
@@ -382,7 +384,7 @@ void setupSolarSystem(Registry& registry,
     int solarSystem = EntityBuilder::create(registry, "solarSystem", { 13.0f, 2.0f, 3.0f }, glm::vec3(1.0f), parentEntity);
 
     EntityBuilder::create(registry, "sun", { 0.0f, 0.0f, 0.0f }, glm::vec3(1.0f), solarSystem)
-        .mesh(sunMeshId, litShader, {
+        .renderable(sunMeshId, litShader, {
             .diffuseTexture = (int)texSun, .specularTexture = (int)fallbackSpecular,
             .color = glm::vec3(1.0f), .emissive = 1.0f
             })
@@ -390,14 +392,14 @@ void setupSolarSystem(Registry& registry,
         .pointLight({ .color = glm::vec3(1.0f), .intensity = 1.0f });
 
     int earth = EntityBuilder::create(registry, "earth", { 3.0f, 0.0f, 0.0f }, glm::vec3(0.5f), solarSystem)
-        .mesh(earthMeshId, litShader, {
+        .renderable(earthMeshId, litShader, {
             .diffuseTexture = (int)texWorld, .specularTexture = (int)texWorld,
             .color = {0.2f, 0.4f, 0.9f}, .shininess = 16.0f
             })
         .script(earthOrbitBehavior(0.25f, 0.25f, 23.5f));
 
     EntityBuilder::create(registry, "moon", { 1.5f, 0.0f, 0.0f }, glm::vec3(0.5f), earth)
-        .mesh(moonMeshId, litShader, {
+        .renderable(moonMeshId, litShader, {
             .diffuseTexture = (int)texMoon, .specularTexture = (int)texMoon,
             .color = {0.2f, 0.4f, 0.9f}, .shininess = 0.0f
             })
@@ -407,7 +409,7 @@ void setupSolarSystem(Registry& registry,
 void setupLights(Registry& registry, int litShader, int parentEntity, int lampMeshId, unsigned int fallbackDiffuse, unsigned int fallbackSpecular, int& outDirLight, int& outLamp)
 {
     outLamp = EntityBuilder::create(registry, "lamp", { 9.0f, 4.0f, 3.0f }, glm::vec3(1.0f), parentEntity)
-        .mesh(lampMeshId, litShader, {
+        .renderable(lampMeshId, litShader, {
             .diffuseTexture = (int)fallbackDiffuse, .specularTexture = (int)fallbackSpecular,
             .color = glm::vec3(1.0f), .shininess = 32.0f, .emissive = 1.0f
             })
@@ -426,7 +428,7 @@ void setupVegetation(Registry& registry, int litShader, int parentEntity, int gr
     for (size_t i = 0; i < std::size(positions); ++i) {
         std::string name = "grass" + std::to_string(i + 1);
         EntityBuilder::create(registry, name, positions[i], glm::vec3(2.0f), parentEntity)
-            .mesh(grassMeshId, litShader, {
+            .renderable(grassMeshId, litShader, {
                 .diffuseTexture = (int)grassTex, .specularTexture = (int)fallbackSpecular,
                 .isMasked = true
                 });
@@ -436,7 +438,7 @@ void setupVegetation(Registry& registry, int litShader, int parentEntity, int gr
 void setupTransparentBlocks(Registry& registry, int litShader, int parentEntity, int cubeMeshId, unsigned int whiteTex, unsigned int fallbackSpecular)
 {
     EntityBuilder::create(registry, "redTransparentBlock", glm::vec3(7.0f, 2.0f, 3.0f), glm::vec3(1.0f), parentEntity)
-        .mesh(cubeMeshId, litShader, {
+        .renderable(cubeMeshId, litShader, {
             .isTransparent = true,
             .diffuseTexture = (int)whiteTex,
             .specularTexture = (int)fallbackSpecular,
