@@ -68,7 +68,7 @@ bool World::exportWorldToPath(const std::string& destinationPath) const {
             std::filesystem::create_directories(dir);
         }
         catch (const std::filesystem::filesystem_error& e) {
-            std::cerr << "Failed to create directory path: " << e.what() << std::endl;
+            std::cout << "Failed to create directory path: " << e.what() << std::endl;
             return false;
         }
     }
@@ -90,6 +90,12 @@ bool World::exportWorldToPath(const std::string& destinationPath) const {
         }
     }
 
+    outFile.flush();
+    if (!outFile) {
+        std::cout << "Error occurred while writing to: " << destinationPath << std::endl;
+        return false;
+    }
+
     outFile.close();
     std::cout << "Successfully exported world to: " << destinationPath << std::endl;
     return true;
@@ -97,47 +103,80 @@ bool World::exportWorldToPath(const std::string& destinationPath) const {
 
 bool World::importWorldFromPath(Registry& reg, const std::string& sourcePath) {
     if (!std::filesystem::exists(sourcePath)) {
-        std::cerr << "Error: File does not exist at path: " << sourcePath << std::endl;
+        std::cout << "Error: File does not exist at path: " << sourcePath << std::endl;
         return false;
     }
 
     std::ifstream inFile(sourcePath);
     if (!inFile.is_open()) {
-        std::cerr << "Failed to open file for importing: " << sourcePath << std::endl;
+        std::cout << "Failed to open file for importing: " << sourcePath << std::endl;
         return false;
     }
 
     int bx, by, bz;
     if (!(inFile >> bx >> by >> bz)) {
-        std::cerr << "Failed to read dimensions from: " << sourcePath << std::endl;
+        std::cout << "Failed to read dimensions from: " << sourcePath << std::endl;
         return false;
     }
 
-    boundx = bx;
-    boundy = by;
-    boundz = bz;
-    blocks.assign(boundx * boundy * boundz, 0);
-    opaque.clear();
-    transparent.clear();
+    this->reg = &reg;
+
+    int newBoundX = bx, newBoundY = by, newBoundZ = bz;
+    std::vector<int> newBlocks(newBoundX * newBoundY * newBoundZ, 0);
+    std::unordered_map<int, std::vector<glm::vec3>> newOpaque;
+    std::unordered_map<int, std::vector<glm::vec3>> newTransparent;
 
     std::string line;
     std::getline(inFile, line);
 
-    for (int x = 0; x < boundx; ++x) {
-        for (int y = 0; y < boundy; ++y) {
-            for (int z = 0; z < boundz; ++z) {
-                if (!std::getline(inFile, line)) break;
+    bool truncated = false;
+
+    for (int x = 0; x < newBoundX && !truncated; ++x) {
+        for (int y = 0; y < newBoundY && !truncated; ++y) {
+            for (int z = 0; z < newBoundZ; ++z) {
+                if (!std::getline(inFile, line)) {
+                    std::cout << "Unexpected end of file while importing: " << sourcePath << " (missing block data at " << x << ", " << y << ", " << z << ")" << std::endl;
+                    truncated = true;
+                    break;
+                }
 
                 std::stringstream ss(line);
                 int e = 0;
-                ss >> e;
-
-                if (e != NULL_ENTITY) {
-                    setBlock(e, glm::vec3(x, y, z));   // keeps blocks[] and opaque/transparent in sync
+                if (!(ss >> e)) {
+                    std::cout << "Malformed block entry in: " << sourcePath << " at (" << x << ", " << y << ", " << z << ")" << std::endl;
+                    truncated = true;
+                    break;
                 }
+
+                if (e == NULL_ENTITY) continue;
+
+                if (!reg.materials.count(e)) {
+                    std::cout << "World file references unknown entity " << e << " at (" << x << ", " << y << ", " << z << ") — skipping block." << std::endl;
+                    continue;
+                }
+
+                int idx = x * newBoundY * newBoundZ + y * newBoundZ + z;
+                newBlocks[idx] = e;
+
+                if (reg.getMaterial(e).isTransparent)
+                    newTransparent[e].push_back(glm::vec3(x, y, z));
+                else
+                    newOpaque[e].push_back(glm::vec3(x, y, z));
             }
         }
     }
+
+    if (truncated) {
+        std::cout << "Import failed: " << sourcePath << " is corrupted or truncated." << std::endl;
+        return false;
+    }
+
+    boundx = newBoundX;
+    boundy = newBoundY;
+    boundz = newBoundZ;
+    blocks = std::move(newBlocks);
+    opaque = std::move(newOpaque);
+    transparent = std::move(newTransparent);
 
     inFile.close();
 
