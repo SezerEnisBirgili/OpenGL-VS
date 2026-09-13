@@ -5,8 +5,8 @@
 struct EngineSettings
 {
     // Screen dimensions
-    unsigned int screenWidth = 1024;
-    unsigned int screenHeight = 1024;
+    unsigned int screenWidth = 1920;
+    unsigned int screenHeight = 1080;
 
     // Projection settings
     float fov = 45.0f;

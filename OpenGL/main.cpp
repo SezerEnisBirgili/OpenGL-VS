@@ -128,9 +128,6 @@ int main()
         coloredBlocksMesh[i] = registry.registerMesh(cubeVerts, cubeIndices, "cube");
     }
 
-    // for storage reference
-    int storedWorld = registry.registerWorld(16, 16, 16);
-
     // ------------------------------------------------------------------
     // Scene graph
     // ------------------------------------------------------------------
@@ -166,8 +163,8 @@ int main()
 
     }
     
-    int world = WorldBuilder::create(registry, "world", 16, 16, 16, worldShader, outlineShader)
-        .platform(coloredBlockIds[0] /*white block*/, 16, 16)
+    int world = WorldBuilder::create(registry, "world", 64, 64, 64, worldShader, outlineShader)
+        .platform(coloredBlockIds[0] /*white block*/, 64, 64)
         .outlineColor(engineSettings.outlineColor);
 
     player.setWorld(registry.getWorld(world));
@@ -498,7 +495,7 @@ void setupLights(Registry& registry, int litShader, int parentEntity, int lampMe
         .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 2.5f });
 
     outDirLight = EntityBuilder::create(registry, "dirLight", glm::vec3(0.0f), glm::vec3(1.0f), parentEntity)
-        .dirLight({ .direction = glm::normalize(glm::vec3(0.5f, 1.5f, -0.8f)), .color = {1.0f, 0.98f, 0.9f}, .intensity = 1.2f });
+    .dirLight({ .direction = glm::normalize(glm::vec3(0.5f, -1.5f, -0.8f)), .color = {1.0f, 0.98f, 0.9f}, .intensity = 1.2f });
 }
 
 void setupVegetation(Registry& registry, int litShader, int parentEntity, int grassMeshId, unsigned int grassTex, unsigned int fallbackSpecular)
