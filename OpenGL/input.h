@@ -15,7 +15,7 @@ public:
     InputManager(Registry& reg, Player& p) : player(p), registry(reg) {}
 
     // -------------------------------------------------------------------------
-    // GLFW Callbacks (Must be static to match C-style function pointers)
+    // GLFW Callbacks
     // -------------------------------------------------------------------------
 
     static void framebuffer_size_callback(GLFWwindow* /*window*/, int width, int height)
@@ -28,23 +28,25 @@ public:
         auto* self = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
         if (!self) return;
 
-        ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
-
-        if (engineSettings.menuOpen) return;
+        if (engineSettings.menuOpen)
+        {
+            ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
+            return;
+        }
 
         if (engineSettings.firstMouse)
         {
-            engineSettings.lastX = static_cast<float>(xpos);
-            engineSettings.lastY = static_cast<float>(ypos);
+            engineSettings.lastX = (float)xpos;
+            engineSettings.lastY = (float)ypos;
             engineSettings.firstMouse = false;
             return;
         }
 
-        float xoffset = static_cast<float>(xpos) - engineSettings.lastX;
-        float yoffset = engineSettings.lastY - static_cast<float>(ypos);
+        float xoffset = (float)xpos - engineSettings.lastX;
+        float yoffset = engineSettings.lastY - (float)ypos;
 
-        engineSettings.lastX = static_cast<float>(xpos);
-        engineSettings.lastY = static_cast<float>(ypos);
+        engineSettings.lastX = (float)xpos;
+        engineSettings.lastY = (float)ypos;
 
         self->player.getCamera().ProcessMouseMovement(xoffset, yoffset);
     }
@@ -54,8 +56,11 @@ public:
         auto* self = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
         if (!self) return;
 
-        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-        if (ImGui::GetIO().WantCaptureMouse) return;
+        if (engineSettings.menuOpen)
+        {
+            ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+            if (ImGui::GetIO().WantCaptureMouse) return;
+        }
 
         self->player.getCamera().ProcessMouseScroll(static_cast<float>(yoffset));
     }
@@ -65,10 +70,11 @@ public:
         auto* self = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
         if (!self) return;
 
-        ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-        if (ImGui::GetIO().WantCaptureMouse) return;
-
-        if (engineSettings.menuOpen) return;
+        if (engineSettings.menuOpen)
+        {
+            ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+            return; // menu is open — don't place blocks
+        }
 
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
         {
