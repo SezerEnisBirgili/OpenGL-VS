@@ -69,7 +69,7 @@ void RenderSystem::renderInstanced(const std::vector<InstancedRenderItem>& items
 
         s->setFloat("ambientStrength", lightSettings.ambientStrength);
         s->setVec3("ambientColor", lightSettings.ambientColor);
-        s->setMat4("model", world);
+        s->setMat4("model", glm::mat4(1.0f)); // positions already resolved to world space
         s->setMat4("view", player.getCamera().GetViewMatrix());
         s->setMat4("projection", engineSettings.getProjectionMatrix());
         s->setVec3("viewPos", player.getCamera().Position);
@@ -204,8 +204,10 @@ void RenderSystem::renderFrame() {
     for (const auto& item : opaque)
         render(item);
 
-    renderInstanced(instancedOpaque);
-
+    for (int e : reg.renderableWorlds) {
+        int worldShaderId = reg.worlds.at(e).shaderId;
+        renderInstanced(instancedOpaque, worldShaderId);
+    }
     // --- transparent pass ---
     //std::cout << "[RenderSystem] transparent items: " << transparent.size() << std::endl;
 

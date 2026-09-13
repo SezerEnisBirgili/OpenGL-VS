@@ -17,6 +17,9 @@ public:
     int  getSelectedBlock() const { return selectedBlock; }
     glm::vec3 getSelectedBlockPos() const { return selectedBlockPos; }
 
+    void changeSelectedBlock(int e) { blockToPlace = e; }
+    int  getBlockToPlace() const { return blockToPlace; }
+
     bool lookingAtBlock(glm::vec3& hit);
     bool placeBlock();
 
@@ -25,5 +28,6 @@ private:
     Camera camera{};
     bool hasSelectedBlock = false;
     int selectedBlock = 0;
+    int blockToPlace = 0;
     glm::vec3 selectedBlockPos = glm::vec3(0.0f);
 };

@@ -20,6 +20,8 @@
 #include "AssimpImporter.h"
 
 #include <iostream>
+#include <string>
+#include <sys/types.h>
 #include <vector>
 
 char worldPath[256] = "world.txt";
@@ -33,13 +35,22 @@ float lastFrame = 0.0f;
 const char* const mouseStateArr[] = { "FREE", "TANK" };
 MouseState mouseState = MouseState::FREE;
 
+struct BlockPaletteEntry {
+    int entity;
+    std::string name;
+    unsigned int diffuseTexture;
+};
+
+std::vector<BlockPaletteEntry> blockPalette;
+
 std::vector<Vertex> floatArrayToVertexVector(const float* data, int count);
 
 int main();
 
 GLFWwindow* initOpenGL();
 void initImGui(GLFWwindow* window);
-void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp);
+void buildBlockPalette(Registry& reg, std::vector<BlockPaletteEntry>& out);
+void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp, const std::vector<BlockPaletteEntry>& palette);
 
 int setupSceneGraph(Registry& registry, int litShader,
     int sunMeshId, int earthMeshId, int moonMeshId, int lampMeshId, int grassMeshId, int cubeMeshId,
@@ -78,6 +89,15 @@ int main()
     unsigned int grass                 = loadTexture(registry, "grass.png",               1, true);
     unsigned int white                 = loadTexture(registry, "white.png",               1, true);
 
+    int coloredBlocksSize = 16;
+    int coloredBlockTextures[coloredBlocksSize];
+    int coloredBlocksMesh[coloredBlocksSize];
+    std::vector<std::string> colorNames = {"white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"};
+
+    for(int i = 0; i < coloredBlocksSize; i++) {
+        coloredBlockTextures[i] = loadTexture(registry, colorNames[i] + ".png", 1, true);
+    }
+
     if (!fallbackDiffuse || !fallbackSpecular || !texContainer2 || !texContainer2Specular || !texWorld || !texSun || !texMoon) {
         std::cerr << "One or more textures failed to load, continuing with fallbacks." << std::endl;
     }
@@ -104,6 +124,10 @@ int main()
     int lampMesh     = registry.registerMesh(cubeVerts,   cubeIndices,   "cube");
     int grassMesh    = registry.registerMesh(squareVerts, squareIndices, "square");
 
+    for(int i = 0; i < coloredBlocksSize; i++) {
+        coloredBlocksMesh[i] = registry.registerMesh(cubeVerts, cubeIndices, "cube");
+    }
+
     // for storage reference
     int storedWorld = registry.registerWorld(16, 16, 16);
 
@@ -121,22 +145,38 @@ int main()
     
 
     // .mesh vs .renderable : .mesh doesnt add to renderables list
-    int redTransparentPlatormBlock = EntityBuilder::create(registry, "redTransparentBlock", glm::vec3(7.0f, 2.0f, 3.0f), glm::vec3(1.0f), root)
-        .renderable(cubeMesh, litShader, {
+    // .block: like .renderable, but also registers this entity in the block palette
+    int redGlassBlock = EntityBuilder::create(registry, "Red Glass", glm::vec3(7.0f, 2.0f, 3.0f), glm::vec3(1.0f), root)
+        .block(cubeMesh, litShader, {
             .isTransparent = true,
             .diffuseTexture = (int)white,
             .specularTexture = (int)fallbackSpecular,
             .color = { 1.0f, 0.0f, 0.0f },
             .alpha = 0.5f
             });
+        
+    int coloredBlockIds[coloredBlocksSize];
+    for(int i = 0; i < coloredBlocksSize; i++) {
+        coloredBlockIds[i] = EntityBuilder::create(registry, colorNames[i] + " Block", glm::vec3(0.0f), glm::vec3(1.0f), root)
+        .block(cubeMesh, litShader, {
+            .isTransparent = false,
+            .diffuseTexture = coloredBlockTextures[i],
+            .specularTexture = (int)fallbackSpecular,
+            });
 
+    }
     
     int world = WorldBuilder::create(registry, "world", 16, 16, 16, worldShader, outlineShader)
-        .platform(redTransparentPlatormBlock, 16, 16)
+        .platform(coloredBlockIds[0] /*white block*/, 16, 16)
         .outlineColor(engineSettings.outlineColor);
 
     player.setWorld(registry.getWorld(world));
     std::cout << "main: player @ " << &player << " world set to " << &world << std::endl;
+
+    buildBlockPalette(registry, blockPalette);
+    if (!blockPalette.empty()) {
+        player.changeSelectedBlock(blockPalette.front().entity);
+    }
 
 
     // ------------------------------------------------------------------
@@ -167,7 +207,7 @@ int main()
         engine.update(currentFrame, deltaTime);
         engine.render();
 
-        renderImGui(registry, player, world, dirLight, lamp);
+        renderImGui(registry, player, world, dirLight, lamp, blockPalette);
 
         glfwSwapBuffers(window);
     }
@@ -267,7 +307,24 @@ std::vector<Vertex> floatArrayToVertexVector(const float* data, int count)
     return vertices;
 }
 
-void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp)
+void buildBlockPalette(Registry& reg, std::vector<BlockPaletteEntry>& out)
+{
+    out.clear();
+
+    for (int e : reg.blockPalette) {
+        auto matIt = reg.materials.find(e);
+        if (matIt == reg.materials.end()) continue;
+        if (matIt->second.isAir) continue; // skip air
+
+        std::string name = reg.names.count(e) ? reg.names.at(e) : ("entity_" + std::to_string(e));
+
+        out.push_back({ e, name, (unsigned int)matIt->second.diffuseTexture });
+    }
+
+    std::cout << "[buildBlockPalette] found " << out.size() << " block entities" << std::endl;
+}
+
+void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp, const std::vector<BlockPaletteEntry>& palette)
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -366,6 +423,30 @@ void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp)
         }
     }
 
+    if (ImGui::CollapsingHeader("Block Palette", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        int currentBlock = player.getBlockToPlace();
+
+        for (const auto& entry : palette)
+        {
+            ImGui::PushID(entry.entity);
+
+            if (entry.diffuseTexture != 0)
+            {
+                ImGui::Image((ImTextureID)(intptr_t)entry.diffuseTexture, ImVec2(32, 32));
+                ImGui::SameLine();
+            }
+
+            bool isSelected = (entry.entity == currentBlock);
+            if (ImGui::Selectable(entry.name.c_str(), isSelected))
+            {
+                player.changeSelectedBlock(entry.entity);
+            }
+
+            ImGui::PopID();
+        }
+    }
+
     ImGui::End();
 
     ImGui::Render();
@@ -417,7 +498,7 @@ void setupLights(Registry& registry, int litShader, int parentEntity, int lampMe
         .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 2.5f });
 
     outDirLight = EntityBuilder::create(registry, "dirLight", glm::vec3(0.0f), glm::vec3(1.0f), parentEntity)
-        .dirLight({ .direction = glm::normalize(glm::vec3(-0.5f, -1.5f, -0.8f)), .color = {1.0f, 0.98f, 0.9f}, .intensity = 1.2f });
+        .dirLight({ .direction = glm::normalize(glm::vec3(0.5f, 1.5f, -0.8f)), .color = {1.0f, 0.98f, 0.9f}, .intensity = 1.2f });
 }
 
 void setupVegetation(Registry& registry, int litShader, int parentEntity, int grassMeshId, unsigned int grassTex, unsigned int fallbackSpecular)
@@ -436,18 +517,6 @@ void setupVegetation(Registry& registry, int litShader, int parentEntity, int gr
     }
 }
 
-void setupTransparentBlocks(Registry& registry, int litShader, int parentEntity, int cubeMeshId, unsigned int whiteTex, unsigned int fallbackSpecular)
-{
-    EntityBuilder::create(registry, "redTransparentBlock", glm::vec3(7.0f, 2.0f, 3.0f), glm::vec3(1.0f), parentEntity)
-        .renderable(cubeMeshId, litShader, {
-            .isTransparent = true,
-            .diffuseTexture = (int)whiteTex,
-            .specularTexture = (int)fallbackSpecular,
-            .color = { 1.0f, 0.0f, 0.0f },
-            .alpha = 0.5f
-            });
-}
-
 int setupSceneGraph(Registry& registry, int litShader,
     int sunMeshId, int earthMeshId, int moonMeshId, int lampMeshId, int grassMeshId, int cubeMeshId,
     unsigned int texSun, unsigned int texWorld, unsigned int texMoon,
@@ -463,7 +532,6 @@ int setupSceneGraph(Registry& registry, int litShader,
     setupSolarSystem(registry, litShader, root, sunMeshId, earthMeshId, moonMeshId, texSun, texWorld, texMoon, fallbackSpecular);
     setupLights(registry, litShader, root, lampMeshId, fallbackDiffuse, fallbackSpecular, outDirLight, outLamp);
     setupVegetation(registry, litShader, root, grassMeshId, grassTex, fallbackSpecular);
-    setupTransparentBlocks(registry, litShader, root, cubeMeshId, whiteTex, fallbackSpecular);
 
     return root;
 }

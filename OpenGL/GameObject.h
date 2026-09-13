@@ -126,6 +126,7 @@ void addRenderable(Registry & reg, int e, int meshId, int shader, MaterialCompon
 void addMesh(Registry& reg, int e, int meshId, MaterialComponent& material);
 void addShader(Registry& reg, int e, int shader);
 void addMaterial(Registry& reg, int e, const MaterialComponent& material);
+void addBlock(Registry& reg, int e, int meshId, int shader, MaterialComponent& material);
 void addWorld(Registry& reg, int e, int world, int shader, int outlineShader);
 void addTexture(Registry& reg, int e, const std::string& path);
 void addPointLight(Registry& reg, int e, const PointLightComponent& light = PointLightComponent{});
@@ -212,6 +213,10 @@ public:
     Mesh* getMesh(int e) { return &meshStorage.at(getMeshId(e)); }
     int getMeshId(int e) { return meshes.at(e).MeshId; }
     Mesh* getMeshWithId(int m) {return &meshStorage.at(m); }
+    int getMeshIdByName(const std::string& name) const {
+        if (auto it = meshCache.find(name); it != meshCache.end()) { return it->second; }
+        else { return -1; }   
+    }
 
     MaterialComponent getMaterial(int e) { return materials.at(e); }
 
@@ -241,6 +246,7 @@ public:
 
     std::vector<int> renderableEntities;
     std::vector<int> renderableWorlds;
+    std::vector<int> blockPalette;
 
 private:
     int nextOutlineShader = 1;
@@ -259,6 +265,7 @@ struct EntityBuilder {
     static EntityBuilder create(Registry& reg, const std::string& name, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f), int parent = NULL_ENTITY);
     EntityBuilder& renderable(int meshId, int s, MaterialComponent mat = {});
     EntityBuilder& mesh(int meshId, int s, MaterialComponent mat = {});
+    EntityBuilder& block(int meshId, int s, MaterialComponent mat = {});
     EntityBuilder& script(std::function<void(Registry&, int, float, float)> func);
     EntityBuilder& pointLight(PointLightComponent light);
     EntityBuilder& dirLight(DirLightComponent light);

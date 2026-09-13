@@ -191,7 +191,7 @@ void World::collectInstancedRenderItems(std::vector<InstancedRenderItem>& out, c
         std::vector<glm::vec3> centered;
         centered.reserve(positions.size());
         for (const auto& pos : positions)
-            centered.push_back(blockCenter(pos));
+            centered.push_back(glm::vec3(parentTransform * glm::vec4(blockCenter(pos), 1.0f)));
 
         out.push_back({ e, std::move(centered) });
     }

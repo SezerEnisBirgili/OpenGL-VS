@@ -97,6 +97,13 @@ void addMaterial(Registry& reg, int e, const MaterialComponent& material) {
     reg.materials[e] = material;
 }
 
+void addBlock(Registry& reg, int e, int meshId, int shader, MaterialComponent& material) {
+    addMesh(reg, e, meshId, material);
+    addShader(reg, e, shader);
+    addMaterial(reg, e, material);
+    reg.blockPalette.push_back(e);
+}
+
 void addWorld(Registry& reg, int e, int world, int shader, int outlineShader) {
     reg.worlds[e] = { .worldId = world, .shaderId = shader, .outlineShaderId = outlineShader };
     reg.renderableWorlds.push_back(e); 
@@ -138,6 +145,11 @@ EntityBuilder& EntityBuilder::mesh(int meshId, int s, MaterialComponent mat) {
     addMesh(reg, id, meshId, mat);
     addShader(reg, id, s);
     addMaterial(reg, id, mat);
+    return *this;
+}
+
+EntityBuilder& EntityBuilder::block(int meshId, int s, MaterialComponent mat) {
+    addBlock(reg, id, meshId, s, mat);
     return *this;
 }
 

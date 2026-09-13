@@ -40,6 +40,11 @@ bool Player::placeBlock()
         return false;
     }
 
+    if (blockToPlace == 0) {
+        std::cout << "[placeBlock] failed: no block selected in palette" << std::endl;
+        return false;
+    }
+
     glm::vec3 hitBlock(0.0f);
     bool hitSomething = lookingAtBlock(hitBlock);
 
@@ -73,8 +78,10 @@ bool Player::placeBlock()
         << " inBounds=" << isWithinBounds
         << " alreadySolid=" << isBlockSolid << std::endl;
 
+    std::cout << "[placeBlock] block id=" << blockToPlace << std::endl;
+
     if (isWithinBounds && !isBlockSolid) {
-        world->setBlock(selectedBlock, targetPos);
+        world->setBlock(blockToPlace, targetPos);
         std::cout << "[placeBlock] SUCCESS" << std::endl;
         return true;
     }
