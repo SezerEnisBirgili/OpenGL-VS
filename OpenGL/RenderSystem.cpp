@@ -6,9 +6,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>   // glm::distance2
 
-void RenderSystem::render(int e, int s) {
+void RenderSystem::render(RenderItem renderable, int s) {
 
     Shader* shader;
+    int e = renderable.e;
 
     // if shader is not given, use shader assigned to entity
     if (!s) {
@@ -19,14 +20,14 @@ void RenderSystem::render(int e, int s) {
 
     const Mesh* mesh = reg.getMesh(e);
     const auto& camera = player.getCamera();
-    const glm::mat4& world = reg.worldMatrices.at(e).value;
+    const glm::mat4& model = renderable.model;
     const MaterialComponent& mat = reg.materials.at(e);
 
     shader->use();
 
     shader->setFloat("ambientStrength", lightSettings.ambientStrength);
     shader->setVec3("ambientColor", lightSettings.ambientColor);
-    shader->setMat4("model", world);
+    shader->setMat4("model", model);
     shader->setMat4("view", camera.GetViewMatrix());
     shader->setMat4("projection", engineSettings.getProjectionMatrix());
     shader->setVec3("viewPos", camera.Position);
@@ -164,24 +165,20 @@ void RenderSystem::uploadDirLights(const Registry& reg, Shader& shader, bool ena
 void RenderSystem::collectRenderItems() {
     opaque.clear();
     transparent.clear();
+    instancedOpaque.clear();
 
     // entities
-    std::unordered_map<int, std::vector<glm::vec3>> entityOpaqueGroups;
     for (int e : reg.renderableEntities) {
         const MaterialComponent& mat = reg.materials.at(e);
-        glm::vec3 pos = glm::vec3(reg.worldMatrices.at(e).value[3]);
+        const glm::mat4& model = reg.worldMatrices.at(e).value;
 
-        if (mat.isTransparent)
-            transparent.push_back({ e, pos });
-        else
-            entityOpaqueGroups[e].push_back(pos);
+        if (mat.isTransparent) transparent.push_back({ e, model });
+        else opaque.push_back({ e, model });
     }
-    for (auto& [e, positions] : entityOpaqueGroups)
-        opaque.push_back({ e, std::move(positions) });
 
     for (int e : reg.renderableWorlds) {
         World& world = *reg.getWorld(e);
-        world.collectInstancedRenderItems(opaque, glm::mat4(1.0f));
+        world.collectInstancedRenderItems(instancedOpaque, glm::mat4(1.0f));
         world.collectRenderItems(transparent, glm::mat4(1.0f));
     }
 }
@@ -204,21 +201,24 @@ void RenderSystem::renderFrame() {
     if (opaque.empty())
         std::cout << "[RenderSystem] WARNING: opaque list is empty, nothing will be drawn this pass\n";
 
-    renderInstanced(opaque);
+    for (const auto& item : opaque)
+        render(item);
+
+    renderInstanced(instancedOpaque);
 
     // --- transparent pass ---
     //std::cout << "[RenderSystem] transparent items: " << transparent.size() << std::endl;
 
-    std::sort(transparent.begin(), transparent.end(), [&](const RenderItem& a, const RenderItem& b) {
-        return glm::distance2(camPos, a.position) > glm::distance2(camPos, b.position);
-        });
+    std::sort(transparent.begin(), transparent.end(), 
+    [&](const RenderItem& a, const RenderItem& b) { return glm::distance2(camPos, glm::vec3(a.model[3])) > glm::distance2(camPos, glm::vec3(b.model[3]));
+    });
 
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     for (const auto& item : transparent)
-        render(item.e);
+        render(item);
 
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);

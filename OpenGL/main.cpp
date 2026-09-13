@@ -121,17 +121,18 @@ int main()
     
 
     // .mesh vs .renderable : .mesh doesnt add to renderables list
-    int platformBlock = EntityBuilder::create(registry, "platformBlock", {}, glm::vec3(1.0f), root)
-        .mesh(platformMesh, worldShader, {
-            .diffuseTexture = (int)texContainer2,
-            .specularTexture = (int)texContainer2Specular,
-            .color = glm::vec3(1.0f),
-            .shininess = 32.0f
+    int redTransparentPlatormBlock = EntityBuilder::create(registry, "redTransparentBlock", glm::vec3(7.0f, 2.0f, 3.0f), glm::vec3(1.0f), root)
+        .renderable(cubeMesh, litShader, {
+            .isTransparent = true,
+            .diffuseTexture = (int)white,
+            .specularTexture = (int)fallbackSpecular,
+            .color = { 1.0f, 0.0f, 0.0f },
+            .alpha = 0.5f
             });
 
     
     int world = WorldBuilder::create(registry, "world", 16, 16, 16, worldShader, outlineShader)
-        .platform(platformBlock, 16, 16)
+        .platform(redTransparentPlatormBlock, 16, 16)
         .outlineColor(engineSettings.outlineColor);
 
     player.setWorld(registry.getWorld(world));

@@ -15,13 +15,14 @@ private:
     Registry& reg;
     EngineSettings engineSettings;
 
-    std::vector<InstancedRenderItem> opaque;
+    std::vector<RenderItem> opaque;
     std::vector<RenderItem> transparent;
+    std::vector<InstancedRenderItem> instancedOpaque;
 
     void uploadInstancePositions(Mesh* mesh, const std::vector<glm::vec3>& positions);
     void drawMesh(int m);
     void drawMeshInstanced(Mesh* mesh, int count);
-    void render(int e, int shader = 0);
+    void render(RenderItem renderable, int s = 0);
     void renderInstanced(const std::vector<InstancedRenderItem>& items, int shader = 0);
     void uploadLights(const Registry& reg, Shader& shader);
     void uploadDirLights(const Registry& reg, Shader& shader, bool enabled);

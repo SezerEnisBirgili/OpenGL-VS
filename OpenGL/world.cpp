@@ -202,7 +202,9 @@ void World::collectRenderItems(std::vector<RenderItem>& out, const glm::mat4& pa
     for (auto& [e, positions] : transparent) {
         for (auto& pos : positions) {
             glm::vec3 worldPos = blockCenter(glm::vec3(parentTransform * glm::vec4(pos, 1.0f)));
-            out.push_back({ e, worldPos });
+            glm::mat4 model(parentTransform);
+            model[3] = glm::vec4(worldPos, 1.0f);
+            out.push_back({ e, model });
         }
     }
 }

@@ -5,8 +5,9 @@
 
 struct RenderItem {
     int       e;
-    glm::vec3 position;
+    glm::mat4 model;
 };
+
 
 struct InstancedRenderItem {
     int                     e;
