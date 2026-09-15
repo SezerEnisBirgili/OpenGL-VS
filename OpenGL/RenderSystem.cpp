@@ -131,9 +131,9 @@ void RenderSystem::uploadLights(const Registry& reg, Shader& shader) {
 
     int i = 0;
     for (const auto& [e, pointLightComp] : reg.pointLights) {
-        auto transformIt = reg.transforms.find(e);
-        if (transformIt == reg.transforms.end()) continue;
-        glm::vec3 lightPos = transformIt->second.position;
+        auto worldIt = reg.worldMatrices.find(e);
+        if (worldIt == reg.worldMatrices.end()) continue;
+        glm::vec3 lightPos = glm::vec3(worldIt->second.value[3]); // world-space position
 
         std::string base = "pointLights[" + std::to_string(i) + "].";
         shader.setVec3(base + "position", lightPos);
