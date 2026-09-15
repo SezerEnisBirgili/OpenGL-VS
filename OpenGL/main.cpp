@@ -152,6 +152,14 @@ int main()
             .alpha = 0.5f
             });
         
+    int simpleLamp = EntityBuilder::create(registry, "simpleLamp", glm::vec3(15.0f, 5.0f, 15.0f), glm::vec3(1.0f), root)
+        .block(cubeMesh, litShader, {
+            .isTransparent = false,
+            .diffuseTexture = (int)fallbackDiffuse,
+            .specularTexture = (int)fallbackSpecular,
+            })
+        .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 0.5f });
+
     int coloredBlockIds[COLORED_BLOCK_SIZE];
     for(int i = 0; i < COLORED_BLOCK_SIZE; i++) {
         coloredBlockIds[i] = EntityBuilder::create(registry, colorNames[i] + " Block", glm::vec3(0.0f), glm::vec3(1.0f), root)
@@ -468,7 +476,7 @@ void setupSolarSystem(Registry& registry,
             .color = glm::vec3(1.0f), .emissive = 1.0f
             })
         .script(spinBehavior(0.2f))
-        .pointLight({ .color = glm::vec3(1.0f), .intensity = 1.0f });
+        .pointLight({ .color = glm::vec3(1.0f), .intensity = 0.5f });
 
     int earth = EntityBuilder::create(registry, "earth", { 3.0f, 0.0f, 0.0f }, glm::vec3(0.5f), solarSystem)
         .renderable(earthMeshId, litShader, {
@@ -492,7 +500,7 @@ void setupLights(Registry& registry, int litShader, int parentEntity, int lampMe
             .diffuseTexture = (int)fallbackDiffuse, .specularTexture = (int)fallbackSpecular,
             .color = glm::vec3(1.0f), .shininess = 32.0f, .emissive = 1.0f
             })
-        .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 1.0f });
+        .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 0.5f });
 
     outDirLight = EntityBuilder::create(registry, "dirLight", glm::vec3(0.0f), glm::vec3(1.0f), parentEntity)
     .dirLight({ .direction = glm::normalize(glm::vec3(0.5f, -1.5f, -0.8f)), .color = {1.0f, 0.98f, 0.9f}, .intensity = 1.0f });

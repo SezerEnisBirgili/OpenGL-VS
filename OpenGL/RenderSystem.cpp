@@ -47,7 +47,7 @@ void RenderSystem::render(RenderItem renderable, int s) {
     shader->setFloat("material.alpha", mat.alpha);
     shader->setBool("material.isMasked", mat.isMasked);
 
-    uploadLights(reg, *shader);
+    uploadLights(*shader);
     uploadDirLights(reg, *shader, lightSettings.dirLightEnabled);
 
     drawMesh(reg.getMeshId(e));
@@ -88,7 +88,7 @@ void RenderSystem::renderInstanced(const std::vector<InstancedRenderItem>& items
         s->setFloat("material.alpha", mat.alpha);
         s->setBool("material.isMasked", mat.isMasked);
 
-        uploadLights(reg, *s);
+        uploadLights(*s);
         uploadDirLights(reg, *s, lightSettings.dirLightEnabled);
 
         uploadInstancePositions(mesh, batch.positions);
@@ -125,24 +125,19 @@ void RenderSystem::drawMeshInstanced(Mesh* mesh, int count) {
     glBindVertexArray(0);
 }
 
-void RenderSystem::uploadLights(const Registry& reg, Shader& shader) {
+void RenderSystem::uploadLights(Shader& shader) {
     shader.setBool("pointLightsEnabled", lightSettings.pointLightsEnabled);
-    shader.setInt("numPointLights", (int)reg.pointLights.size());
+    shader.setInt("numPointLights", (int)pointLightsGPU.size());
 
-    int i = 0;
-    for (const auto& [e, pointLightComp] : reg.pointLights) {
-        auto worldIt = reg.worldMatrices.find(e);
-        if (worldIt == reg.worldMatrices.end()) continue;
-        glm::vec3 lightPos = glm::vec3(worldIt->second.value[3]); // world-space position
-
+    for (size_t i = 0; i < pointLightsGPU.size(); i++) {
+        const GpuPointLight& light = pointLightsGPU[i];
         std::string base = "pointLights[" + std::to_string(i) + "].";
-        shader.setVec3(base + "position", lightPos);
-        shader.setVec3(base + "color", pointLightComp.color);
-        shader.setFloat(base + "intensity", pointLightComp.intensity);
-        shader.setFloat(base + "constant", pointLightComp.constant);
-        shader.setFloat(base + "linear", pointLightComp.linear);
-        shader.setFloat(base + "quadratic", pointLightComp.quadratic);
-        i++;
+        shader.setVec3(base + "position", light.position);
+        shader.setVec3(base + "color", light.color);
+        shader.setFloat(base + "intensity", light.intensity);
+        shader.setFloat(base + "constant", light.constant);
+        shader.setFloat(base + "linear", light.linear);
+        shader.setFloat(base + "quadratic", light.quadratic);
     }
 }
 
@@ -166,6 +161,7 @@ void RenderSystem::collectRenderItems() {
     opaque.clear();
     transparent.clear();
     instancedOpaque.clear();
+    pointLightsGPU.clear();
 
     // entities
     for (int e : reg.renderableEntities) {
@@ -174,6 +170,19 @@ void RenderSystem::collectRenderItems() {
 
         if (mat.isTransparent) transparent.push_back({ e, model });
         else opaque.push_back({ e, model });
+
+        auto lightIt = reg.pointLights.find(e);
+        if (lightIt != reg.pointLights.end()) {
+            const PointLightComponent& pl = lightIt->second;
+            GpuPointLight gpuLight;
+            gpuLight.position = glm::vec3(model[3]); // world position
+            gpuLight.color = pl.color;
+            gpuLight.intensity = pl.intensity;
+            gpuLight.constant = pl.constant;
+            gpuLight.linear = pl.linear;
+            gpuLight.quadratic = pl.quadratic;
+            pointLightsGPU.push_back(gpuLight);
+        }
     }
 
     for (int e : reg.renderableWorlds) {
@@ -183,20 +192,60 @@ void RenderSystem::collectRenderItems() {
     }
 }
 
+void RenderSystem::collectPointLights() {
+    pointLightsGPU.clear();
+
+    for (const RenderItem& item : opaque) {
+        auto it = reg.pointLights.find(item.e);
+        if (it == reg.pointLights.end()) continue;
+        addLight(item.e, glm::vec3(item.model[3]));
+    }
+
+        for (const RenderItem& item : transparent) {
+        auto it = reg.pointLights.find(item.e);
+        if (it == reg.pointLights.end()) continue;
+        addLight(item.e, glm::vec3(item.model[3]));
+    }
+
+    for (const InstancedRenderItem& batch : instancedOpaque) {
+        for (const glm::vec3& pos : batch.positions) {
+            auto it = reg.pointLights.find(batch.e);
+            if (it == reg.pointLights.end()) continue;
+            addLight(batch.e, pos);
+        }
+    }
+}
+
+// collectPointLights helper function
+void RenderSystem::addLight(int e, const glm::vec3& worldPos) {
+
+    auto it = reg.pointLights.find(e);
+    if (it == reg.pointLights.end()) {
+        std::cout << "[addLight] entity point light component is null" << std::endl;
+        return;
+    }
+
+    const PointLightComponent& pl = reg.pointLights.at(e);
+    GpuPointLight gpuLight;
+    gpuLight.position = worldPos;
+    gpuLight.color = pl.color;
+    gpuLight.intensity = pl.intensity;
+    gpuLight.constant = pl.constant;
+    gpuLight.linear = pl.linear;
+    gpuLight.quadratic = pl.quadratic;
+    pointLightsGPU.push_back(gpuLight);
+}
+
 void RenderSystem::renderFrame() {
     // collect all renderable entities
     collectRenderItems();
+    collectPointLights();
 
     const glm::vec3 camPos = player.getCamera().Position;
 
     // --- opaque pass ---
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
-
-    //std::cout << "[RenderSystem] opaque batches: " << opaque.size() << std::endl;
-    for (const auto& batch : opaque)
-        //std::cout << "[RenderSystem]   e=" << batch.e
-        //<< " positions=" << batch.positions.size() << std::endl;
 
     if (opaque.empty())
         std::cout << "[RenderSystem] WARNING: opaque list is empty, nothing will be drawn this pass\n";
@@ -208,9 +257,8 @@ void RenderSystem::renderFrame() {
         int worldShaderId = reg.worlds.at(e).shaderId;
         renderInstanced(instancedOpaque, worldShaderId);
     }
-    // --- transparent pass ---
-    //std::cout << "[RenderSystem] transparent items: " << transparent.size() << std::endl;
 
+    // --- transparent pass ---
     std::sort(transparent.begin(), transparent.end(), 
     [&](const RenderItem& a, const RenderItem& b) { return glm::distance2(camPos, glm::vec3(a.model[3])) > glm::distance2(camPos, glm::vec3(b.model[3]));
     });
