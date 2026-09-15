@@ -37,13 +37,12 @@ int World::getBlock(const glm::vec3& v) const {
 void World::setBlock(int e, const glm::vec3& v) {
     if (isWithinBounds(v))  {
         blocks[getIndex(v)] = e;
+    }
+}
 
-        // danger: std out of range
-        if (reg->getMaterial(e).isTransparent) {
-            transparent[e].push_back(v);
-        } else {
-            opaque[e].push_back(v);
-        }
+void World::removeBlock(const glm::vec3& v) {
+    if (isWithinBounds(v)) {
+        setBlock(NULL_ENTITY, v);
     }
 }
 
@@ -175,8 +174,6 @@ bool World::importWorldFromPath(Registry& reg, const std::string& sourcePath) {
     boundy = newBoundY;
     boundz = newBoundZ;
     blocks = std::move(newBlocks);
-    opaque = std::move(newOpaque);
-    transparent = std::move(newTransparent);
 
     inFile.close();
 
@@ -187,24 +184,57 @@ bool World::importWorldFromPath(Registry& reg, const std::string& sourcePath) {
 
 // Opaque only
 void World::collectInstancedRenderItems(std::vector<InstancedRenderItem>& out, const glm::mat4& parentTransform) const {
-    for (auto& [e, positions] : opaque) {
-        std::vector<glm::vec3> centered;
-        centered.reserve(positions.size());
-        for (const auto& pos : positions)
-            centered.push_back(glm::vec3(parentTransform * glm::vec4(blockCenter(pos), 1.0f)));
+    std::unordered_map<int, std::vector<glm::vec3>> opaqueGrouped;
 
-        out.push_back({ e, std::move(centered) });
+    for (int x = 0; x < boundx; ++x) {
+        for (int y = 0; y < boundy; ++y) {
+            for (int z = 0; z < boundz; ++z) {
+                glm::vec3 pos(x, y, z);
+                int e = blocks[getIndex(pos)];
+
+                if (e == NULL_ENTITY) continue;
+
+                if (reg && reg->materials.count(e)) {
+                    if (!reg->getMaterial(e).isTransparent) {
+                        opaqueGrouped[e].push_back(pos);
+                    }
+                }
+            }
+        }
+    }
+
+    for (auto& [e, positions] : opaqueGrouped) {
+        std::vector<glm::vec3> transformedPositions;
+        transformedPositions.reserve(positions.size());
+
+        for (const auto& pos : positions) {
+            glm::vec3 worldPos = glm::vec3(parentTransform * glm::vec4(blockCenter(pos), 1.0f));
+            transformedPositions.push_back(worldPos);
+        }
+
+        out.push_back({ e, std::move(transformedPositions) });
     }
 }
 
-// transparent only
+// Transparent only
 void World::collectRenderItems(std::vector<RenderItem>& out, const glm::mat4& parentTransform) const {
-    for (auto& [e, positions] : transparent) {
-        for (auto& pos : positions) {
-            glm::vec3 worldPos = blockCenter(glm::vec3(parentTransform * glm::vec4(pos, 1.0f)));
-            glm::mat4 model(parentTransform);
-            model[3] = glm::vec4(worldPos, 1.0f);
-            out.push_back({ e, model });
+    for (int x = 0; x < boundx; ++x) {
+        for (int y = 0; y < boundy; ++y) {
+            for (int z = 0; z < boundz; ++z) {
+                glm::vec3 pos(x, y, z);
+                int e = blocks[getIndex(pos)];
+
+                if (e == NULL_ENTITY) continue;
+
+                if (reg && reg->materials.count(e)) {
+                    if (reg->getMaterial(e).isTransparent) {
+                        glm::vec3 worldPos = glm::vec3(parentTransform * glm::vec4(blockCenter(pos), 1.0f));
+                        glm::mat4 model(parentTransform);
+                        model[3] = glm::vec4(worldPos, 1.0f);
+                        out.push_back({ e, model });
+                    }
+                }
+            }
         }
     }
 }

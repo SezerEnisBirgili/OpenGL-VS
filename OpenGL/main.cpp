@@ -89,12 +89,12 @@ int main()
     unsigned int grass                 = loadTexture(registry, "grass.png",               1, true);
     unsigned int white                 = loadTexture(registry, "white.png",               1, true);
 
-    int coloredBlocksSize = 16;
-    int coloredBlockTextures[coloredBlocksSize];
-    int coloredBlocksMesh[coloredBlocksSize];
+    int const COLORED_BLOCK_SIZE = 16;
+    int coloredBlockTextures[COLORED_BLOCK_SIZE];
+    int coloredBlocksMesh[COLORED_BLOCK_SIZE];
     std::vector<std::string> colorNames = {"white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"};
 
-    for(int i = 0; i < coloredBlocksSize; i++) {
+    for(int i = 0; i < COLORED_BLOCK_SIZE; i++) {
         coloredBlockTextures[i] = loadTexture(registry, colorNames[i] + ".png", 1, true);
     }
 
@@ -124,7 +124,7 @@ int main()
     int lampMesh     = registry.registerMesh(cubeVerts,   cubeIndices,   "cube");
     int grassMesh    = registry.registerMesh(squareVerts, squareIndices, "square");
 
-    for(int i = 0; i < coloredBlocksSize; i++) {
+    for(int i = 0; i < COLORED_BLOCK_SIZE; i++) {
         coloredBlocksMesh[i] = registry.registerMesh(cubeVerts, cubeIndices, "cube");
     }
 
@@ -152,8 +152,8 @@ int main()
             .alpha = 0.5f
             });
         
-    int coloredBlockIds[coloredBlocksSize];
-    for(int i = 0; i < coloredBlocksSize; i++) {
+    int coloredBlockIds[COLORED_BLOCK_SIZE];
+    for(int i = 0; i < COLORED_BLOCK_SIZE; i++) {
         coloredBlockIds[i] = EntityBuilder::create(registry, colorNames[i] + " Block", glm::vec3(0.0f), glm::vec3(1.0f), root)
         .block(cubeMesh, litShader, {
             .isTransparent = false,
@@ -460,7 +460,7 @@ void setupSolarSystem(Registry& registry,
     unsigned int texSun, unsigned int texWorld, unsigned int texMoon,
     unsigned int fallbackSpecular)
 {
-    int solarSystem = EntityBuilder::create(registry, "solarSystem", { 13.0f, 2.0f, 3.0f }, glm::vec3(1.0f), parentEntity);
+    int solarSystem = EntityBuilder::create(registry, "solarSystem", { 20.0f, 3.0f, 20.0f }, glm::vec3(1.0f), parentEntity);
 
     EntityBuilder::create(registry, "sun", { 0.0f, 0.0f, 0.0f }, glm::vec3(1.0f), solarSystem)
         .renderable(sunMeshId, litShader, {
@@ -487,15 +487,15 @@ void setupSolarSystem(Registry& registry,
 
 void setupLights(Registry& registry, int litShader, int parentEntity, int lampMeshId, unsigned int fallbackDiffuse, unsigned int fallbackSpecular, int& outDirLight, int& outLamp)
 {
-    outLamp = EntityBuilder::create(registry, "lamp", { 9.0f, 4.0f, 3.0f }, glm::vec3(1.0f), parentEntity)
+    outLamp = EntityBuilder::create(registry, "lamp", glm::vec3(10.0f, 5.0f, 10.0f), glm::vec3(1.0f), parentEntity)
         .renderable(lampMeshId, litShader, {
             .diffuseTexture = (int)fallbackDiffuse, .specularTexture = (int)fallbackSpecular,
             .color = glm::vec3(1.0f), .shininess = 32.0f, .emissive = 1.0f
             })
-        .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 2.5f });
+        .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 1.0f });
 
     outDirLight = EntityBuilder::create(registry, "dirLight", glm::vec3(0.0f), glm::vec3(1.0f), parentEntity)
-    .dirLight({ .direction = glm::normalize(glm::vec3(0.5f, -1.5f, -0.8f)), .color = {1.0f, 0.98f, 0.9f}, .intensity = 1.2f });
+    .dirLight({ .direction = glm::normalize(glm::vec3(0.5f, -1.5f, -0.8f)), .color = {1.0f, 0.98f, 0.9f}, .intensity = 1.0f });
 }
 
 void setupVegetation(Registry& registry, int litShader, int parentEntity, int grassMeshId, unsigned int grassTex, unsigned int fallbackSpecular)

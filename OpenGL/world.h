@@ -27,9 +27,6 @@ private:
     Registry* reg = nullptr;
 
 public:
-    std::unordered_map<int, std::vector<glm::vec3>> opaque;
-    std::unordered_map<int, std::vector<glm::vec3>> transparent;
-
     World() = default;
 
     World(Registry* registry, int x, int y, int z);
@@ -46,8 +43,6 @@ public:
         blocks = std::move(other.blocks);
         outlineColor = other.outlineColor;
         reg = other.reg;
-        opaque = std::move(other.opaque);
-        transparent = std::move(other.transparent);
 
         other.boundx = 0;
         other.boundy = 0;
@@ -63,8 +58,6 @@ public:
             blocks = std::move(other.blocks);
             outlineColor = other.outlineColor;
             reg = other.reg;
-            opaque = std::move(other.opaque);
-            transparent = std::move(other.transparent);
 
             other.boundx = 0;
             other.boundy = 0;
@@ -88,6 +81,7 @@ public:
 
     int getBlock(const glm::vec3& v) const;
     void setBlock(int e, const glm::vec3& v);
+    void removeBlock(const glm::vec3& v);
     void createPlatform(int e, int sizeX, int sizeZ);
 
     bool exportWorldToPath(const std::string& destinationPath) const;

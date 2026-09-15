@@ -76,9 +76,14 @@ public:
             return; // menu is open — don't place blocks
         }
 
-        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+        if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
         {
             self->player.placeBlock();
+        }
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+        {
+            self->player.breakBlock();
         }
     }
 

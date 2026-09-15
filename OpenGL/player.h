@@ -22,6 +22,7 @@ public:
 
     bool lookingAtBlock(glm::vec3& hit);
     bool placeBlock();
+    bool breakBlock();
 
 private:
     World* world = nullptr;
