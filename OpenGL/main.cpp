@@ -83,11 +83,12 @@ int main()
 
     unsigned int texContainer2         = loadTexture(registry, "container2.png",          1, true);
     unsigned int texContainer2Specular = loadTexture(registry, "container2_specular.png", 1, true);
-    unsigned int texWorld              = loadTexture(registry, "world.png",               1, true);
-    unsigned int texSun                = loadTexture(registry, "sun.png",                 1, true);
-    unsigned int texMoon               = loadTexture(registry, "moon.png",                1, true);
+    unsigned int texLamp               = loadTexture(registry, "lamp.png",                0, true);
+    unsigned int texWorld              = loadTexture(registry, "world.png",               0, true);
+    unsigned int texSun                = loadTexture(registry, "sun.png",                 0, true);
+    unsigned int texMoon               = loadTexture(registry, "moon.png",                0, true);
     unsigned int grass                 = loadTexture(registry, "grass.png",               1, true);
-    unsigned int white                 = loadTexture(registry, "white.png",               1, true);
+    unsigned int white                 = loadTexture(registry, "white.png",               0, true);
 
     int const COLORED_BLOCK_SIZE = 16;
     int coloredBlockTextures[COLORED_BLOCK_SIZE];
@@ -95,7 +96,7 @@ int main()
     std::vector<std::string> colorNames = {"white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"};
 
     for(int i = 0; i < COLORED_BLOCK_SIZE; i++) {
-        coloredBlockTextures[i] = loadTexture(registry, colorNames[i] + ".png", 1, true);
+        coloredBlockTextures[i] = loadTexture(registry, colorNames[i] + ".png", 0, true);
     }
 
     if (!fallbackDiffuse || !fallbackSpecular || !texContainer2 || !texContainer2Specular || !texWorld || !texSun || !texMoon) {
@@ -146,17 +147,17 @@ int main()
     int redGlassBlock = EntityBuilder::create(registry, "Red Glass", glm::vec3(7.0f, 2.0f, 3.0f), glm::vec3(1.0f), root)
         .block(cubeMesh, litShader, {
             .isTransparent = true,
-            .diffuseTexture = (int)white,
+            .diffuseTexture = coloredBlockTextures[14],
             .specularTexture = (int)fallbackSpecular,
-            .color = { 1.0f, 0.0f, 0.0f },
             .alpha = 0.5f
             });
         
     int simpleLamp = EntityBuilder::create(registry, "simpleLamp", glm::vec3(15.0f, 5.0f, 15.0f), glm::vec3(1.0f), root)
         .block(cubeMesh, litShader, {
             .isTransparent = false,
-            .diffuseTexture = (int)fallbackDiffuse,
+            .diffuseTexture = (int)texLamp,
             .specularTexture = (int)fallbackSpecular,
+            .emissive = 0.75f,
             })
         .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 0.5f });
 
@@ -335,8 +336,6 @@ void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp, c
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    World& world = *reg.getWorld(e);
-
     {
         ImGuiIO& io = ImGui::GetIO();
         ImVec2 center(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f);
@@ -349,9 +348,11 @@ void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp, c
         drawList->AddLine(ImVec2(center.x, center.y - size), ImVec2(center.x, center.y + size), color, thickness);
     }
 
-    ImGui::SetNextWindowSize(ImVec2(250, 200), ImGuiCond_Once);
-    ImGui::Begin("Controls");
+    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(350.0f, (float)engineSettings.screenHeight - 20.0f), ImGuiCond_Once);
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
+    World& world = *reg.getWorld(e);
     Camera& camera = player.getCamera();
 
     int selectedMouseState = (int)mouseState;
@@ -457,6 +458,7 @@ void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp, c
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
+
 
 // -------------------------------------------------------------------------
 // Scene Graph Creation Helpers

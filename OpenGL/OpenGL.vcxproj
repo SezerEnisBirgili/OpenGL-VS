@@ -217,18 +217,33 @@
     <Image Include="backpack\normal.png" />
     <Image Include="backpack\roughness.jpg" />
     <Image Include="backpack\specular.jpg" />
+    <Image Include="black.png" />
+    <Image Include="blue.png" />
+    <Image Include="brown.png" />
     <Image Include="container.jpg" />
     <Image Include="container2.png" />
     <Image Include="container2_specular.png" />
     <Image Include="container2_wood_specular.png" />
+    <Image Include="cyan.png" />
     <Image Include="grass.png" />
+    <Image Include="gray.png" />
+    <Image Include="green.png" />
     <Image Include="lighting_maps_specular_color.png" />
+    <Image Include="light_blue.png" />
+    <Image Include="light_gray.png" />
+    <Image Include="lime.png" />
+    <Image Include="magenta.png" />
     <Image Include="matrix.jpg" />
     <Image Include="matrix_c.png" />
     <Image Include="moon.png" />
+    <Image Include="orange.png" />
+    <Image Include="pink.png" />
+    <Image Include="purple.png" />
+    <Image Include="red.png" />
     <Image Include="sun.png" />
     <Image Include="white.png" />
     <Image Include="world.png" />
+    <Image Include="yellow.png" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="backpack\source_attribution.txt" />

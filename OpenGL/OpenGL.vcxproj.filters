@@ -96,6 +96,15 @@
     <ClCompile Include="world.cpp">
       <Filter>.cpp files</Filter>
     </ClCompile>
+    <ClCompile Include="AssimpImporter.cpp">
+      <Filter>controller</Filter>
+    </ClCompile>
+    <ClCompile Include="player.cpp">
+      <Filter>controller</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderSystem.cpp">
+      <Filter>controller</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -168,6 +177,12 @@
       <Filter>.h files</Filter>
     </ClInclude>
     <ClInclude Include="settings.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="IRenderable.h">
+      <Filter>.h files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderSystem.h">
       <Filter>.h files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -246,6 +261,51 @@
     <Image Include="white.png">
       <Filter>source\resources\textures</Filter>
     </Image>
+    <Image Include="black.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="blue.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="brown.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="cyan.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="gray.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="green.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="light_blue.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="light_gray.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="lime.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="magenta.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="orange.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="pink.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="purple.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="red.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
+    <Image Include="yellow.png">
+      <Filter>source\resources\textures</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <Text Include="platform.txt">
@@ -254,10 +314,5 @@
     <Text Include="backpack\source_attribution.txt">
       <Filter>source\resources\environment\backpack</Filter>
     </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="backpack\backpack.obj">
-      <Filter>source\resources\backpack</Filter>
-    </Object>
   </ItemGroup>
 </Project>
