@@ -36,9 +36,13 @@ A small C++/OpenGL engine I'm using to build out an ECS and basic lighting. It h
 
 You need CMake 3.15+ and a C++20 compiler.
 
-**Windows:** Visual Studio with the "Desktop development with C++" workload that gets you both MSVC and CMake. If cmake isn't found, download it from [cmake.org/download](cmake.org/download) and make sure to add it to PATH during install.
+**Windows:** 
+- Download Visual Studio from [visualstudio.microsoft.com](https://visualstudio.microsoft.com/downloads/) with the "Desktop development with C++" option that gets you both MSVC and CMake. 
+- If cmake isn't found, download it from [cmake.org/download](https://cmake.org/download/) and make sure to add it to PATH during install. Visual Studio itself can be downloaded from 
 
-**Linux:** you will need the usual build tools plus X11/Wayland dev headers:
+**Linux:**
+
+you will need the usual build tools plus X11/Wayland dev headers:
 
 ```bash
 # Debian/Ubuntu
