@@ -1,125 +1,110 @@
-# OpenGL 3D Renderer
+# OpenGL Engine
 
-A real-time 3D renderer built from scratch in **C++ with OpenGL 3.3 Core Profile**. Developed as a learning project following the [learnopengl.com](https://learnopengl.com) curriculum, with several independent systems designed and implemented on top of the tutorial foundation.
-
-![screenshot](screenshot.png)
-
----
+A small C++/OpenGL engine I'm using to build out an ECS and basic lighting. It has a small voxel world you can place and break blocks in. The engine is capable of importing arbitrary models through Assimp (there's a backpack model as a demo) and has a toy solar system with orbiting/spinning entities driven by simple script components.
 
 ## Features
 
-### Lighting
-- **Phong shading model** — ambient, diffuse, and specular components
-- **Directional light** — simulates a global light source like the sun
-- **Point lights (x4)** — positional lights with quadratic attenuation, rendered as small visible cubes in the scene
-- **Spotlight / flashlight** — camera-attached spotlight with configurable inner and outer cutoff angles, toggled at runtime
+- ECS-ish `Registry` transforms, materials, meshes, lights, hierarchy, scripts, all stored per-entity in hashmaps.
+- `EntityBuilder`/`WorldBuilder` for chaining entity setup (e. g. `.renderable()` -> `.script()` -> `.pointLight()`).
+- Parent/child transform hierarchy with world matrices recomputed each frame.
+- A voxel grid featuring block breaking and placing through raycasting via DDA. It can export/import the grid to a text file.
+- Model loading through Assimp (`AssimpImporter`) into the registry.
+- There are essentially three shaders: 
+  - world, for instanced rendering of the block system
+  - outline, specifically for outlining the selected block in the block system
+  - lit (the main one), which everything else treated as a game entity uses. 
 
-### Camera System
-Two distinct camera modes switchable at runtime via the ImGui overlay:
+  The main and world shaders both support directional, point, and specular lighting.
+- Texture loading with dedup-by-path and fallback textures if diffuse/specular are missing, so it doesn't just crash on a bad material.
+- An ImGui panel for camera info, light tweaking, outline color, world export/import, and a block palette you can click to select what you're placing.
+- Materials can be alpha-blended and are sorted back-to-front each frame (e.g. Red Glass Block) or alpha-masked (e.g. grass).
+- `.renderable()` entities are drawn individually as normal scene objects while `.block()` entities are registered into the block palette and drawn instanced through the world grid instead.
 
-- **FREE mode** — standard FPS-style free-look camera. Mouse controls yaw and pitch, WASD moves in the direction the camera faces
-- **TANK mode** — grid-based movement with smooth interpolation. W/S moves one unit forward/backward, A/D rotates exactly 90 degrees. Position and rotation animate smoothly using `deltaTime` rather than snapping instantly
 
-The view matrix is computed using a **custom `lookAt` implementation** built from first principles — constructing the rotation matrix from the camera's right, up, and forward vectors and combining it with a translation matrix — rather than delegating to `glm::lookAt`.
+## Controls
 
-### Rendering
-- VAO/VBO setup with interleaved vertex data (position, normal, texture coordinates)
-- Separate VAOs for scene objects and light cube geometry sharing a single VBO
-- Texture loading with automatic format detection (GL_RED / GL_RGB / GL_RGBA) based on channel count
-- Specular maps for per-pixel shininess control
-- Depth testing enabled
+- `WASD` — move
+- `Space` / `Left Shift` — up / down
+- Mouse — look
+- Scroll — zoom
+- Left click — break block
+- Right click — place block
+- `Left Ctrl` — toggle menu / free the cursor
+- `Esc` — quit
 
-### Shader Management
-A `ShaderUniform` base class defines a two-phase uniform interface:
-- `initShaderUniforms()` — uploads constants set once at startup (material properties, texture units, light attenuation parameters)
-- `updateFrameUniforms()` — uploads per-frame data (view matrix, camera position, spotlight direction)
+## Setup
 
-`OurShaderUniform` and `LightCubeShaderUniform` inherit from this base and manage their respective shaders independently.
+You need CMake 3.15+ and a C++20 compiler.
 
-### Procedural World Generation
-A text file–based world system (`horrorWorld.cpp`) parses ASCII map files into multi-floor 3D geometry:
-- `#` characters in the map file become rendered cubes at the corresponding XZ position
-- Floors are separated by a `-` delimiter, stacked on the Y axis automatically
-- Supports optional rotation of the entire generated structure
+**Windows:** Visual Studio with the "Desktop development with C++" workload that gets you both MSVC and CMake. If cmake isn't found, download it from [cmake.org/download](cmake.org/download) and make sure to add it to PATH during install.
 
-This allows level layouts to be edited in a plain text file without recompiling.
+**Linux**, you'll need the usual build tools plus X11/Wayland dev headers:
 
-### Debug Overlay (ImGui)
-A live control panel rendered via **Dear ImGui** exposes the following at runtime:
-- Mouse mode toggle (FREE / TANK)
-- Camera position and direction readout
-- Ambient and attenuation factor sliders
-- Light color picker
-- Background color picker
-- Flashlight on/off toggle
+```bash
+# Debian/Ubuntu
+sudo apt install build-essential cmake libx11-dev libwayland-dev libxkbcommon-dev libgl1-mesa-dev
 
----
-
-## Branch Overview
-
-Each branch represents an independent feature implementation or experiment:
-
-| Branch | Description |
-|---|---|
-| `master` | Stable build with full lighting, dual camera, ImGui overlay, and world generation |
-| `multipleLights` | Implementation of multiple simultaneous light sources — directional, point (x4), and spotlight combined in a single fragment shader |
-| `directionalLight` | Isolated directional light implementation, Phong shading with a single global light direction |
-| `flashlight` | Spotlight attached to the camera with smooth edge falloff using inner/outer cutoff angles |
-| `circularTextures` | Texture mapping experiments, circular/masked texture effects |
-| `horror` | World generation system — ASCII map file parsing, multi-floor geometry, procedural cube placement |
-
----
-
-## Built With
-
-| Library | Purpose |
-|---|---|
-| OpenGL 3.3 Core | Graphics API |
-| GLFW | Window creation and input handling |
-| GLAD | OpenGL function pointer loading |
-| GLM | Math library (vectors, matrices, transformations) |
-| Dear ImGui | Immediate-mode debug UI overlay |
-| stb_image | Texture loading |
-
----
-
-## Project Structure
-
-```
-├── main.cpp              — Application entry point, render loop
-├── shader.h/.cpp         — Shader program compilation and uniform setters
-├── camera.h              — Camera class: FPS and tank modes, custom lookAt
-├── input.h               — AppState: GLFW callbacks and per-frame input handling
-├── horrorWorld.h/.cpp    — Procedural world generation from ASCII map files
-├── bufferSetup.h         — VAO/VBO setup and vertex attribute configuration
-├── textureLoader.h       — Texture loading with format auto-detection
-├── shaderUniforms.h      — ShaderUniform class hierarchy for init/frame uniform management
-├── lightingSets.h        — Material and Light structs with default values
-├── vertexData.h          — Cube vertex data (position, normal, texcoord)
-└── enum.h                — MouseState enum
+# Fedora
+sudo dnf install @development-tools cmake libX11-devel wayland-devel libxkbcommon-devel mesa-libGL-devel
 ```
 
----
+Then:
 
-## Building
+```bash
+git clone https://github.com/SezerEnisBirgili/OpenGL-VS.git
+cd OpenGL
 
-This project was developed with Visual Studio 2022 on Windows x64.
+cmake -S . -B build
+cmake --build build --config Release
+```
 
-**Dependencies required:**
-- GLFW 3.x
-- GLAD (OpenGL 3.3 Core, generated from [glad.dav1d.de](https://glad.dav1d.de))
-- GLM
-- Dear ImGui (with GLFW + OpenGL3 backends)
-- stb_image
+First build takes a few minutes because Assimp is compiling from source. After that it's incremental.
 
-Link against: `opengl32.lib`, `glfw3.lib`
+- `CMP0175` policy warnings during configure are coming from Assimp's own CMakeLists, not this project, ignore them.
 
----
+To run:
 
-## What I Learned
+```bash
+# Linux
+./OpenGLApp
 
-- How the OpenGL pipeline works end to end: vertex data → VAO/VBO → vertex shader → rasterization → fragment shader → framebuffer
-- How Phong lighting is computed per-fragment in GLSL, including attenuation and cutoff angles for spotlights
-- How view and projection matrices work mathematically, including implementing `lookAt` from scratch
-- How to structure a growing C++ OpenGL project into focused, reusable components
-- How to integrate Dear ImGui into an OpenGL/GLFW application for real-time debugging
+# Windows
+.\OpenGLApp.exe
+```
+
+if you are using Visual Studio and OpenGLApp.exe is not where it is supposed to be, by default Visual Studio may have dropped the exe in `.\Release\OpenGLApp.exe` or `.\Debug\OpenGLApp.exe` instead of the root.
+
+## Rebuilding
+
+You only need to rerun `cmake -S . -B build` if you touch `CMakeLists.txt` or add/remove source files. Otherwise just:
+
+```bash
+cmake --build build --config Release
+```
+
+## Layout
+
+```
+CMakeLists.txt                     build config
+main.cpp                           entry point, scene setup, ImGui panel, main loop
+engine.h                           wraps registry, player and systems
+GameObject.h/.cpp                  registry, components, builders
+world.h/.cpp                       voxel grid, raycasting, save/load grid
+player.h/.cpp                      look/place/break block logic
+camera.h                           free-fly camera
+input.h                            GLFW callbacks + polling
+RenderSystem.h/.cpp                draw passes, instancing, outline pass
+IRenderable.h                      interface world/renderables implement to collect draw items
+shader.h / mesh.h                  GL wrappers
+AssimpImporter.h/.cpp              model loading into the registry
+scripts.h                          scripted behaviors
+utils.h                            utility functions (e.g. DDA raycast, AABB ray helpers)
+settings.h                         engine/global light settings structs
+vertex.h / vertexData.h            vertex layout + built-in cube/square geometry
+enum.h                             shared enums
+lit.vert/frag, outline.vert/frag   shaders
+```
+
+## Limitations
+
+- Light counts are capped in the shaders: `MAX_POINT_LIGHTS = 16`, `MAX_DIR_LIGHTS = 4`. Lights beyond that silently stop showing up.
