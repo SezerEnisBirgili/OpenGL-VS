@@ -38,7 +38,7 @@ You need CMake 3.15+ and a C++20 compiler.
 
 **Windows:** Visual Studio with the "Desktop development with C++" workload that gets you both MSVC and CMake. If cmake isn't found, download it from [cmake.org/download](cmake.org/download) and make sure to add it to PATH during install.
 
-**Linux**, you'll need the usual build tools plus X11/Wayland dev headers:
+**Linux:** you will need the usual build tools plus X11/Wayland dev headers:
 
 ```bash
 # Debian/Ubuntu
