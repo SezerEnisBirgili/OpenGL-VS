@@ -46,3 +46,7 @@ ipch/
 *~
 .DS_Store
 Thumbs.db
+
+imgui.ini
+OpenGLApp.exe
+OpenGLApp
