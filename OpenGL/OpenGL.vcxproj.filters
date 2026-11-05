@@ -97,13 +97,13 @@
       <Filter>.cpp files</Filter>
     </ClCompile>
     <ClCompile Include="AssimpImporter.cpp">
-      <Filter>controller</Filter>
+      <Filter>.cpp files</Filter>
     </ClCompile>
     <ClCompile Include="player.cpp">
-      <Filter>controller</Filter>
+      <Filter>.cpp files</Filter>
     </ClCompile>
     <ClCompile Include="RenderSystem.cpp">
-      <Filter>controller</Filter>
+      <Filter>.cpp files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -32,7 +32,7 @@ float lastFrame = 0.0f;
 // -------------------------------------------------------------------------
 // ImGui / menu state
 // -------------------------------------------------------------------------
-const char* const mouseStateArr[] = { "FREE", "TANK" };
+const char* const mouseStateArr[] = { "FREE" };
 MouseState mouseState = MouseState::FREE;
 
 struct BlockPaletteEntry {
@@ -173,10 +173,12 @@ int main()
     }
     
     int world = WorldBuilder::create(registry, "world", 64, 64, 64, worldShader, outlineShader)
-        .platform(coloredBlockIds[0] /*white block*/, 64, 64)
+        .platform(coloredBlockIds[13] /*green block*/, 64, 64)
         .outlineColor(engineSettings.outlineColor);
 
     player.setWorld(registry.getWorld(world));
+    World& worldptr = *registry.getWorld(world);
+    worldptr.importWorldFromPath(registry, worldPath);
     std::cout << "main: player @ " << &player << " world set to " << &world << std::endl;
 
     buildBlockPalette(registry, blockPalette);
@@ -502,7 +504,7 @@ void setupLights(Registry& registry, int litShader, int parentEntity, int lampMe
             .diffuseTexture = (int)fallbackDiffuse, .specularTexture = (int)fallbackSpecular,
             .color = glm::vec3(1.0f), .shininess = 32.0f, .emissive = 1.0f
             })
-        .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 0.5f });
+        .pointLight({ .color = {1.0f, 0.95f, 0.85f}, .intensity = 2.5f });
 
     outDirLight = EntityBuilder::create(registry, "dirLight", glm::vec3(0.0f), glm::vec3(1.0f), parentEntity)
     .dirLight({ .direction = glm::normalize(glm::vec3(0.5f, -1.5f, -0.8f)), .color = {1.0f, 0.98f, 0.9f}, .intensity = 1.0f });
@@ -511,7 +513,7 @@ void setupLights(Registry& registry, int litShader, int parentEntity, int lampMe
 void setupVegetation(Registry& registry, int litShader, int parentEntity, int grassMeshId, unsigned int grassTex, unsigned int fallbackSpecular)
 {
     const glm::vec3 positions[] = {
-        {3.1f, 2.0f, 3.1f}, {5.1f, 2.0f, 3.1f}, {3.1f, 2.0f, 5.1f}, {5.1f, 2.1f, 5.1f}
+        {14.0f, 3.0f, 16.0f}, {15.0f, 3.0f, 16.5f}, {8.0f, 3.0f, 16.0f}, {8.0f, 3.0f, 16.5f}
     };
 
     for (size_t i = 0; i < std::size(positions); ++i) {

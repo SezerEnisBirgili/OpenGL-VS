@@ -29,7 +29,7 @@ struct EngineSettings
 };
 
 struct GlobalLightSettings {
-    float ambientStrength = 0.03f;
+    float ambientStrength = 0.1f;
     glm::vec3 ambientColor = glm::vec3(1.0f);
     bool dirLightEnabled = true;
     bool pointLightsEnabled = true;
