@@ -34,10 +34,11 @@ The goal is to implement everything in LearnOpenGL within one engine.
 
 ## Setup
 
-You need CMake 3.15+ and a C++20 compiler.
+You need Git, CMake 3.15+ and a C++20 compiler.
 
 ### Dependencies
 
+- **Git**, needed to clone this repo and for CMake to fetch GLFW and Assimp on the first configure.
 - **Fetched automatically by CMake** (internet needed on the first configure): GLFW 3.4 and Assimp 5.4.1.
 - **Bundled in the repo**: GLM, GLAD, Dear ImGui and stb_image, so there is nothing else to install.
 
@@ -45,18 +46,20 @@ You need CMake 3.15+ and a C++20 compiler.
 
 Download Visual Studio from [visualstudio.microsoft.com](https://visualstudio.microsoft.com/) with the "Desktop development with C++" option that gets you both MSVC and CMake.
 
+Install Git from [git-scm.com](https://git-scm.com/download/win) and make sure it is on PATH (the default installer option does this).
+
 If `cmake` isn't found, download it from [cmake.org/download](https://cmake.org/download/) and make sure to add it to PATH during install.
 
 ### Linux
 
-You will need the usual build tools plus the X11 development packages. GLFW, the windowing library, is built for X11 only (Wayland support is switched off in `CMakeLists.txt`), so Wayland desktops run it through XWayland, which most of them include.
+You will need Git, the usual build tools plus the X11 development packages. GLFW, the windowing library, is built for X11 only (Wayland support is switched off in `CMakeLists.txt`), so Wayland desktops run it through XWayland, which most of them include.
 
 ```bash
 # Debian/Ubuntu
-sudo apt install build-essential cmake libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev
+sudo apt install git build-essential cmake libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev
 
 # Fedora
-sudo dnf install @development-tools cmake libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel mesa-libGL-devel
+sudo dnf install git @development-tools cmake libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel mesa-libGL-devel
 ```
 
 ### Build
