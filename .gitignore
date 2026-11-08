@@ -27,7 +27,7 @@ x86/
 
 # Compiler/linker intermediates
 *.obj
-!backpack/**/*.obj
+!**/backpack/backpack.obj
 *.ilk
 *.pdb
 *.ipdb
