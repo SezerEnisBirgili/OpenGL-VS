@@ -34,25 +34,17 @@ The goal is to implement everything in LearnOpenGL within one engine.
 
 ## Setup
 
-You need Git, CMake 3.15+ and a C++20 compiler.
+Requires Git, CMake 3.15+ and a C++20 compiler.
 
-### Dependencies
-
-- **Git**, needed to clone this repo and for CMake to fetch GLFW and Assimp on the first configure.
-- **Fetched automatically by CMake** (internet needed on the first configure): GLFW 3.4 and Assimp 5.4.1.
-- **Bundled in the repo**: GLM, GLAD, Dear ImGui and stb_image, so there is nothing else to install.
+Dependencies: GLFW 3.4 and Assimp 5.4.1 are fetched by CMake on first configure. GLM, GLAD, Dear ImGui and stb_image are bundled.
 
 ### Windows
 
-Download Visual Studio from [visualstudio.microsoft.com](https://visualstudio.microsoft.com/) with the "Desktop development with C++" option that gets you both MSVC and CMake.
-
-Install Git from [git-scm.com](https://git-scm.com/download/win) and make sure it is on PATH (the default installer option does this).
-
-If `cmake` isn't found, download it from [cmake.org/download](https://cmake.org/download/) and make sure to add it to PATH during install.
+- Install [Visual Studio](https://visualstudio.microsoft.com/) with the "Desktop development with C++" workload (includes MSVC and CMake).
+- Install [Git](https://git-scm.com/download/win).
+- If `cmake` isn't found, install it from [cmake.org/download](https://cmake.org/download/) and add it to PATH.
 
 ### Linux
-
-You will need Git, the usual build tools plus the X11 development packages. GLFW, the windowing library, is built for X11 only (Wayland support is switched off in `CMakeLists.txt`), so Wayland desktops run it through XWayland, which most of them include.
 
 ```bash
 # Debian/Ubuntu
@@ -72,13 +64,9 @@ cmake -S . -B build
 cmake --build build --config Release
 ```
 
-First build takes a few minutes because Assimp is compiling from source. After that it's incremental.
-
-> CMP0175 policy warnings during configure are coming from Assimp's own CMakeLists, not this project, ignore them.
-
 ### Run
 
-The executable is placed in the `OpenGL/` folder next to the shaders and textures, and has to be run from there so it can find its assets.
+From the `OpenGL/` folder:
 
 ```bash
 # Linux
@@ -86,18 +74,6 @@ The executable is placed in the `OpenGL/` folder next to the shaders and texture
 
 # Windows
 .\OpenGLApp.exe
-```
-
-On Linux, `./run.sh` does a clean configure, build and run in one step.
-
-If you are using Visual Studio and `OpenGLApp.exe` is not where it is supposed to be, by default Visual Studio may have dropped the exe in `.\Release\OpenGLApp.exe` or `.\Debug\OpenGLApp.exe` instead of the root.
-
-### Rebuilding
-
-You only need to rerun `cmake -S . -B build` if you touch `CMakeLists.txt` or add/remove source files. Otherwise just:
-
-```bash
-cmake --build build --config Release
 ```
 
 ## Architecture
@@ -153,5 +129,4 @@ Light counts are capped in the shaders: `MAX_POINT_LIGHTS = 16`, `MAX_DIR_LIGHTS
 
 - Backpack model by Berk Gedik ([Sketchfab](https://sketchfab.com/3d-models/survival-guitar-backpack-low-poly-799f8c4511f84fab8c3f12887f7e6b36)), with material changes by Joey de Vries from [LearnOpenGL](https://learnopengl.com).
 - `container2.png` and `container2_specular.png` are from LearnOpenGL.
-- Block textures: *[add source here]*
 - Libraries: GLFW, GLM, GLAD, Dear ImGui, stb_image, Assimp.
