@@ -58,7 +58,7 @@ sudo dnf install git @development-tools cmake libX11-devel libXrandr-devel libXi
 
 ```bash
 git clone https://github.com/SezerEnisBirgili/OpenGL-VS.git
-cd OpenGL-VS/OpenGL
+cd OpenGL-VS
 
 cmake -S . -B build
 cmake --build build --config Release
