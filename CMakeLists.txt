@@ -17,9 +17,17 @@ set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-# Disable Wayland so Linux users don't need wayland-scanner / wayland-protocols
-set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_X11     ON  CACHE BOOL "" FORCE)
+if(UNIX AND NOT APPLE)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(XORG QUIET x11 xrandr xinerama xcursor xi)
+
+    if(NOT XORG_FOUND)
+        message(FATAL_ERROR "X11 development packages not found.")
+    endif()
+
+    set(GLFW_BUILD_X11     ON  CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
+endif()
 
 FetchContent_Declare(
     glfw

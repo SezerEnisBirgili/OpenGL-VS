@@ -70,10 +70,10 @@ From the `OpenGL/` folder:
 
 ```bash
 # Linux
-./OpenGLApp
+build/bin/OpenGLApp
 
 # Windows
-.\OpenGLApp.exe
+build\bin\OpenGLApp.exe
 ```
 
 ## Architecture
