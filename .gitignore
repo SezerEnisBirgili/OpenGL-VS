@@ -50,3 +50,6 @@ Thumbs.db
 imgui.ini
 OpenGLApp.exe
 OpenGLApp
+
+!/assets/**/*.obj
+!/assets/*.obj
