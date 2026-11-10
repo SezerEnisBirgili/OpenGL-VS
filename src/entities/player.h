@@ -1,0 +1,34 @@
+#pragma once
+
+#include <glm/glm.hpp>
+
+#include "core/utils.h"
+#include "renderer/camera.h"
+#include "world/world.h"
+
+class Player {
+public:
+    Player() = default;
+
+    void setWorld(World* w) { world = w; }
+    void setCamera(const Camera& cam) { camera = cam; }
+    Camera& getCamera() { return camera; }
+    bool getHasSelectedBlock() const { return hasSelectedBlock; }
+    int  getSelectedBlock() const { return selectedBlock; }
+    glm::vec3 getSelectedBlockPos() const { return selectedBlockPos; }
+
+    void changeSelectedBlock(int e) { blockToPlace = e; }
+    int  getBlockToPlace() const { return blockToPlace; }
+
+    bool lookingAtBlock(glm::vec3& hit);
+    bool placeBlock();
+    bool breakBlock();
+
+private:
+    World* world = nullptr;
+    Camera camera{};
+    bool hasSelectedBlock = false;
+    int selectedBlock = 0;
+    int blockToPlace = 0;
+    glm::vec3 selectedBlockPos = glm::vec3(0.0f);
+};
