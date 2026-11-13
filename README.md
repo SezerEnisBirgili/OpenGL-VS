@@ -4,6 +4,10 @@ A small C++/OpenGL engine I'm using to build out an ECS and basic lighting. It h
 
 The goal is to implement everything in LearnOpenGL within one engine.
 
+<p align="center">
+  <video src="docs/media/default.mp4" controls muted loop width="720"></video>
+</p>
+
 ## Features
 
 - ECS-ish Registry transforms, materials, meshes, lights, hierarchy, scripts, all stored per-entity in hashmaps.
@@ -20,6 +24,38 @@ The goal is to implement everything in LearnOpenGL within one engine.
 - An ImGui panel for camera info, light tweaking, outline color, world export/import, and a block palette you can click to select what you're placing.
 - Materials can be alpha-blended and are sorted back-to-front each frame (e.g. Red Glass Block) or alpha-masked (e.g. grass).
 - `.renderable()` entities are drawn individually as normal scene objects while `.block()` entities are registered into the block palette and drawn instanced through the world grid instead.
+
+## Showcase
+
+### Block breaking and placing
+Raycast (DDA) block selection with an outline, plus breaking and placing from the palette.
+
+<video src="docs/media/block-breaking-and-placing.mp4" controls muted loop width="720"></video>
+
+### Light blocks
+Placing emissive blocks that act as point lights in the voxel world.
+
+<video src="docs/media/light_placeblock.mp4" controls muted loop width="720"></video>
+
+### Directional and point lights
+Tweaking the directional and point lights live through the ImGui panel.
+
+<video src="docs/media/directional-and-point-lights.mp4" controls muted loop width="720"></video>
+
+### Lighting
+Diffuse and specular lighting across the scene.
+
+<video src="docs/media/lighting.mp4" controls muted loop width="720"></video>
+
+### Building a house
+Voxel building with opaque, alpha-blended and alpha-masked blocks.
+
+<video src="docs/media/house.mp4" controls muted loop width="720"></video>
+
+### Solar system
+Orbiting and spinning entities driven by script components and the parent/child hierarchy.
+
+<video src="docs/media/solar-system.mp4" controls muted loop width="720"></video>
 
 ## Controls
 
