@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 
-# Build all fetched libraries statically (no DLLs to copy next to the exe)
+# Build fetched libraries into compilation
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 # ---------------------------------------------------------------------------
@@ -16,6 +16,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL        OFF CACHE BOOL "" FORCE)
 
 if(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
@@ -41,7 +42,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG        1.0.1
+    GIT_TAG        1.0.3
 )
 
 # ---------------------------------------------------------------------------
@@ -51,7 +52,7 @@ set(ASSIMP_BUILD_TESTS          OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_ASSIMP_TOOLS   OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_ZLIB           ON  CACHE BOOL "" FORCE)
 set(ASSIMP_INSTALL              OFF CACHE BOOL "" FORCE)
-set(ASSIMP_WARNINGS_AS_ERRORS   OFF CACHE BOOL "" FORCE)  # avoids failures on newer compilers
+set(ASSIMP_WARNINGS_AS_ERRORS   OFF CACHE BOOL "" FORCE) 
 
 FetchContent_Declare(
     assimp
@@ -66,12 +67,12 @@ find_package(OpenGL REQUIRED)
 # ---------------------------------------------------------------------------
 # Sources
 # ---------------------------------------------------------------------------
-# Your own code (recursive)
+# src
 file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
-# Third-party code vendored in the repo (explicit, non-recursive)
+# external
 file(GLOB EXTERNAL_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/external/stb/*.cpp"
@@ -82,21 +83,21 @@ list(APPEND EXTERNAL_SOURCES
 
 add_executable(${PROJECT_NAME} ${GAME_SOURCES} ${EXTERNAL_SOURCES})
 
-# Your headers: #include "renderer/shader.h"
+# headers
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-# Vendored third-party headers (SYSTEM suppresses their warnings)
+# external headers (SYSTEM suppresses their warnings)
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui         # <imgui.h>, <imgui_impl_glfw.h>
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/stb           # "stb_image.h"
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include  # <glad/glad.h>, <KHR/khrplatform.h>
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/stb
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
 )
 
 # Root folder for runtime assets (used by src/core/paths.h and main.cpp)
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-    ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/"
+    ASSET_DIR="assets/"
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -120,3 +121,6 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT $
 
 # Visual Studio: show source files in folders matching the disk layout
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${GAME_SOURCES} ${EXTERNAL_SOURCES})
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
+install(DIRECTORY assets DESTINATION .)
