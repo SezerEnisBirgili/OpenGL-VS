@@ -4,9 +4,11 @@ A small C++/OpenGL engine I'm using to build out an ECS and basic lighting. It h
 
 The goal is to implement everything in LearnOpenGL within one engine.
 
-<p align="center">
-  <video src="docs/media/default.mp4" controls muted loop width="720"></video>
-</p>
+https://github.com/user-attachments/assets/e31ce188-b560-4d94-82e3-6a516c88d93f
+
+
+
+
 
 ## Features
 
@@ -28,34 +30,32 @@ The goal is to implement everything in LearnOpenGL within one engine.
 ## Showcase
 
 ### Block breaking and placing
-Raycast (DDA) block selection with an outline, plus breaking and placing from the palette.
+Raycast block selection with an outline, plus breaking and placing from the block palette.
 
-<video src="docs/media/block-breaking-and-placing.mp4" controls muted loop width="720"></video>
+https://github.com/user-attachments/assets/a2652f97-57e4-4e0c-bc90-3a568658d7fd
 
 ### Light blocks
 Placing emissive blocks that act as point lights in the voxel world.
 
-<video src="docs/media/light_placeblock.mp4" controls muted loop width="720"></video>
+https://github.com/user-attachments/assets/a5ef54b7-6adb-4145-a173-50b10fed9abc
 
 ### Directional and point lights
 Tweaking the directional and point lights live through the ImGui panel.
 
-<video src="docs/media/directional-and-point-lights.mp4" controls muted loop width="720"></video>
+https://github.com/user-attachments/assets/41de46e1-18f8-4696-a24f-3c3a8918389e
 
 ### Lighting
-Diffuse and specular lighting across the scene.
 
-<video src="docs/media/lighting.mp4" controls muted loop width="720"></video>
+https://github.com/user-attachments/assets/d9d99e58-68a5-4b68-b6d7-ae047f70706d
 
-### Building a house
-Voxel building with opaque, alpha-blended and alpha-masked blocks.
+### a Built house
 
-<video src="docs/media/house.mp4" controls muted loop width="720"></video>
+https://github.com/user-attachments/assets/04a13bd4-a488-443d-a735-11005e024744
 
 ### Solar system
 Orbiting and spinning entities driven by script components and the parent/child hierarchy.
 
-<video src="docs/media/solar-system.mp4" controls muted loop width="720"></video>
+https://github.com/user-attachments/assets/f84f1754-b2fe-4ba7-bbb6-b4674949df4a
 
 ## Controls
 
