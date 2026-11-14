@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
 project(OpenGLApp VERSION 1.0.0 LANGUAGES C CXX)
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -118,6 +122,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     OpenGL::GL
     ${CMAKE_DL_LIBS}
 )
+
+# Strip debug symbols from Release builds on GCC/Clang (smaller exe)
+if(NOT MSVC)
+    target_link_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Release>:-s>)
+endif()
 
 # ---------------------------------------------------------------------------
 # Output
