@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 3.15)
-project(OpenGLApp LANGUAGES C CXX)
+project(OpenGLApp VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Optional: link the MSVC runtime statically so users don't need the
+# Visual C++ Redistributable. Must be set before add_executable and before
+# the dependencies are fetched. Uncomment if you want it.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 include(FetchContent)
 
@@ -34,6 +39,7 @@ FetchContent_Declare(
     glfw
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG        3.4
+    GIT_PROGRESS   TRUE
 )
 
 # ---------------------------------------------------------------------------
@@ -43,21 +49,26 @@ FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
     GIT_TAG        1.0.3
+    GIT_PROGRESS   TRUE
 )
 
 # ---------------------------------------------------------------------------
 # Assimp
 # ---------------------------------------------------------------------------
-set(ASSIMP_BUILD_TESTS          OFF CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_ASSIMP_TOOLS   OFF CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_ZLIB           ON  CACHE BOOL "" FORCE)
-set(ASSIMP_INSTALL              OFF CACHE BOOL "" FORCE)
-set(ASSIMP_WARNINGS_AS_ERRORS   OFF CACHE BOOL "" FORCE) 
+set(ASSIMP_BUILD_TESTS                     OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS              OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ZLIB                      ON  CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL                         OFF CACHE BOOL "" FORCE)
+set(ASSIMP_WARNINGS_AS_ERRORS              OFF CACHE BOOL "" FORCE)
+set(ASSIMP_NO_EXPORT                       ON  CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT  OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_OBJ_IMPORTER              ON  CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
     assimp
     GIT_REPOSITORY https://github.com/assimp/assimp.git
     GIT_TAG        v5.4.1
+    GIT_PROGRESS   TRUE
 )
 
 FetchContent_MakeAvailable(glfw glm assimp)
@@ -122,5 +133,10 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT $
 # Visual Studio: show source files in folders matching the disk layout
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${GAME_SOURCES} ${EXTERNAL_SOURCES})
 
+# Install
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
 install(DIRECTORY assets DESTINATION .)
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/Release/${CMAKE_SYSTEM_NAME}_v${PROJECT_VERSION}" CACHE PATH "Install path" FORCE)
+endif()
