@@ -1,11 +1,6 @@
 // ---- External
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <glm/gtc/type_ptr.hpp>
-
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
 
 #include <assimp/version.h>
 
@@ -19,8 +14,8 @@
 #include "entities/player.h"
 #include "entities/scripts.h"
 #include "io/AssimpImporter.h"
+#include "ui/menu.h"
 
-#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -33,34 +28,14 @@ const std::string SHADER_DIR = std::string(ASSET_DIR) + "shaders/";
 const std::string MODEL_DIR = std::string(ASSET_DIR) + "models/";
 const std::string WORLD_DIR = std::string(ASSET_DIR) + "worlds/";
 
-// char buffer for ImGui::InputText
-char worldFile[128] = "world.txt";
-
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-
-// -------------------------------------------------------------------------
-// ImGui / menu state
-// -------------------------------------------------------------------------
-const char* const mouseStateArr[] = { "FREE" };
-MouseState mouseState = MouseState::FREE;
-
-struct BlockPaletteEntry {
-    int entity;
-    std::string name;
-    unsigned int diffuseTexture;
-};
-
-std::vector<BlockPaletteEntry> blockPalette;
 
 std::vector<Vertex> floatArrayToVertexVector(const float* data, int count);
 
 int main();
 
 GLFWwindow* initOpenGL();
-void initImGui(GLFWwindow* window);
-void buildBlockPalette(Registry& reg, std::vector<BlockPaletteEntry>& out);
-void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp, const std::vector<BlockPaletteEntry>& palette);
 
 int setupSceneGraph(Registry& registry, int litShader,
     int sunMeshId, int earthMeshId, int moonMeshId, int lampMeshId, int grassMeshId, int cubeMeshId,
@@ -74,7 +49,8 @@ int main()
     GLFWwindow* window = initOpenGL();
     if (!window) return -1;
 
-    initImGui(window);
+    ImguiMenu ui;
+    ui.init(window);
 
     Engine engine;
     Player& player = engine.getPlayer();
@@ -188,12 +164,12 @@ int main()
 
     player.setWorld(registry.getWorld(world));
     World& worldptr = *registry.getWorld(world);
-    worldptr.importWorldFromPath(registry, WORLD_DIR + worldFile);
+    worldptr.importWorldFromPath(registry, WORLD_DIR + ui.worldFile());
     std::cout << "main: player @ " << &player << " world set to " << &world << std::endl;
 
-    buildBlockPalette(registry, blockPalette);
-    if (!blockPalette.empty()) {
-        player.changeSelectedBlock(blockPalette.front().entity);
+    ui.buildBlockPalette(registry);
+    if (!ui.palette().empty()) {
+        player.changeSelectedBlock(ui.palette().front().entity);
     }
 
 
@@ -225,14 +201,13 @@ int main()
         engine.update(currentFrame, deltaTime);
         engine.render();
 
-        renderImGui(registry, player, world, dirLight, lamp, blockPalette);
+        UIContext uiCtx{ registry, player, world, dirLight, lamp, WORLD_DIR };
+        ui.render(uiCtx);
 
         glfwSwapBuffers(window);
     }
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    ui.shutdown();
     glfwTerminate();
 
     return 0;
@@ -291,27 +266,10 @@ GLFWwindow* initOpenGL()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
-    glEnable(GL_CULL_FACE);  
+    glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     return window;
-}
-
-void initImGui(GLFWwindow* window)
-{
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.IniFilename = nullptr; // don't write imgui.ini into the working directory
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
-
-    int fbWidth, fbHeight;
-    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    io.DisplayFramebufferScale = ImVec2((float)fbWidth / engineSettings.screenWidth, (float)fbHeight / engineSettings.screenHeight);
-
-    glViewport(0, 0, fbWidth, fbHeight);
 }
 
 std::vector<Vertex> floatArrayToVertexVector(const float* data, int count)
@@ -329,167 +287,6 @@ std::vector<Vertex> floatArrayToVertexVector(const float* data, int count)
         vertices.push_back(v);
     }
     return vertices;
-}
-
-void buildBlockPalette(Registry& reg, std::vector<BlockPaletteEntry>& out)
-{
-    out.clear();
-
-    for (int e : reg.blockPalette) {
-        auto matIt = reg.materials.find(e);
-        if (matIt == reg.materials.end()) continue;
-        if (matIt->second.isAir) continue; // skip air
-
-        std::string name = reg.names.count(e) ? reg.names.at(e) : ("entity_" + std::to_string(e));
-
-        out.push_back({ e, name, (unsigned int)matIt->second.diffuseTexture });
-    }
-
-    std::cout << "[buildBlockPalette] found " << out.size() << " block entities" << std::endl;
-}
-
-void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp, const std::vector<BlockPaletteEntry>& palette)
-{
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    {
-        ImGuiIO& io = ImGui::GetIO();
-        ImVec2 center(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f);
-        float size = 10.0f;
-        float thickness = 2.0f;
-        ImU32 color = IM_COL32(255, 255, 255, 220);
-
-        ImDrawList* drawList = ImGui::GetForegroundDrawList();
-        drawList->AddLine(ImVec2(center.x - size, center.y), ImVec2(center.x + size, center.y), color, thickness);
-        drawList->AddLine(ImVec2(center.x, center.y - size), ImVec2(center.x, center.y + size), color, thickness);
-    }
-
-    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(350.0f, (float)engineSettings.screenHeight - 20.0f), ImGuiCond_Once);
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-
-    World& world = *reg.getWorld(e);
-    Camera& camera = player.getCamera();
-
-    int selectedMouseState = (int)mouseState;
-    if (ImGui::Combo("Mouse Mode", &selectedMouseState, mouseStateArr, IM_ARRAYSIZE(mouseStateArr)))
-    {
-        mouseState = (MouseState)selectedMouseState;
-    }
-    ImGui::InputFloat3("Camera Position", glm::value_ptr(camera.Position));
-    ImGui::InputFloat3("Camera Direction", glm::value_ptr(camera.Front));
-
-    if (ImGui::Button("Export World"))
-    {
-        std::string fullPath = WORLD_DIR + worldFile;
-        if (world.exportWorldToPath(fullPath))
-            std::cout << "World exported to " << fullPath << std::endl;
-        else
-            std::cout << "World export failed!" << std::endl;
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Import World"))
-    {
-        std::string fullPath = WORLD_DIR + worldFile;
-        world.importWorldFromPath(reg, fullPath);
-        player.setWorld(&world);
-        std::cout << "World imported from " << fullPath << std::endl;
-    }
-
-    if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        ImGui::SliderFloat("Ambient Strength", &lightSettings.ambientStrength, 0.0f, 1.0f);
-        ImGui::ColorEdit3("Ambient Color", glm::value_ptr(lightSettings.ambientColor));
-
-        ImGui::Checkbox("Directional Light Enabled", &lightSettings.dirLightEnabled);
-        ImGui::Checkbox("Point Lights Enabled", &lightSettings.pointLightsEnabled);
-
-        ImGui::Separator();
-        ImGui::Text("Sun");
-        if (reg.dirLights.count(dirLight))
-        {
-            auto& globalLight = reg.dirLights[dirLight];
-            if (ImGui::SliderFloat3("Sun Direction", glm::value_ptr(globalLight.direction), -1.0f, 1.0f))
-            {
-                if (glm::length(globalLight.direction) > 0.0001f)
-                    globalLight.direction = glm::normalize(globalLight.direction);
-            }
-            ImGui::ColorEdit3("Sun Color", glm::value_ptr(globalLight.color));
-            ImGui::SliderFloat("Sun Intensity", &globalLight.intensity, 0.0f, 5.0f);
-        }
-
-        ImGui::Separator();
-        ImGui::Text("Lamp");
-        if (reg.pointLights.count(lamp))
-        {
-            auto& lampLight = reg.pointLights[lamp];
-            ImGui::ColorEdit3("Lamp Color", glm::value_ptr(lampLight.color));
-            ImGui::SliderFloat("Lamp Intensity", &lampLight.intensity, 0.0f, 10.0f);
-            ImGui::SliderFloat("Lamp Linear", &lampLight.linear, 0.0f, 1.0f);
-            ImGui::SliderFloat("Lamp Quadratic", &lampLight.quadratic, 0.0f, 2.0f);
-        }
-        if (reg.materials.count(lamp))
-        {
-            auto& lampMat = reg.materials[lamp];
-            ImGui::SliderFloat("Lamp Emissive", &lampMat.emissive, 0.0f, 1.0f);
-        }
-    }
-
-    if (ImGui::CollapsingHeader("World", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        if (ImGui::ColorEdit3("Outline Color", glm::value_ptr(engineSettings.outlineColor)))
-        {
-            world.setOutlineColor(engineSettings.outlineColor);
-        }
-    }
-
-    if (ImGui::CollapsingHeader("Block Palette", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        int currentBlock = player.getBlockToPlace();
-
-        for (const auto& entry : palette)
-        {
-            ImGui::PushID(entry.entity);
-
-            if (entry.diffuseTexture != 0)
-            {
-                ImGui::Image((ImTextureID)(intptr_t)entry.diffuseTexture, ImVec2(32, 32));
-                ImGui::SameLine();
-            }
-
-            bool isSelected = (entry.entity == currentBlock);
-            if (ImGui::Selectable(entry.name.c_str(), isSelected))
-            {
-                player.changeSelectedBlock(entry.entity);
-            }
-
-            ImGui::PopID();
-        }
-    }
-    if (ImGui::CollapsingHeader("Face Culling Debug", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        ImGui::Checkbox("Cull Face", &debugSettings.cullFace);
-        ImGui::Checkbox("Wireframe", &debugSettings.wireframe);
-        ImGui::Checkbox("Show Front/Back Colors", &debugSettings.showFaceColors);
-
-        // Query the REAL GL state to catch leaks
-        ImGui::Separator();
-        GLint cullMode, frontFace;
-        glGetIntegerv(GL_CULL_FACE_MODE, &cullMode);
-        glGetIntegerv(GL_FRONT_FACE, &frontFace);
-        ImGui::Text("GL_CULL_FACE: %s", glIsEnabled(GL_CULL_FACE) ? "ON" : "OFF");
-        ImGui::Text("Cull mode: %s", cullMode == GL_BACK ? "BACK" : cullMode == GL_FRONT ? "FRONT" : "FRONT_AND_BACK");
-        ImGui::Text("Front face: %s", frontFace == GL_CCW ? "CCW" : "CW");
-    }
-
-    ImGui::End();
-
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 
