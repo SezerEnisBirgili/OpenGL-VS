@@ -5,7 +5,6 @@
 #include "IRenderable.h"
 #include "entities/GameObject.h"
 #include "entities/player.h"
-#include "core/settings.h"
 
 #include <vector>
 
@@ -13,7 +12,6 @@ class RenderSystem {
 private:
     Player& player;
     Registry& reg;
-    EngineSettings engineSettings;
 
     std::vector<RenderItem> opaque;
     std::vector<RenderItem> transparent;
@@ -30,11 +28,13 @@ private:
     void collectRenderItems();
     void collectPointLights();
     void drawOutline();
+
+    void applyDebugState();
      
     // helpers
     void addLight(int e, const glm::vec3& worldPos);
 
 public:
-    RenderSystem(Registry& r, Player& p, EngineSettings es) : reg(r), player(p), engineSettings(es) {}
+    RenderSystem(Registry& r, Player& p) : reg(r), player(p) {}
     void renderFrame();
 };

@@ -7,7 +7,7 @@
 
 class Engine {
 public:
-    Engine(EngineSettings settings) : renderSystem(registry, player, settings), inputManager(registry, player) {}
+    Engine() : renderSystem(registry, player), inputManager(registry, player) {}
 
     Registry& getRegistry() { return registry; }
     Player&   getPlayer()   { return player; }

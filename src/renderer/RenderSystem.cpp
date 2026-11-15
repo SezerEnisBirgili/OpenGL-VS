@@ -8,7 +8,7 @@
 #define GLM_ENABLE_EXPERIMENTAL   // required for glm/gtx/* headers in GLM 1.0+
 #include <glm/gtx/norm.hpp>       // glm::distance2
 
-void RenderSystem::render(RenderItem renderable, int s) {
+void RenderSystem:: render(RenderItem renderable, int s) {
 
     Shader* shader;
     int e = renderable.e;
@@ -49,15 +49,17 @@ void RenderSystem::render(RenderItem renderable, int s) {
     shader->setFloat("material.alpha", mat.alpha);
     shader->setBool("material.isMasked", mat.isMasked);
 
+    shader->setBool("debugFaces", debugSettings.showFaceColors);
+
     uploadLights(*shader);
     uploadDirLights(reg, *shader, lightSettings.dirLightEnabled);
 
     // masked renderables (e.g. grass) are typically square meshes
-    if (mat.isMasked) glDisable(GL_CULL_FACE);
+    if (debugSettings.cullFace && mat.isMasked) glDisable(GL_CULL_FACE);
 
     drawMesh(reg.getMeshId(e));
 
-    if (mat.isMasked) glEnable(GL_CULL_FACE);
+    if (debugSettings.cullFace && mat.isMasked) glEnable(GL_CULL_FACE);
 }
 
 void RenderSystem::renderInstanced(const std::vector<InstancedRenderItem>& items, int shader) {
@@ -94,6 +96,8 @@ void RenderSystem::renderInstanced(const std::vector<InstancedRenderItem>& items
         s->setFloat("material.alphaCutoff", mat.alphaCutoff);
         s->setFloat("material.alpha", mat.alpha);
         s->setBool("material.isMasked", mat.isMasked);
+
+        s->setBool("debugFaces", debugSettings.showFaceColors);
 
         uploadLights(*s);
         uploadDirLights(reg, *s, lightSettings.dirLightEnabled);
@@ -223,6 +227,13 @@ void RenderSystem::collectPointLights() {
     }
 }
 
+void RenderSystem::applyDebugState() {
+    if (debugSettings.cullFace) glEnable(GL_CULL_FACE);
+    else                        glDisable(GL_CULL_FACE);
+
+    glPolygonMode(GL_FRONT_AND_BACK, debugSettings.wireframe ? GL_LINE : GL_FILL);
+}
+
 // collectPointLights helper function
 void RenderSystem::addLight(int e, const glm::vec3& worldPos) {
 
@@ -244,6 +255,9 @@ void RenderSystem::addLight(int e, const glm::vec3& worldPos) {
 }
 
 void RenderSystem::renderFrame() {
+    // apply debug settings
+    applyDebugState();
+    std::cout << "render: " << &debugSettings << " = " << debugSettings.showFaceColors << "\n";
     // collect all renderable entities
     collectRenderItems();
     collectPointLights();

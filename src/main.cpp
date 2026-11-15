@@ -76,7 +76,7 @@ int main()
 
     initImGui(window);
 
-    Engine engine(engineSettings);
+    Engine engine;
     Player& player = engine.getPlayer();
     Camera defaultCam(glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f);
     player.setCamera(defaultCam);
@@ -469,6 +469,21 @@ void renderImGui(Registry& reg, Player& player, int e, int dirLight, int lamp, c
 
             ImGui::PopID();
         }
+    }
+    if (ImGui::CollapsingHeader("Face Culling Debug", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::Checkbox("Cull Face", &debugSettings.cullFace);
+        ImGui::Checkbox("Wireframe", &debugSettings.wireframe);
+        ImGui::Checkbox("Show Front/Back Colors", &debugSettings.showFaceColors);
+
+        // Query the REAL GL state to catch leaks
+        ImGui::Separator();
+        GLint cullMode, frontFace;
+        glGetIntegerv(GL_CULL_FACE_MODE, &cullMode);
+        glGetIntegerv(GL_FRONT_FACE, &frontFace);
+        ImGui::Text("GL_CULL_FACE: %s", glIsEnabled(GL_CULL_FACE) ? "ON" : "OFF");
+        ImGui::Text("Cull mode: %s", cullMode == GL_BACK ? "BACK" : cullMode == GL_FRONT ? "FRONT" : "FRONT_AND_BACK");
+        ImGui::Text("Front face: %s", frontFace == GL_CCW ? "CCW" : "CW");
     }
 
     ImGui::End();

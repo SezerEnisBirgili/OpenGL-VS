@@ -35,5 +35,12 @@ struct GlobalLightSettings {
     bool pointLightsEnabled = true;
 };
 
+struct DebugSettings {
+    bool cullFace = true;
+    bool wireframe = false;
+    bool showFaceColors = false; // green = front, red = back
+};
+
 inline EngineSettings engineSettings;
 inline GlobalLightSettings lightSettings;
+inline DebugSettings debugSettings;

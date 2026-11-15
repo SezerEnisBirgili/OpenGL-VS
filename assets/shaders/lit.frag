@@ -9,6 +9,8 @@ uniform float ambientStrength;
 uniform vec3 ambientColor;
 uniform bool pointLightsEnabled;
 
+uniform bool debugFaces;
+
 struct Material {
     sampler2D diffuse;
     sampler2D specular;
@@ -58,6 +60,12 @@ void main()
 
     if (material.isMasked && (texColor.a < material.alphaCutoff)) {
         discard;
+    }
+
+    // DEBUG for face culling
+    if (debugFaces) {
+        FragColor = gl_FrontFacing ? vec4(0.0, 1.0, 0.0, 1.0) : vec4(1.0, 0.0, 0.0, 1.0);  // green = front, red = back
+        return;
     }
         
     vec3 norm = normalize(Normal);
