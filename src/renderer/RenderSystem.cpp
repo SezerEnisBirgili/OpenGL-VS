@@ -257,7 +257,6 @@ void RenderSystem::addLight(int e, const glm::vec3& worldPos) {
 void RenderSystem::renderFrame() {
     // apply debug settings
     applyDebugState();
-    std::cout << "render: " << &debugSettings << " = " << debugSettings.showFaceColors << "\n";
     // collect all renderable entities
     collectRenderItems();
     collectPointLights();
