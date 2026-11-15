@@ -116,10 +116,14 @@ void ImguiMenu::drawCameraSection(UIContext& ctx)
 void ImguiMenu::drawWorldIO(UIContext& ctx)
 {
     World& world = *ctx.reg.getWorld(ctx.worldEntity);
+
+    ImGui::InputText("World File", worldFileBuf, sizeof(worldFileBuf));
+
+    // build the path AFTER the input, so edits apply immediately
     std::string fullPath = ctx.worldDir + worldFileBuf;
 
     if (ImGui::Button("Export World")) {
-        if (world.exportWorldToPath(fullPath))
+        if (world.exportWorldToPath(ctx.reg, fullPath))
             std::cout << "World exported to " << fullPath << std::endl;
         else
             std::cout << "World export failed!" << std::endl;
@@ -128,9 +132,12 @@ void ImguiMenu::drawWorldIO(UIContext& ctx)
     ImGui::SameLine();
 
     if (ImGui::Button("Import World")) {
-        world.importWorldFromPath(ctx.reg, fullPath);
-        ctx.player.setWorld(&world);
-        std::cout << "World imported from " << fullPath << std::endl;
+        if (world.importWorldFromPath(ctx.reg, fullPath)) {
+            ctx.player.setWorld(&world);
+            std::cout << "World imported from " << fullPath << std::endl;
+        } else {
+            std::cout << "World import failed!" << std::endl;
+        }
     }
 }
 

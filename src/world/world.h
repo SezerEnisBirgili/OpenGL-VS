@@ -84,7 +84,7 @@ public:
     void removeBlock(const glm::vec3& v);
     void createPlatform(int e, int sizeX, int sizeZ);
 
-    bool exportWorldToPath(const std::string& destinationPath) const;
+    bool exportWorldToPath(Registry& reg, const std::string& destinationPath) const;
     bool importWorldFromPath(Registry& reg, const std::string& sourcePath);
 
     void collectRenderItems(std::vector<RenderItem>& out, const glm::mat4& parentTransform) const override;

@@ -8,18 +8,15 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
-#include <algorithm>
 #include <vector>
 #include <unordered_map>
 #include <string>
 #include <functional>
-#include <iostream>
-#include <map>
+
 
 #include "stb_image.h"
 #include "renderer/mesh.h"
 #include "renderer/shader.h"
-#include "core/settings.h"
 #include "world/world.h"
 
 constexpr int NULL_ENTITY = 0;

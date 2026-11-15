@@ -1,6 +1,7 @@
 #include "RenderSystem.h"
 #include "IRenderable.h"
 #include "world/world.h"
+#include "core/settings.h"
 
 #include <algorithm>
 #include <unordered_map>

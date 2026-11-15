@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <set>
 #include <glm/gtc/matrix_transform.hpp>
 
 World::World(Registry* registry, int x, int y, int z) : reg(registry), boundx(x), boundy(y), boundz(z) {
@@ -57,127 +58,154 @@ void World::createPlatform(int e, int sizeX, int sizeZ) {
     }
 }
 
-bool World::exportWorldToPath(const std::string& destinationPath) const {
+bool World::exportWorldToPath(Registry& reg, const std::string& destinationPath) const {
 
-    std::filesystem::path p(destinationPath);
-    std::filesystem::path dir = p.parent_path();
-
-    if (!dir.empty() && !std::filesystem::exists(dir)) {
-        try {
-            std::filesystem::create_directories(dir);
-        }
-        catch (const std::filesystem::filesystem_error& e) {
-            std::cout << "Failed to create directory path: " << e.what() << std::endl;
-            return false;
-        }
-    }
-
-    std::ofstream outFile(destinationPath);
-    if (!outFile.is_open()) {
-        std::cerr << "Failed to write to file: " << destinationPath << std::endl;
+    std::ofstream f(destinationPath);
+    if (!f) {
+        std::cerr << "[world] cannot open " << destinationPath << " for writing\n";
         return false;
     }
 
-    outFile << boundx << " " << boundy << " " << boundz << "\n";
+    std::unordered_map<int, int> idToIndex;
+    std::set<int> paletteIds; 
+    std::vector<std::pair<int, int>> runs; 
 
-    for (int x = 0; x < boundx; ++x) {
-        for (int y = 0; y < boundy; ++y) {
-            for (int z = 0; z < boundz; ++z) {
-                int e = blocks[getIndex(glm::vec3(x, y, z))];
-                outFile << e << "\n";
+    for (int x = 0; x < boundx; x++)
+        for (int y = 0; y < boundy; y++)
+            for (int z = 0; z < boundz; z++) 
+            {
+                int idx = getBlock(glm::vec3(x, y, z));
+                if (!runs.empty() && runs.back().first == idx) 
+                {
+                    runs.back().second++;
+                }
+                else 
+                {
+                    if (!paletteIds.count(idx)) { paletteIds.insert(idx); }
+                    runs.push_back({ idx, 1 });
+                }
             }
-        }
+
+    f << "size " << boundx << " " << boundy << " " << boundz << "\n";
+    f << "palette " << paletteIds.size() << "\n";
+
+    int i = 0;
+    for (int id : paletteIds)
+    {
+        idToIndex[id] = i;
+        std::string name = (id == NULL_ENTITY) ? "air" : reg.names.at(id);
+        f << i << " " << name << "\n";
+        i++;
     }
 
-    outFile.flush();
-    if (!outFile) {
-        std::cout << "Error occurred while writing to: " << destinationPath << std::endl;
-        return false;
-    }
-
-    outFile.close();
-    std::cout << "Successfully exported world to: " << destinationPath << std::endl;
-    return true;
+    f << "data\n";
+    for (auto& [id, count] : runs)
+        f << idToIndex.at(id) << " x " << count << "\n";
+    
+    f.close();
+    return !f.fail();
 }
 
 bool World::importWorldFromPath(Registry& reg, const std::string& sourcePath) {
-    if (!std::filesystem::exists(sourcePath)) {
-        std::cout << "Error: File does not exist at path: " << sourcePath << std::endl;
+
+    std::ifstream f(sourcePath);
+    if (!f) 
+    {
+        std::cerr << "[world] cannot open " << sourcePath << " for reading\n";
         return false;
     }
 
-    std::ifstream inFile(sourcePath);
-    if (!inFile.is_open()) {
-        std::cout << "Failed to open file for importing: " << sourcePath << std::endl;
+    // --- size ---
+    std::string word;
+    int sx = 0, sy = 0, sz = 0;
+    if (!(f >> word >> sx >> sy >> sz) || word != "size") 
+    {
+        std::cerr << "[world] bad or missing size line\n";
+        return false;
+    }
+    if (sx != boundx || sy != boundy || sz != boundz) 
+    {
+        std::cerr << "[world] size mismatch: file " << sx << "x" << sy << "x" << sz << ", world " << boundx << "x" << boundy << "x" << boundz << "\n";
         return false;
     }
 
-    int bx, by, bz;
-    if (!(inFile >> bx >> by >> bz)) {
-        std::cout << "Failed to read dimensions from: " << sourcePath << std::endl;
+    // --- name -> block entity, from the live registry ---
+    std::unordered_map<std::string, int> nameToId;
+    for (int e : reg.blockPalette) nameToId[reg.names.at(e)] = e;
+
+    // --- palette ---
+    int paletteCount = 0;
+    if (!(f >> word >> paletteCount) || word != "palette" || paletteCount <= 0) 
+    {
+        std::cerr << "[world] bad or missing palette line\n";
         return false;
     }
 
-    this->reg = &reg;
+    std::vector<int> palette(paletteCount, NULL_ENTITY);
+    for (int n = 0; n < paletteCount; n++) {
+        int idx = -1;
+        if (!(f >> idx) || idx < 0 || idx >= paletteCount) {
+            std::cerr << "[world] bad palette index\n";
+            return false;
+        }
 
-    int newBoundX = bx, newBoundY = by, newBoundZ = bz;
-    std::vector<int> newBlocks(newBoundX * newBoundY * newBoundZ, 0);
-    std::unordered_map<int, std::vector<glm::vec3>> newOpaque;
-    std::unordered_map<int, std::vector<glm::vec3>> newTransparent;
+        std::string name;
+        std::getline(f, name);                               // rest of line, may contain spaces
+        name.erase(0, name.find_first_not_of(' '));          // trim leading space
+        while (!name.empty() && (name.back() == '\r' || name.back() == ' '))
+            name.pop_back();                                 // trim trailing \r / spaces
 
-    std::string line;
-    std::getline(inFile, line);
-
-    bool truncated = false;
-
-    for (int x = 0; x < newBoundX && !truncated; ++x) {
-        for (int y = 0; y < newBoundY && !truncated; ++y) {
-            for (int z = 0; z < newBoundZ; ++z) {
-                if (!std::getline(inFile, line)) {
-                    std::cout << "Unexpected end of file while importing: " << sourcePath << " (missing block data at " << x << ", " << y << ", " << z << ")" << std::endl;
-                    truncated = true;
-                    break;
-                }
-
-                std::stringstream ss(line);
-                int e = 0;
-                if (!(ss >> e)) {
-                    std::cout << "Malformed block entry in: " << sourcePath << " at (" << x << ", " << y << ", " << z << ")" << std::endl;
-                    truncated = true;
-                    break;
-                }
-
-                if (e == NULL_ENTITY) continue;
-
-                if (!reg.materials.count(e)) {
-                    std::cout << "World file references unknown entity " << e << " at (" << x << ", " << y << ", " << z << ") — skipping block." << std::endl;
-                    continue;
-                }
-
-                int idx = x * newBoundY * newBoundZ + y * newBoundZ + z;
-                newBlocks[idx] = e;
-
-                if (reg.getMaterial(e).isTransparent)
-                    newTransparent[e].push_back(glm::vec3(x, y, z));
-                else
-                    newOpaque[e].push_back(glm::vec3(x, y, z));
-            }
+        if (name == "air") 
+        {
+            palette[idx] = NULL_ENTITY;
+        } 
+        else if (auto it = nameToId.find(name); it != nameToId.end()) 
+        {
+            palette[idx] = it->second;
+        } 
+        else 
+        {
+            std::cerr << "[world] unknown block '" << name << "', using air\n";
+            palette[idx] = NULL_ENTITY;
         }
     }
 
-    if (truncated) {
-        std::cout << "Import failed: " << sourcePath << " is corrupted or truncated." << std::endl;
+    // --- data: parse into a temporary buffer first ---
+    if (!(f >> word) || word != "data") 
+    {
+        std::cerr << "[world] missing data section\n";
         return false;
     }
 
-    boundx = newBoundX;
-    boundy = newBoundY;
-    boundz = newBoundZ;
-    blocks = std::move(newBlocks);
+    const int total = boundx * boundy * boundz;
+    std::vector<int> cells;
+    cells.reserve(total);
 
-    inFile.close();
+    int idx = 0, count = 0;
+    char sep = 0;
 
-    std::cout << "Successfully imported world from: " << sourcePath << std::endl;
+    while (f >> idx >> sep >> count) 
+    {
+        if (sep != 'x' || idx < 0 || idx >= paletteCount || count < 0 || cells.size() + count > total) {
+            std::cerr << "[world] corrupt data run\n";
+            return false;
+        }
+        cells.insert(cells.end(), count, palette[idx]);
+    }
+
+    if (cells.size() != total) 
+    {
+        std::cerr << "[world] file truncated: got " << cells.size() << " blocks, expected " << total << "\n";
+        return false;
+    }
+
+    // --- apply: same x, y, z order as the export ---
+    int pos = 0;
+    for (int x = 0; x < boundx; x++)
+        for (int y = 0; y < boundy; y++)
+            for (int z = 0; z < boundz; z++)
+                setBlock(cells[pos++], glm::vec3(x, y, z));
+
     return true;
 }
 
