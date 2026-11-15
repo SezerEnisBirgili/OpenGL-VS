@@ -52,7 +52,12 @@ void RenderSystem::render(RenderItem renderable, int s) {
     uploadLights(*shader);
     uploadDirLights(reg, *shader, lightSettings.dirLightEnabled);
 
+    // masked renderables (e.g. grass) are typically square meshes
+    if (mat.isMasked) glDisable(GL_CULL_FACE);
+
     drawMesh(reg.getMeshId(e));
+
+    if (mat.isMasked) glEnable(GL_CULL_FACE);
 }
 
 void RenderSystem::renderInstanced(const std::vector<InstancedRenderItem>& items, int shader) {

@@ -5,6 +5,9 @@ CMakeFiles/
 cmake_install.cmake
 compile_commands.json
 
+
+.vscode
+
 # Visual Studio user/cache files
 .vs/
 *.suo
