@@ -49,21 +49,21 @@ int getParent(const Registry& reg, int entity) {
 // ==========================================
 
 
-void addRenderable(Registry& reg, int e, int meshId, int shader, MaterialComponent & material) {
-    addMesh(reg, e, meshId, material);
+void addRenderable(Registry& reg, int e, std::string meshPath, int shader, MaterialComponent & material) {
+    addMesh(reg, e, meshPath, material);
     addShader(reg, e, shader);
     addMaterial(reg, e, material);
     reg.renderableEntities.push_back(e);
 }
 
-void addMesh(Registry& reg, int e, int meshId, MaterialComponent& material) {
-    if (material.diffuseTexture == 0) {
-        std::cout << "[RenderSystem] entity " << e << " (mesh " << meshId << ") has no diffuseTexture set — " << "using fallback diffuse (" << reg.getFallbackDiffuse() << ")\n";
+void addMesh(Registry& reg, int e, std::string meshPath, MaterialComponent& material) {
+    if (material.diffuseTexture == NULL_DIFFUSE_TEXTURE) {
+        std::cout << "[RenderSystem] entity " << e << " (mesh " << meshPath << ") has no diffuseTexture set \n" << "using fallback diffuse (" << reg.getFallbackDiffuse() << ")\n";
         material.diffuseTexture = reg.getFallbackDiffuse();
     }
 
-    if (material.specularTexture == 0) {
-        std::cout << "[RenderSystem] entity " << e << " (mesh " << meshId << ") has no specularTexture set — " << "using fallback specular (" << reg.getFallbackSpecular() << ")\n";
+    if (material.specularTexture == NULL_SPECULAR_TEXTURE) {
+        std::cout << "[RenderSystem] entity " << e << " (mesh " << meshPath << ") has no specularTexture set \n" << "using fallback specular (" << reg.getFallbackSpecular() << ")\n";
         material.specularTexture = reg.getFallbackSpecular();
     }
 

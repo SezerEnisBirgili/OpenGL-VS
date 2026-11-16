@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "entities/GameObject.h"
-#include "renderer/mesh.h"
 
 class AssimpImporter {
 public:

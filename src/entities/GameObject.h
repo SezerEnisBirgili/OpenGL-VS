@@ -66,10 +66,7 @@ struct DirLightComponent {
     float intensity{ 1.0f };
 };
 
-struct HierarchyComponent {
-    int parent = NULL_ENTITY;
-    std::vector<int> children;
-};
+
 struct GpuPointLight {
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 color    = glm::vec3(1.0f);
@@ -146,22 +143,16 @@ public:
     int getFallbackDiffuse() const { return fallbackDiffuse; }
     int getFallbackSpecular() const { return fallbackSpecular; }
 
-    int create(const std::string& name = "") {
+    int create(const std::string& name = "") 
+    {
         int e = nextEntity++;
         names[e] = name;
         return e;
     }
 
-    int registerMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices, std::string meshName)
+    int registerMesh(std::string meshPath)
     {
-        // implement either hashing or file based cache
-        if (auto it = meshCache.find(meshName); it != meshCache.end()) { return it->second; }
-
-        int id = nextMesh++;
-        meshStorage[id] = Mesh(vertices, indices);
-        meshCache[meshName] = id;
-
-        return id;
+        meshes[meshPath] = Mesh(meshPath);
     }
 
     int registerShader(const std::string& vertexPath, const std::string& fragmentPath)
@@ -219,28 +210,27 @@ public:
 
     Hierarchy hierarchy;
 
-    std::unordered_map<int, World>                worldStorage;
-    std::unordered_map<int, Mesh>                 meshStorage;
-    std::unordered_map<int, Shader>               shaderStorage;
-    std::unordered_map<int, Shader>               outlineShaderStorage;
+    std::unordered_map<int, World>                        worldStorage;
+    std::unordered_map<int, Mesh>                         meshStorage;
+    std::unordered_map<int, Shader>                       shaderStorage;
+    std::unordered_map<int, Shader>                       outlineShaderStorage;
 
-    std::unordered_map<std::string, int>          meshCache; 
-    std::unordered_map<std::string, int>          shaderCache; 
-    std::unordered_map<std::string, int>          outlineShaderCache; 
+    std::unordered_map<std::string, int>                  shaderCache; 
+    std::unordered_map<std::string, int>                  outlineShaderCache; 
 
-    std::unordered_map<int, TransformComponent>   transforms;
-    std::unordered_map<int, WorldMatrixComponent> worldMatrices;
-    std::unordered_map<int, WorldComponent>       worlds;
-    std::unordered_map<int, MaterialComponent>    materials;
-    std::unordered_map<int, MeshComponent>        meshes;
-    std::unordered_map<int, ShaderComponent>      shaders;
-    std::unordered_map<int, ShaderComponent>      outlineShaders;
-    std::unordered_map<int, ScriptComponent>      scripts;
-    std::unordered_map<int, TextureComponent>     textures;
-    std::unordered_map<std::string, int>          pathToEntity;
-    std::unordered_map<int, PointLightComponent>  pointLights;
-    std::unordered_map<int, DirLightComponent>    dirLights;
-    std::unordered_map<int, std::string>          names;
+    std::unordered_map<int, TransformComponent>           transforms;
+    std::unordered_map<int, WorldMatrixComponent>         worldMatrices;
+    std::unordered_map<int, WorldComponent>               worlds;
+    std::unordered_map<int, MaterialComponent>            materials;
+    std::unordered_map<std::string, Mesh>                 meshes;
+    std::unordered_map<int, ShaderComponent>              shaders;
+    std::unordered_map<int, ShaderComponent>              outlineShaders;
+    std::unordered_map<int, ScriptComponent>              scripts;
+    std::unordered_map<int, TextureComponent>             textures;
+    std::unordered_map<std::string, int>                  pathToEntity;
+    std::unordered_map<int, PointLightComponent>          pointLights;
+    std::unordered_map<int, DirLightComponent>            dirLights;
+    std::unordered_map<int, std::string>                  names;
 
     std::vector<int> renderableEntities;
     std::vector<int> renderableWorlds;
