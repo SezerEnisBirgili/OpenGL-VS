@@ -1,5 +1,6 @@
 #pragma once
 
+#include "entities/Hierarchy.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -18,8 +19,7 @@
 #include "renderer/mesh.h"
 #include "renderer/shader.h"
 #include "world/world.h"
-
-constexpr int NULL_ENTITY = 0;
+#include "Entity.h"
 
 // Forward Declarations
 class Mesh;
@@ -217,6 +217,8 @@ public:
 
     MaterialComponent getMaterial(int e) { return materials.at(e); }
 
+    Hierarchy hierarchy;
+
     std::unordered_map<int, World>                worldStorage;
     std::unordered_map<int, Mesh>                 meshStorage;
     std::unordered_map<int, Shader>               shaderStorage;
@@ -229,7 +231,6 @@ public:
     std::unordered_map<int, TransformComponent>   transforms;
     std::unordered_map<int, WorldMatrixComponent> worldMatrices;
     std::unordered_map<int, WorldComponent>       worlds;
-    std::unordered_map<int, HierarchyComponent>   hierarchy;
     std::unordered_map<int, MaterialComponent>    materials;
     std::unordered_map<int, MeshComponent>        meshes;
     std::unordered_map<int, ShaderComponent>      shaders;

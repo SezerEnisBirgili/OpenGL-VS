@@ -1,8 +1,6 @@
 #include "GameObject.h"
 #include "world/world.h"
 
-#include <algorithm>
-
 // ==========================================
 // Math Helpers
 // ==========================================
@@ -33,34 +31,17 @@ glm::mat4 composeMatrix(const TransformComponent& t) {
 int spawnEntity(Registry& reg, const std::string& name, const TransformComponent& transform, int parent) {
     int e = reg.create(name);
     reg.transforms[e] = transform;
-    reg.hierarchy[e] = { parent, {} };
+    reg.hierarchy.add(e, parent);
 
-    if (parent != NULL_ENTITY) {
-        reg.hierarchy[parent].children.push_back(e);
-    }
     return e;
 }
 
 void setParent(Registry& reg, int child, int parent) {
-    HierarchyComponent& childHierarchy = reg.hierarchy[child];
-
-    if (childHierarchy.parent != NULL_ENTITY) {
-        auto& oldSiblings = reg.hierarchy[childHierarchy.parent].children;
-        oldSiblings.erase(std::remove(oldSiblings.begin(), oldSiblings.end(), child), oldSiblings.end());
-    }
-
-    childHierarchy.parent = parent;
-    if (parent != NULL_ENTITY) {
-        reg.hierarchy[parent].children.push_back(child);
-    }
+    reg.hierarchy.setParent(child, parent);
 }
 
 int getParent(const Registry& reg, int entity) {
-    auto it = reg.hierarchy.find(entity);
-    if (it != reg.hierarchy.end()) {
-        return it->second.parent;
-    }
-    return NULL_ENTITY;
+    return reg.hierarchy.getParent(entity);
 }
 
 // ==========================================
@@ -171,27 +152,27 @@ EntityBuilder& EntityBuilder::dirLight(DirLightComponent light) {
 // ==========================================
 // Transform & Script Systems
 // ==========================================
+void transformEntity(Registry& reg, int root, const glm::mat4& rootParentWorld) {
+    struct Item { int e; glm::mat4 parentWorld; };
 
-void transformEntity(Registry& reg, int e, const glm::mat4& parentWorld) {
-    glm::mat4 local = composeMatrix(reg.transforms[e]);
-    glm::mat4 world = parentWorld * local;
-    reg.worldMatrices[e].value = world;
+    std::vector<Item> stack;
+    stack.push_back({ root, rootParentWorld });
 
-    auto it = reg.hierarchy.find(e);
-    if (it != reg.hierarchy.end()) {
-        for (int child : it->second.children) {
-            transformEntity(reg, child, world);
-        }
+    while (!stack.empty()) {
+        Item it = stack.back();
+        stack.pop_back();
+
+        glm::mat4 world = it.parentWorld * composeMatrix(reg.transforms[it.e]);
+        reg.worldMatrices[it.e].value = world;
+
+        reg.hierarchy.forEachChild(it.e, [&](int child) { stack.push_back({ child, world }); });
     }
 }
 
 void transformSystem(Registry& reg) {
-    for (const auto& [e, hierarchyComp] : reg.hierarchy) {
-        if (hierarchyComp.parent == NULL_ENTITY) {
-            transformEntity(reg, e, glm::mat4(1.0f));
-        }
-    }
+    reg.hierarchy.forEachParent([&](int root) { transformEntity(reg, root, glm::mat4(1.0f)); });
 }
+
 
 void scriptSystem(Registry& reg, float time, float dt) {
     for (auto& [entity, script] : reg.scripts) {
