@@ -93,6 +93,20 @@ int main()
     int worldShader = registry.registerShader(SHADER_DIR + "world.vert", SHADER_DIR + "lit.frag");
     int outlineShader = registry.registerOutlineShader(SHADER_DIR + "outline.vert", SHADER_DIR + "outline.frag");
 
+    AssimpImporter saver(registry, MODEL_DIR + "cube.obj", litShader);
+    int basicCubeVerticesSize = (4 * 6 * 8);
+    int VertexSize = 8;
+    const unsigned int indexCount = (6 * 6);
+    int indicesPerFace = 3;
+    int status = saver.saveSimpleModel(MODEL_DIR + "cube.gltf", basicCubeVertices, basicCubeVerticesSize, VertexSize, cubeIndices, indexCount, indicesPerFace);
+
+    if (status == 0) {
+        std::cout << "Saved quad_test.gltf successfully!" << std::endl;
+    }
+    else {
+        std::cerr << "Failed to save model." << std::endl;
+    }
+
     std::vector<Vertex> squareVerts = floatArrayToVertexVector(basicSquareVertices, std::size(basicSquareVertices));
     std::vector<Vertex> cubeVerts = floatArrayToVertexVector(basicCubeVertices, std::size(basicCubeVertices));
     std::vector<Vertex> earthVerts = floatArrayToVertexVector(basicCubeWrappedTextureVertices, std::size(basicCubeWrappedTextureVertices));
