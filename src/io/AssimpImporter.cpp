@@ -9,34 +9,48 @@
 #include <assimp/DefaultLogger.hpp>
 #include <assimp/scene.h>
 
-AssimpImporter::AssimpImporter(Registry& registry, const std::string& modelPath, int shader) : reg(registry), path(modelPath), shader(shader)
+class Model 
 {
-    std::replace(path.begin(), path.end(), '\\', '/');
+    public:
+        Model(char *path)
+        {
+            loadModel(path);
+        }
+        void Draw(Shader &shader);	
+    private:
+        // model data
+        std::vector<Mesh> meshes;
+        std::string directory;
 
-    size_t lastSlash = path.find_last_of('/');
-    directory = (lastSlash != std::string::npos) ? path.substr(0, lastSlash) : ".";
-}
+        void loadModel(std::string path) 
+        {
+            std::replace(path.begin(), path.end(), '\\', '/');
 
-int AssimpImporter::loadModel(const std::string& rootName, const TransformComponent& transform, int parent)
-{
-    Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+            size_t lastSlash = path.find_last_of('/');
+            directory = (lastSlash != std::string::npos) ? path.substr(0, lastSlash) : ".";
 
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        std::cout << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
-        return NULL_ENTITY;
-    }
+            Assimp::Importer importer;
+            const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
 
-    return processNode(scene->mRootNode, scene, rootName, transform, parent);
-}
+            if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+                std::cout << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
+            }
+
+            return processNode(scene->mRootNode);
+        }
+        void processNode(aiNode *node, const aiScene *scene);
+        Mesh processMesh(aiMesh *mesh, const aiScene *scene);
+        std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
+};
 
 int AssimpImporter::processNode(aiNode* node, const aiScene* scene, const std::string& name, const TransformComponent& transform, int parent)
 {
     int nodeEntity = EntityBuilder::create(reg, name, transform.position, transform.scale, parent);
 
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+
         aiMesh* aMesh = scene->mMeshes[node->mMeshes[i]];
-        std::string meshName = name + "_mesh" + std::to_string(meshCounter++);  // globally unique now
+        std::string meshName = name + "_mesh" + std::to_string(meshCounter++);
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         MaterialComponent material{};
@@ -182,25 +196,86 @@ void AssimpImporter::addVerticesToMesh(const float* vertices, int vertexCount, i
     for (int i = 0; i < vertexCount; ++i) {
         int offset = i * vertexSize;
 
-        // 5. Populate vertices
+        // Populate vertices
         mesh->mVertices[i] = aiVector3D(
             vertices[offset],
             vertices[offset + 1],
             vertices[offset + 2]
         );
 
-        // 6. Populate normals
+        // Populate normals
         mesh->mNormals[i] = aiVector3D(
             vertices[offset + 3],
             vertices[offset + 4],
             vertices[offset + 5]
         );
 
-        // 7. Populate texture UVs
+        // Populate texture UVs
         mesh->mTextureCoords[0][i] = aiVector3D(
             vertices[offset + 6],
             vertices[offset + 7],
             0.0f
         );
     }
+}
+
+std::vector<float> AssimpImporter::meshToVertices(const aiMesh* mesh, const int vertexSize) 
+{
+    if (!mesh || mesh->mNumVertices == 0) { return {}; }
+
+    std::vector<float> vertices(mesh->mNumVertices * vertexSize);
+
+    bool hasNormals = mesh->HasNormals();
+    bool hasUVs = mesh->HasTextureCoords(0);
+
+    for (unsigned int i = 0; i < mesh->mNumVertices; ++i) 
+    {
+        int offset = i * vertexSize;
+
+        // Extract vertex positions (3 floats)
+        vertices[offset + 0] = mesh->mVertices[i].x;
+        vertices[offset + 1] = mesh->mVertices[i].y;
+        vertices[offset + 2] = mesh->mVertices[i].z;
+
+        // Extract normals (3 floats, fallback to 0.0f if missing)
+        if (hasNormals) {
+            vertices[offset + 3] = mesh->mNormals[i].x;
+            vertices[offset + 4] = mesh->mNormals[i].y;
+            vertices[offset + 5] = mesh->mNormals[i].z;
+        } else {
+            vertices[offset + 3] = 0.0f;
+            vertices[offset + 4] = 0.0f;
+            vertices[offset + 5] = 0.0f;
+        }
+
+        // Extract texture UVs (2 floats, fallback to 0.0f if missing)
+        if (hasUVs) {
+            vertices[offset + 6] = mesh->mTextureCoords[0][i].x;
+            vertices[offset + 7] = mesh->mTextureCoords[0][i].y;
+        } else {
+            vertices[offset + 6] = 0.0f;
+            vertices[offset + 7] = 0.0f;
+        }
+    }
+
+    return vertices;
+}
+
+std::vector<unsigned int> AssimpImporter::meshToIndices(const aiMesh* mesh, const int indicesPerFace) {
+    if (!mesh || mesh->mNumFaces == 0) { return {};}
+
+    std::vector<unsigned int> indices;
+    // Reserve space assuming triangles (3 indices per face)
+    indices.reserve(mesh->mNumFaces * indicesPerFace);
+
+    for (unsigned int i = 0; i < mesh->mNumFaces; ++i) 
+    {
+        const aiFace& face = mesh->mFaces[i];
+        
+        for (unsigned int j = 0; j < face.mNumIndices; ++j) {
+            indices.push_back(face.mIndices[j]);
+        }
+    }
+
+    return indices;
 }

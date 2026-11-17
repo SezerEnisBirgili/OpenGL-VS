@@ -101,7 +101,7 @@ int main()
     int status = saver.saveSimpleModel(MODEL_DIR + "cube.gltf", basicCubeVertices, basicCubeVerticesSize, VertexSize, cubeIndices, indexCount, indicesPerFace);
 
     if (status == 0) {
-        std::cout << "Saved quad_test.gltf successfully!" << std::endl;
+        std::cout << "Saved cube.gltf successfully!" << std::endl;
     }
     else {
         std::cerr << "Failed to save model." << std::endl;

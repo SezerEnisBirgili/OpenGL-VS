@@ -1,12 +1,12 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <string>
 #include <vector>
 #include <utility>
 #include <cstddef>
 
 #include "vertex.h"
-#include "shader.h"
 
 class Mesh {
 public:
@@ -14,9 +14,49 @@ public:
     unsigned int instanceVBO = 0;
     int indexCount = 0;
 
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+
     Mesh() = default;
 
-    Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) 
+    Mesh(std::string path) 
+    {
+        
+    }
+
+    Mesh(const std::vector<Vertex>& verts, const std::vector<unsigned int>& inds) : vertices(verts), indices(inds) {
+        indexCount = indices.size();
+    }
+
+    ~Mesh() {
+        cleanup();
+    }
+
+    Mesh(const Mesh&) = delete;
+    Mesh& operator=(const Mesh&) = delete;
+
+    Mesh(Mesh&& other) noexcept {
+        *this = std::move(other);
+    }
+
+    Mesh& operator=(Mesh&& other) noexcept {
+        if (this != &other) {
+            cleanup();
+
+            VAO         = std::exchange(other.VAO, 0);
+            VBO         = std::exchange(other.VBO, 0);
+            EBO         = std::exchange(other.EBO, 0);
+            instanceVBO = std::exchange(other.instanceVBO, 0);
+            indexCount  = std::exchange(other.indexCount, 0);
+
+            vertices = std::move(other.vertices);
+            indices  = std::move(other.indices);
+        }
+
+        return *this;
+    }
+
+    void sendToGPU() 
     {
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
@@ -40,38 +80,6 @@ public:
         glBindVertexArray(0);
 
         glGenBuffers(1, &instanceVBO);
-
-        indexCount = static_cast<int>(indices.size());
-    }
-
-    ~Mesh() {
-        cleanup();
-    }
-
-    Mesh(const Mesh&) = delete;
-    Mesh& operator=(const Mesh&) = delete;
-
-    Mesh(Mesh&& other) noexcept {
-        *this = std::move(other);
-    }
-
-    Mesh& operator=(Mesh&& other) noexcept {
-        if (this != &other) {
-            cleanup(); // Release existing resources on this object
-
-            VAO = other.VAO;
-            VBO = other.VBO;
-            EBO = other.EBO;
-            instanceVBO = other.instanceVBO;
-            indexCount = other.indexCount;
-
-            other.VAO = 0;
-            other.VBO = 0;
-            other.EBO = 0;
-            other.instanceVBO = 0;
-            other.indexCount = 0;
-        }
-        return *this;
     }
 
 private:

@@ -150,9 +150,20 @@ public:
         return e;
     }
 
-    int registerMesh(std::string meshPath)
+    void registerModel()
+    {   
+
+
+    }
+
+    Mesh* registerMesh(const std::string& meshPath, Mesh mesh)
     {
-        meshes[meshPath] = Mesh(meshPath);
+        auto it = meshes.find(meshPath);
+        if (it == meshes.end())
+        {
+            it = meshes.insert(std::make_pair(meshPath, std::move(mesh))).first;
+        }
+        return &it->second;
     }
 
     int registerShader(const std::string& vertexPath, const std::string& fragmentPath)
