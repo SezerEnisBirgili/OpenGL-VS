@@ -19,7 +19,7 @@ public:
 private:
     int processNode(aiNode* node, const aiScene* scene, const std::string& name, const TransformComponent& transform = TransformComponent{}, int parent = NULL_ENTITY);
 
-    void processMesh(aiMesh* aMesh, const aiScene* scene, MaterialComponent& outMaterial, std::vector<Vertex> &vertices, std::vector<unsigned int> &indices);
+    Mesh processMesh(const aiScene* scene, aiMesh* aMesh)
     unsigned int loadMaterialTexture(aiMaterial* mat, aiTextureType type);
     std::string extractTexturePath(const aiString& str);
     void addIndicesToMesh(const unsigned int* indices, int indexCount, aiMesh* mesh, const int indicesPerFace);
