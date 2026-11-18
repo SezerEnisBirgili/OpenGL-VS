@@ -16,6 +16,7 @@ public:
 
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+    MaterialComponent material;
 
     Mesh() = default;
 
@@ -24,7 +25,8 @@ public:
         
     }
 
-    Mesh(const std::vector<Vertex>& verts, const std::vector<unsigned int>& inds) : vertices(verts), indices(inds) {
+    Mesh(const std::vector<Vertex>& verts, const std::vector<unsigned int>& inds, MaterialComponent mat = MaterialComponent{}) 
+        : vertices(verts), indices(inds), material(mat) {
         indexCount = indices.size();
     }
 

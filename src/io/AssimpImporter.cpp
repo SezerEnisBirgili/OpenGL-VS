@@ -16,13 +16,18 @@ class Model
         {
             loadModel(path);
         }
-        void Draw(Shader &shader);	
+
+        void Draw(Shader& shader)
+        {
+            for (unsigned int i = 0; i < meshes.size(); i++)
+                meshes[i].Draw(shader);
+        }
     private:
         // model data
         std::vector<Mesh> meshes;
         std::string directory;
 
-        void loadModel(std::string path) 
+        void loadModel(Registry& reg, std::string path, std::string name) 
         {
             std::replace(path.begin(), path.end(), '\\', '/');
 
@@ -36,34 +41,28 @@ class Model
                 std::cout << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
             }
 
-            return processNode(scene->mRootNode);
+            return processNode(scene->mRootNode, scene);
         }
         void processNode(aiNode *node, const aiScene *scene);
         Mesh processMesh(aiMesh *mesh, const aiScene *scene);
         std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
 };
 
-int AssimpImporter::processNode(aiNode* node, const aiScene* scene, const std::string& name, const TransformComponent& transform, int parent)
+int AssimpImporter::processNode(aiNode* node, const aiScene* scene)
 {
-    int nodeEntity = EntityBuilder::create(reg, name, transform.position, transform.scale, parent);
-
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 
         aiMesh* aMesh = scene->mMeshes[node->mMeshes[i]];
-        std::string meshName = name + "_mesh" + std::to_string(meshCounter++);
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         MaterialComponent material{};
 
-        processMesh(aMesh, scene, material, vertices, indices);
+        Mesh mesh = processMesh(aMesh, scene, material, vertices, indices);
 
-        int meshId = reg.registerMesh(vertices, indices, meshName);
-
-        EntityBuilder::create(reg, meshName, glm::vec3(0.0f), glm::vec3(1.0f), nodeEntity)
-            .renderable(meshId, shader, material);
+        meshes.push_back(mesh);
     }
 
-    // 4. Recursively process child nodes
+    // Recursively process child nodes
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
         processNode(node->mChildren[i], scene, name, TransformComponent{}, nodeEntity);
     }
@@ -71,8 +70,14 @@ int AssimpImporter::processNode(aiNode* node, const aiScene* scene, const std::s
     return nodeEntity;
 }
 
-void AssimpImporter::processMesh(aiMesh* aMesh, const aiScene* scene, MaterialComponent& outMaterial, std::vector<Vertex> &vertices, std::vector<unsigned int> &indices)
+Mesh AssimpImporter::processMesh(aiMesh* aMesh, const aiScene* scene)
 {
+    Mesh mesh;
+    mesh.vertices.reserve(aMesh->mNumVertices);
+    mesh.indices.reserve(aMesh->mNumFaces * 3);
+
+    MaterialComponent outMaterial{};
+
     for (unsigned int i = 0; i < aMesh->mNumVertices; i++) {
         Vertex v{};
         v.Position = { aMesh->mVertices[i].x, aMesh->mVertices[i].y, aMesh->mVertices[i].z };
@@ -80,21 +85,24 @@ void AssimpImporter::processMesh(aiMesh* aMesh, const aiScene* scene, MaterialCo
         v.TexCoords = aMesh->mTextureCoords[0]
             ? glm::vec2(aMesh->mTextureCoords[0][i].x, aMesh->mTextureCoords[0][i].y)
             : glm::vec2(0.0f);
-        vertices.push_back(v);
+        mesh.vertices.push_back(v);
     }
 
     for (unsigned int i = 0; i < aMesh->mNumFaces; i++) {
         aiFace face = aMesh->mFaces[i];
         for (unsigned int j = 0; j < face.mNumIndices; j++)
-            indices.push_back(face.mIndices[j]);
+            mesh.indices.push_back(face.mIndices[j]);
     }
 
     // --- textures now go on the material, not the mesh ---
     if (aMesh->mMaterialIndex < scene->mNumMaterials) {
         aiMaterial* material = scene->mMaterials[aMesh->mMaterialIndex];
-        outMaterial.diffuseTexture  = loadMaterialTexture(material, aiTextureType_DIFFUSE);
-        outMaterial.specularTexture = loadMaterialTexture(material, aiTextureType_SPECULAR);
+        mesh.material.diffuseTexture = loadMaterialTexture(material, aiTextureType_DIFFUSE);
+        mesh.material.specularTexture = loadMaterialTexture(material, aiTextureType_SPECULAR);
     }
+
+    return mesh;
+
 }
 
 unsigned int AssimpImporter::loadMaterialTexture(aiMaterial* mat, aiTextureType type)

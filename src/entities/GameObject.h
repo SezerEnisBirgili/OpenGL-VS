@@ -156,12 +156,12 @@ public:
 
     }
 
-    Mesh* registerMesh(const std::string& meshPath, Mesh mesh)
+    Model* registerModel(const std::string& meshPath, Model model)
     {
-        auto it = meshes.find(meshPath);
-        if (it == meshes.end())
+        auto it = models.find(meshPath);
+        if (it == models.end())
         {
-            it = meshes.insert(std::make_pair(meshPath, std::move(mesh))).first;
+            it = models.insert(std::make_pair(meshPath, std::move(model))).first;
         }
         return &it->second;
     }
@@ -233,7 +233,7 @@ public:
     std::unordered_map<int, WorldMatrixComponent>         worldMatrices;
     std::unordered_map<int, WorldComponent>               worlds;
     std::unordered_map<int, MaterialComponent>            materials;
-    std::unordered_map<std::string, Mesh>                 meshes;
+    std::unordered_map<std::string, Model>                models;
     std::unordered_map<int, ShaderComponent>              shaders;
     std::unordered_map<int, ShaderComponent>              outlineShaders;
     std::unordered_map<int, ScriptComponent>              scripts;
