@@ -107,15 +107,13 @@ int main()
         std::cerr << "Failed to save model." << std::endl;
     }
 
-    std::vector<Vertex> squareVerts = floatArrayToVertexVector(basicSquareVertices, std::size(basicSquareVertices));
-    std::vector<Vertex> cubeVerts = floatArrayToVertexVector(basicCubeVertices, std::size(basicCubeVertices));
-    std::vector<Vertex> earthVerts = floatArrayToVertexVector(basicCubeWrappedTextureVertices, std::size(basicCubeWrappedTextureVertices));
-
     // auto generate indices for compatbility, inefficient
-    std::vector<unsigned int> squareIndices(std::begin(::squareIndices), std::end(::squareIndices));
-    std::vector<unsigned int> cubeIndices(std::begin(::cubeIndices), std::end(::cubeIndices));
 
-    int cubeMesh = registry.registerMesh(cubeVerts, cubeIndices, "cube");
+    Model* cube = registry.registerModel(MODEL_DIR + "cube.glb");
+
+    int sun = registry.create("sun");
+
+    registry.addModel(sun, cube);
 
     int sunMesh = registry.registerMesh(cubeVerts, cubeIndices, "cube");
     int earthMesh = registry.registerMesh(earthVerts, cubeIndices, "earth");
