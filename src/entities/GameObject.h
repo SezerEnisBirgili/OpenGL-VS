@@ -17,6 +17,7 @@
 
 #include "stb_image.h"
 #include "renderer/mesh.h"
+#include "renderer/model.h"
 #include "renderer/shader.h"
 #include "world/world.h"
 #include "Entity.h"
@@ -150,18 +151,12 @@ public:
         return e;
     }
 
-    void registerModel()
-    {   
-
-
-    }
-
-    Model* registerModel(const std::string& meshPath, Model model)
+    Model* registerModel(const std::string& path)
     {
-        auto it = models.find(meshPath);
+        auto it = models.find(path);
         if (it == models.end())
         {
-            it = models.insert(std::make_pair(meshPath, std::move(model))).first;
+            it = models.insert(std::make_pair(path, Model(path))).first;
         }
         return &it->second;
     }
@@ -233,6 +228,7 @@ public:
     std::unordered_map<int, WorldMatrixComponent>         worldMatrices;
     std::unordered_map<int, WorldComponent>               worlds;
     std::unordered_map<int, MaterialComponent>            materials;
+    std::unordered_map<std::string, Mesh>                 meshes;
     std::unordered_map<std::string, Model>                models;
     std::unordered_map<int, ShaderComponent>              shaders;
     std::unordered_map<int, ShaderComponent>              outlineShaders;
