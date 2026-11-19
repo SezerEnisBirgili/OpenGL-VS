@@ -145,21 +145,21 @@ public:
     int getFallbackDiffuse() const { return fallbackDiffuse; }
     int getFallbackSpecular() const { return fallbackSpecular; }
 
-    int create(const std::string& name = "") 
+    int create(const std::string& name = "", const Mesh* model) 
     {
         int e = nextEntity++;
         names[e] = name;
+        
         return e;
     }
 
     Model* registerModel(const std::string& path)
     {
-        auto it = models.find(path);
-        if (it == models.end())
-        {
-            it = models.insert(std::make_pair(path, Model(path))).first;
-        }
-        return &it->second;
+        if (auto it = modelStorage.find(path); it != modelStorage.end()) { return &it->second; }
+
+        modelStorage[path] = Model(path);
+
+        return &modelStorage[path];
     }
 
     int registerShader(const std::string& vertexPath, const std::string& fragmentPath)
@@ -221,6 +221,7 @@ public:
     std::unordered_map<int, Mesh>                         meshStorage;
     std::unordered_map<int, Shader>                       shaderStorage;
     std::unordered_map<int, Shader>                       outlineShaderStorage;
+    std::unordered_map<std::string, Model>                modelStorage;
 
     std::unordered_map<std::string, int>                  shaderCache; 
     std::unordered_map<std::string, int>                  outlineShaderCache; 
@@ -230,7 +231,7 @@ public:
     std::unordered_map<int, WorldComponent>               worlds;
     std::unordered_map<int, MaterialComponent>            materials;
     std::unordered_map<std::string, Mesh>                 meshes;
-    std::unordered_map<std::string, Model>                models;
+    std::unordered_map<int, Model*>                       models;
     std::unordered_map<int, ShaderComponent>              shaders;
     std::unordered_map<int, ShaderComponent>              outlineShaders;
     std::unordered_map<int, ScriptComponent>              scripts;

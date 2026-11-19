@@ -1,12 +1,7 @@
 
 #include "model.h"
 #include "assimp/postprocess.h"
-#include "renderer/texture.h"
-
-void Model::Draw(const Shader& shader) const 
-{
-    for (const auto& mesh : meshes) { mesh.Draw(shader); }
-}
+#include <iostream>
 
 void Model::loadModel(std::string path) 
 {
@@ -64,30 +59,22 @@ Mesh Model::processMesh(const aiScene* scene, const aiMesh* aMesh)
         }
     }
 
-    // --- textures now go on the material, not the mesh ---
     if (aMesh->mMaterialIndex < scene->mNumMaterials) {
         aiMaterial* material = scene->mMaterials[aMesh->mMaterialIndex];
-        mesh.material.diffuseTexture  = loadMaterialTexture(material, aiTextureType_DIFFUSE);
-        mesh.material.specularTexture = loadMaterialTexture(material, aiTextureType_SPECULAR);
+        mesh.diffuseTexturePath  = getMaterialTexturePath(material, aiTextureType_DIFFUSE);
+        mesh.specularTexturePath = getMaterialTexturePath(material, aiTextureType_SPECULAR);
     }
 
-    mesh.setupMesh();
     return mesh;
 }
 
-unsigned int Model::loadMaterialTexture(aiMaterial* mat, aiTextureType type) {
-    if (mat->GetTextureCount(type) == 0) { return 0; }
+std::string Model::getMaterialTexturePath(aiMaterial* mat, aiTextureType type) {
+    if (mat->GetTextureCount(type) == 0) return 0;
 
     aiString str;
-    mat->GetTexture(type, 0, &str);
+    if (mat->GetTexture(type, 0, &str) != AI_SUCCESS) return 0;
     std::string filename = str.C_Str();
-
-    // Return cached texture ID if already uploaded to GPU
-    if (loadedTextures.contains(filename)) { return loadedTextures[filename]; }
-
     std::string fullPath = directory + '/' + filename;
-    unsigned int textureID = loadTextureFromFile(fullPath);
-    loadedTextures[filename] = textureID;
 
-    return textureID;
+    return fullPath;
 }
