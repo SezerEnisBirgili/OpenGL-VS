@@ -1,26 +1,42 @@
 #include <vector>
 
-#include "assimp/Importer.hpp"
 #include "assimp/scene.h"
 
+#include "renderer/transform.h"
+#include "renderer/material.h"
 #include "renderer/mesh.h"
+#include "renderer/registry.h"
 
-struct Model 
+struct ModelNode 
+{
+    Mesh mesh;
+    Material material;
+    Transform transform;
+    int parent;
+};
+
+struct Model
+{
+    std::string directory;
+    std::vector<ModelNode> nodes;
+};
+
+struct ModelLoader
 {
 public:
-    std::vector<Mesh> meshes;
-    std::string directory;
-    std::vector<unsigned int> hierarchy;
-    std::unordered_map<std::string, unsigned int> loadedTextures;
+    Model model;
+    std::string path;
+    std::unordered_map<std::string, Texture> loadedTextures;
 
-    Model(const std::string& path) {
+    ModelLoader(Registry& reg, const std::string& path): registry(reg) {
         loadModel(path);
     }
 
-    void Draw(const Shader &shader) const;	
 private:
+    Registry& registry;
+
     void loadModel(std::string path);
-    void processNode(const aiScene* scene, aiNode* node, int depth = 0);
+    void processNode(const aiScene* scene, aiNode* node, int parent = 0);
     Mesh processMesh(const aiScene* scene, const aiMesh* aMesh);
     unsigned int loadMaterialTexture(aiMaterial* mat, aiTextureType type);
 };

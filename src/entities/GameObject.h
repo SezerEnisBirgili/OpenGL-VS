@@ -16,8 +16,10 @@
 
 
 #include "stb_image.h"
+#include "renderer/transform.h"
 #include "renderer/mesh.h"
 #include "renderer/model.h"
+#include "renderer/texture.h"
 #include "renderer/shader.h"
 #include "world/world.h"
 #include "Entity.h"
@@ -29,13 +31,6 @@ class World;
 class Player;
 class Camera;
 class Registry;
-
-
-struct TransformComponent {
-    glm::vec3 position{ 0.0f };
-    glm::quat rotation{ 1.0f, 0.0f, 0.0f, 0.0f };
-    glm::vec3 scale{ 1.0f };
-};
 
 struct MaterialComponent {
 
@@ -86,17 +81,8 @@ struct ShaderComponent {
     int ShaderId = 0;
 };
 
-struct MeshComponent {
-    int MeshId = 0;
-};
-
 struct ScriptComponent {
     std::function<void(Registry&, int, float, float)> updateFn;
-};
-
-struct TextureComponent {
-    int textureId = 0;
-    std::string path = "";
 };
 
 struct WorldComponent {
@@ -106,25 +92,19 @@ struct WorldComponent {
 };
 
 // Math Helpers
-glm::vec3 getEulerAngles(const TransformComponent& t);
-void setEulerAngles(TransformComponent& t, const glm::vec3& degrees);
-void rotateAroundAxis(TransformComponent& t, const glm::vec3& axis, float radians);
-glm::mat4 composeMatrix(const TransformComponent& t);
+glm::vec3 getEulerAngles(const Transform& t);
+void setEulerAngles(Transform& t, const glm::vec3& degrees);
+void rotateAroundAxis(Transform& t, const glm::vec3& axis, float radians);
+glm::mat4 composeMatrix(const Transform& t);
 
 unsigned int loadTexture(Registry& reg, const std::string& path, unsigned int filter = 0, bool genMipMaps = true);
 
 // Function Declarations
-int spawnEntity(Registry& reg, const std::string& name, const TransformComponent& transform = TransformComponent{}, int parent = NULL_ENTITY);
-void setParent(Registry& reg, int child, int parent);
-int getParent(const Registry& reg, int entity);
 
-void addRenderable(Registry & reg, int e, int meshId, int shader, MaterialComponent & material);
-void addMesh(Registry& reg, int e, int meshId, MaterialComponent& material);
 void addShader(Registry& reg, int e, int shader);
 void addMaterial(Registry& reg, int e, const MaterialComponent& material);
 void addBlock(Registry& reg, int e, int meshId, int shader, MaterialComponent& material);
 void addWorld(Registry& reg, int e, int world, int shader, int outlineShader);
-void addTexture(Registry& reg, int e, const std::string& path);
 void addPointLight(Registry& reg, int e, const PointLightComponent& light = PointLightComponent{});
 void addDirLight(Registry& reg, int e, const DirLightComponent& light = DirLightComponent{});
 void addScript(Registry& reg, int e, std::function<void(Registry&, int, float, float)> fn);
@@ -133,126 +113,6 @@ void addScript(Registry& reg, int e, std::function<void(Registry&, int, float, f
 void transformSystem(Registry& reg);
 void transformEntity(Registry& reg, int e, const glm::mat4& parentWorld);
 void scriptSystem(Registry& reg, float time, float dt);
-
-class Registry {
-public:
-    Registry() = default;
-    Registry(const Registry&) = delete;
-    Registry& operator=(const Registry&) = delete;
-    Registry(Registry&&) noexcept = default;
-    Registry& operator=(Registry&&) noexcept = default;
-
-    int getFallbackDiffuse() const { return fallbackDiffuse; }
-    int getFallbackSpecular() const { return fallbackSpecular; }
-
-    int create(const std::string& name = "") 
-    {
-        int e = nextEntity++;
-        names[e] = name;
-        return e;
-    }
-
-    Model* registerModel(const std::string& path)
-    {
-        auto it = models.find(path);
-        if (it == models.end())
-        {
-            it = models.insert(std::make_pair(path, Model(path))).first;
-        }
-        return &it->second;
-    }
-
-    int registerShader(const std::string& vertexPath, const std::string& fragmentPath)
-    {
-        std::string combined = std::string(vertexPath) + " | " + std::string(fragmentPath);
-        if (auto it = shaderCache.find(combined); it != shaderCache.end()) { return it->second; }
-
-        int id = nextShader++;
-        shaderStorage[id] = Shader(vertexPath.c_str(), fragmentPath.c_str());
-        shaderCache[combined] = id;
-
-        return id;
-    }
-
-    int registerOutlineShader(const std::string& vertexPath, const std::string& fragmentPath)
-    {
-        std::string combined = std::string(vertexPath) + " | " + std::string(fragmentPath);
-        if (auto it = outlineShaderCache.find(combined); it != outlineShaderCache.end()) { return it->second; }
-
-        int id = nextOutlineShader++;
-        outlineShaderStorage[id] = Shader(vertexPath.c_str(), fragmentPath.c_str());
-        outlineShaderCache[combined] = id;
-
-        return id;
-    }
-
-    int registerWorld(int x, int y, int z)
-    {
-        int id = nextWorld++;
-        worldStorage[id] = World(this, x,y,z);;
-        return id;
-    }
-
-    World* getWorld(int e) { return &worldStorage.at(getWorldId(e)); }
-    int getWorldId(int e) { return worlds.at(e).worldId; }
-    World* getWorldWithId(int w) {return &worldStorage.at(w); }
-
-    Shader* getShader(int e) { return &shaderStorage.at(getShaderId(e)); }
-    int getShaderId(int e) { return shaders.at(e).ShaderId; }
-    Shader* getShaderWithId(int s) { return &shaderStorage.at(s); }
-
-    Shader* getOutlineShader(int e) { return &outlineShaderStorage.at(getOutlineShaderId(e)); }
-    int getOutlineShaderId(int e) { return outlineShaders.at(e).ShaderId; }
-    Shader* getOutlineShaderWithId(int s) { return &outlineShaderStorage.at(s); }
-
-    Mesh* getMesh(int e) { return &meshStorage.at(getMeshId(e)); }
-    int getMeshId(int e) { return meshes.at(e).MeshId; }
-    Mesh* getMeshWithId(int m) {return &meshStorage.at(m); }
-    int getMeshIdByName(const std::string& name) const {
-        if (auto it = meshCache.find(name); it != meshCache.end()) { return it->second; }
-        else { return -1; }   
-    }
-
-    MaterialComponent getMaterial(int e) { return materials.at(e); }
-
-    Hierarchy hierarchy;
-
-    std::unordered_map<int, World>                        worldStorage;
-    std::unordered_map<int, Mesh>                         meshStorage;
-    std::unordered_map<int, Shader>                       shaderStorage;
-    std::unordered_map<int, Shader>                       outlineShaderStorage;
-
-    std::unordered_map<std::string, int>                  shaderCache; 
-    std::unordered_map<std::string, int>                  outlineShaderCache; 
-
-    std::unordered_map<int, TransformComponent>           transforms;
-    std::unordered_map<int, WorldMatrixComponent>         worldMatrices;
-    std::unordered_map<int, WorldComponent>               worlds;
-    std::unordered_map<int, MaterialComponent>            materials;
-    std::unordered_map<std::string, Mesh>                 meshes;
-    std::unordered_map<std::string, Model>                models;
-    std::unordered_map<int, ShaderComponent>              shaders;
-    std::unordered_map<int, ShaderComponent>              outlineShaders;
-    std::unordered_map<int, ScriptComponent>              scripts;
-    std::unordered_map<int, TextureComponent>             textures;
-    std::unordered_map<std::string, int>                  pathToEntity;
-    std::unordered_map<int, PointLightComponent>          pointLights;
-    std::unordered_map<int, DirLightComponent>            dirLights;
-    std::unordered_map<int, std::string>                  names;
-
-    std::vector<int> renderableEntities;
-    std::vector<int> renderableWorlds;
-    std::vector<int> blockPalette;
-
-private:
-    int nextOutlineShader = 1;
-    int nextShader = 1;
-    int nextWorld = 1;
-    int nextMesh = 1;
-    int nextEntity = 1;
-    int fallbackDiffuse = 1;
-    int fallbackSpecular = 2;
-};
 
 struct EntityBuilder {
     Registry& reg;

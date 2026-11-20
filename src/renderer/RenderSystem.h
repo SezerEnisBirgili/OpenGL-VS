@@ -8,15 +8,17 @@
 
 #include <vector>
 
+struct Renderable {
+    int modelID;
+    int textureID;
+    Transform transform;
+};
+
 class RenderSystem {
 private:
-    Player& player;
     Registry& reg;
 
-    std::vector<RenderItem> opaque;
-    std::vector<RenderItem> transparent;
-    std::vector<InstancedRenderItem> instancedOpaque;
-    std::vector<GpuPointLight> pointLightsGPU;
+    std::vector<Renderable> renderables;
 
     void uploadInstancePositions(Mesh* mesh, const std::vector<glm::vec3>& positions);
     void drawMesh(int m);
