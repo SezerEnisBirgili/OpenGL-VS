@@ -1,17 +1,21 @@
-#include "model.h"
+#pragma once
 
+#include "renderer/modelLoader.h"
 #include "renderer/model.h"
 #include "renderer/texture.h"
 #include "renderer/transform.h"
+#include "renderer/vertex.h"
 
+#include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
+
 
 void ModelLoader::loadModel(std::string path)
 {
     std::replace(path.begin(), path.end(), '\\', '/');
 
     size_t lastSlash = path.find_last_of('/');
-    directory = (lastSlash != std::string::npos) ? path.substr(0, lastSlash) : ".";
+    model.directory = (lastSlash != std::string::npos) ? path.substr(0, lastSlash) : ".";
 
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
@@ -39,26 +43,27 @@ Transform ModelLoader::toTransform(const aiMatrix4x4& m)
 void ModelLoader::processNode(const aiScene* scene, aiNode* node, int parent)
 {
     const int self = model.nodes.size();
-    model.nodes.push_back({ Mesh{}, Material{}, toTransform(node->mTransformation), parent });
+    model.nodes.push_back({ nullptr, Material{}, toTransform(node->mTransformation), parent });
 
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         unsigned meshIndex = node->mMeshes[i];
-        std::string key = path + "#" + std::to_string(meshIndex);
-        if (registry.contains())
+        std::string key = registry.makeKey(ResourceType::Mesh, path, meshIndex);
         const aiMesh* aMesh = scene->mMeshes[meshIndex];
 
-        Mesh mesh = processMesh(scene, aMesh);
+        Mesh* mesh = registry.get(key);
+        // there is no mesh for key
+        if (!mesh)
+            mesh = registry.add(key, processMesh(scene, aMesh));
+
         Material material = processMaterial(scene, aMesh);
-        
-        int meshId = registry.add(mesh);
 
         if (i == 0) {
-            model.nodes[self].mesh = std::move(mesh);
+            model.nodes[self].mesh = mesh;
             model.nodes[self].material = material;
         }
         else {
-            model.nodes.push_back({ std::move(mesh), material, Transform{}, self });
+            model.nodes.push_back({ mesh, material, Transform{}, self });
         }
     }
 
