@@ -1,7 +1,7 @@
 #pragma once
 
 #include "componentStore.h"
-#include "entities/hierarchy.h"
+#include "entities/Hierarchy.h"
 #include "renderer/transform.h"
 #include "renderer/components.h"
 

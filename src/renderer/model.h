@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "entities/Hierarchy.h"
 #include "renderer/transform.h"
 #include "renderer/material.h"
 #include "renderer/mesh.h"

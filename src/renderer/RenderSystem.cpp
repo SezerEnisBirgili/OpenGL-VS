@@ -1,46 +1,28 @@
 #include "RenderSystem.h"
 #include "IRenderable.h"
-#include "world/world.h"
 #include "core/settings.h"
 
 #include <algorithm>
-#include <unordered_map>
 #include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL   // required for glm/gtx/* headers in GLM 1.0+
 #include <glm/gtx/norm.hpp>       // glm::distance2
 
-void RenderSystem::render(Renderable r, int s) {    
-    Shader* shader;
+void RenderSystem::render(const DrawItem& item, int s) {
 
-    // if shader is not given, use shader assigned to entity
-    if (!s) {
-        shader = reg.shader(r.material.shaderId);
-    } else {
-        shader = reg.shader(s);
-    }
-
-
-    const auto& camera = player.getCamera();
-
-    const Mesh* mesh = reg.model(r.modelId);
-    const glm::mat4& model = r.;
-    const MaterialComponent& mat = reg.materials.at(e);
-
+    Shader* shader = reg.shader(s ? s : item.material->shaderId);
+    const Material& mat = *item.material;
+    
     shader->use();
 
-    shader->setFloat("ambientStrength", lightSettings.ambientStrength);
-    shader->setVec3("ambientColor", lightSettings.ambientColor);
-    shader->setMat4("model", model);
-    shader->setMat4("view", camera.GetViewMatrix());
-    shader->setMat4("projection", engineSettings.getProjectionMatrix());
-    shader->setVec3("viewPos", camera.Position);
+    bindFrameUniforms(*shader); // view, projection, viewPos, ambient, lights
+    shader->setMat4("model", item.model);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, mat.diffuseTexture);
+    glBindTexture(GL_TEXTURE_2D, mat.diffuse.textureID);
     shader->setInt("material.diffuse", 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, mat.specularTexture);
+    glBindTexture(GL_TEXTURE_2D, mat.specular.textureID);
     shader->setInt("material.specular", 1);
 
     shader->setVec3("material.color", mat.color);
@@ -50,19 +32,16 @@ void RenderSystem::render(Renderable r, int s) {
     shader->setFloat("material.alpha", mat.alpha);
     shader->setBool("material.isMasked", mat.isMasked);
 
-    shader->setBool("debugFaces", debugSettings.showFaceColors);
-
-    uploadLights(*shader);
-    uploadDirLights(reg, *shader, lightSettings.dirLightEnabled);
-
     // masked renderables (e.g. grass) are typically square meshes
-    if (debugSettings.cullFace && mat.isMasked) glDisable(GL_CULL_FACE);
+    const bool noCull = debugSettings.cullFace && mat.isMasked;
+    if (noCull) glDisable(GL_CULL_FACE);
 
-    drawMesh(reg.getMeshId(e));
+    drawMesh(item.mesh);
 
-    if (debugSettings.cullFace && mat.isMasked) glEnable(GL_CULL_FACE);
+    if (noCull) glEnable(GL_CULL_FACE);
 }
 
+/*
 void RenderSystem::renderInstanced(const std::vector<InstancedRenderItem>& items, int shader) {
     for (const InstancedRenderItem& batch : items) {
         if (batch.positions.empty()) {
@@ -120,92 +99,124 @@ void RenderSystem::uploadInstancePositions(Mesh* mesh, const std::vector<glm::ve
 
     glBindVertexArray(0);
 }
+*/
 
-void RenderSystem::drawMesh(int meshId) {
-
-    Mesh* mesh = reg.getMeshWithId(meshId);
-
+void RenderSystem::drawMesh(const Mesh* mesh) {
     glBindVertexArray(mesh->VAO);
-    glDisableVertexAttribArray(3);   // don't let non-instanced draws read leftover aInstancePos
+    glDisableVertexAttribArray(3);   // in case of leftover aInstancePos from drawMeshInstanced
     glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
 
+/*
 void RenderSystem::drawMeshInstanced(Mesh* mesh, int count) {
     glBindVertexArray(mesh->VAO);
     glDrawElementsInstanced(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, 0, count);
+    glDisableVertexAttribArray(3);
     glBindVertexArray(0);
+}
+*/
+
+void RenderSystem::collectGpuLights() {
+    pointLightsGPU.clear();
+    dirLightsGPU.clear();
+
+    for (const LightItem& li : lights) {
+        const Light& l = li.light;
+
+        switch (l.type) {
+        case LightType::Point: 
+        {
+            GpuPointLight g;
+            g.position  = li.position;
+            g.color     = l.color;
+            g.intensity = l.intensity;
+            g.constant  = l.constant;
+            g.linear    = l.linear;
+            g.quadratic = l.quadratic;
+            pointLightsGPU.push_back(g);
+            break;
+        }
+        case LightType::Directional: 
+        {
+            GpuDirLight g;
+            g.direction = li.direction;
+            g.color     = l.color;
+            g.intensity = l.intensity;
+            dirLightsGPU.push_back(g);
+            break;
+        }
+        case LightType::Spot:
+            break; //TODO: implement spotlights e.g. flashlight
+        }
+    }
 }
 
 void RenderSystem::uploadLights(Shader& shader) {
     shader.setBool("pointLightsEnabled", lightSettings.pointLightsEnabled);
-    shader.setInt("numPointLights", (int)pointLightsGPU.size());
+    shader.setInt("numPointLights", (int)pointLights.size());
 
-    for (size_t i = 0; i < pointLightsGPU.size(); i++) {
-        const GpuPointLight& light = pointLightsGPU[i];
+    for (size_t i = 0; i < pointLights.size(); i++) {
+        const LightItem& li = pointLights[i];
+        const Light& l = li.light;  
         std::string base = "pointLights[" + std::to_string(i) + "].";
-        shader.setVec3(base + "position", light.position);
-        shader.setVec3(base + "color", light.color);
-        shader.setFloat(base + "intensity", light.intensity);
-        shader.setFloat(base + "constant", light.constant);
-        shader.setFloat(base + "linear", light.linear);
-        shader.setFloat(base + "quadratic", light.quadratic);
+        shader.setVec3(base + "position", li.position);
+        shader.setVec3(base + "color", l.color);
+        shader.setFloat(base + "intensity", l.intensity);
+        shader.setFloat(base + "constant", l.constant);
+        shader.setFloat(base + "linear", l.linear);
+        shader.setFloat(base + "quadratic", l.quadratic);
     }
 }
 
-void RenderSystem::uploadDirLights(const Registry& reg, Shader& shader, bool enabled) {
-    if (!enabled) { shader.setInt("numDirLights", 0); return; }
+void RenderSystem::uploadDirLights(Shader& shader) {
+    if (!lightSettings.dirLightEnabled) { shader.setInt("numDirLights", 0); return; }
 
-    shader.setInt("numDirLights", (int)reg.dirLights.size());
+    shader.setInt("numDirLights", (int)dirLights.size());
 
-    int i = 0;
-    for (const auto& [e, dirLightComp] : reg.dirLights) {
-        glm::vec3 dir = dirLightComp.direction;
+    for (size_t i = 0; i < dirLights.size(); i++) {
+        const LightItem& li = dirLights[i];
         std::string base = "dirLights[" + std::to_string(i) + "].";
-        shader.setVec3(base + "direction", dir);
-        shader.setVec3(base + "color", dirLightComp.color);
-        shader.setFloat(base + "intensity", dirLightComp.intensity);
-        i++;
+        shader.setVec3(base + "direction", li.direction);
+        shader.setVec3(base + "color", li.light.color);
+        shader.setFloat(base + "intensity", li.light.intensity);
     }
 }
 
 void RenderSystem::collectRenderItems() {
-
-    renderables.clear();
-    lights.clear();
+    opaque.clear();
+    transparent.clear();
+    pointLights.clear();
+    dirLights.clear();
 
     for (const auto& [e, r] : scene.renderables) {
         if (!r.isVisible || r.modelId < 0) continue;
-        renderables.push_back(r);
-    }
 
-    for (const auto& [e, l] : scene.lights) { lights.push_back(l); }
-}
+        const glm::mat4& world = worldMatrices.at(e);
+        Model* model = reg.model(r.modelId);
 
-void RenderSystem::collectPointLights() 
-{
-    pointLightsGPU.clear();
+        for (const ModelNode& node : model->nodes) {
+            DrawItem item;
+            item.mesh     = node.mesh;
+            item.material = &r.material;
+            item.model    = world * node.transform.toMat4();
+            item.entity   = e;
 
-    for (const RenderItem& item : opaque) {
-        auto it = reg.pointLights.find(item.e);
-        if (it == reg.pointLights.end()) continue;
-        addLight(item.e, glm::vec3(item.model[3]));
-    }
-
-        for (const RenderItem& item : transparent) {
-        auto it = reg.pointLights.find(item.e);
-        if (it == reg.pointLights.end()) continue;
-        addLight(item.e, glm::vec3(item.model[3]));
-    }
-
-    for (const InstancedRenderItem& batch : instancedOpaque) {
-        for (const glm::vec3& pos : batch.positions) {
-            auto it = reg.pointLights.find(batch.e);
-            if (it == reg.pointLights.end()) continue;
-            addLight(batch.e, pos);
+            r.material.alpha < 1.0f ? transparent.push_back(item) : opaque.push_back(item);
         }
     }
-    
+
+    for (const auto& [e, l] : scene.lights) {
+        const glm::mat4& w = worldMatrices.at(e);
+
+        LightItem li;
+        li.light     = l;
+        li.position  = glm::vec3(w[3]);
+        li.direction = glm::normalize(glm::vec3(w * glm::vec4(0, 0, -1, 0)));
+
+        if (l.type == LightType::Point)            pointLights.push_back(li);
+        else if (l.type == LightType::Directional) dirLights.push_back(li);
+    }
 }
 
 void RenderSystem::applyDebugState() {
@@ -215,48 +226,26 @@ void RenderSystem::applyDebugState() {
     glPolygonMode(GL_FRONT_AND_BACK, debugSettings.wireframe ? GL_LINE : GL_FILL);
 }
 
-// collectPointLights helper function
-void RenderSystem::addLight(int e, const glm::vec3& worldPos) {
-
-    auto it = reg.pointLights.find(e);
-    if (it == reg.pointLights.end()) {
-        std::cout << "[addLight] entity point light component is null" << std::endl;
-        return;
-    }
-
-    const PointLightComponent& pl = reg.pointLights.at(e);
-    GpuPointLight gpuLight;
-    gpuLight.position = worldPos;
-    gpuLight.color = pl.color;
-    gpuLight.intensity = pl.intensity;
-    gpuLight.constant = pl.constant;
-    gpuLight.linear = pl.linear;
-    gpuLight.quadratic = pl.quadratic;
-    pointLightsGPU.push_back(gpuLight);
-}
-
-void RenderSystem::draw() {
-    // apply debug settings
-    applyDebugState();
-    // collect all renderable entities
-    collectRenderItems();
-    collectPointLights();
-
-    const glm::vec3 camPos = player.getCamera().Position;
-
-    // --- opaque pass ---
+void RenderSystem::drawOpaquePass() 
+{
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
 
-    for (const auto& item : renderables)
+    for (const auto& item : opaque)
         render(item);
 
+    /*
     for (int e : reg.renderableWorlds) {
         int worldShaderId = reg.worlds.at(e).shaderId;
         renderInstanced(instancedOpaque, worldShaderId);
     }
+    */
+}
 
-    // --- transparent pass ---
+void RenderSystem::drawTransparentPass() 
+{
+    const glm::vec3 camPos = player.getCamera().Position;
+
     std::sort(transparent.begin(), transparent.end(), 
     [&](const RenderItem& a, const RenderItem& b) { return glm::distance2(camPos, glm::vec3(a.model[3])) > glm::distance2(camPos, glm::vec3(b.model[3]));
     });
@@ -270,8 +259,24 @@ void RenderSystem::draw() {
 
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
+}
 
-    drawOutline();
+const glm::mat4& RenderSystem::resolveWorld(int e) {
+    auto it = worldMatrices.find(e);
+    if (it != worldMatrices.end()) return it->second;
+    
+    glm::mat4 local = scene.transforms.at(e).toMatrix();
+
+    int parent = scene.hierarchy.getParent(e);
+    glm::mat4 world = (parent != NULL_ENTITY) ? local : resolveWorld(parent) * local;
+
+    return worldMatrices[e] = world;
+}
+
+void RenderSystem::updateWorldMatrices() {
+    worldMatrices.clear();
+    for (const auto& [e, t] : scene.transforms)
+        resolveWorld(e);
 }
 
 void RenderSystem::drawOutline() {
@@ -328,4 +333,37 @@ void RenderSystem::drawOutline() {
             glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
         }
     }
+}
+
+FrameData RenderSystem::buildFrameData() {
+    const Camera& cam = player.getCamera();
+
+    FrameData f;
+    f.view       = cam.GetViewMatrix();
+    f.projection = engineSettings.getProjectionMatrix();
+    f.camPos     = cam.Position;
+    return f;
+}
+
+void RenderSystem::bindFrameUniforms(Shader& s) {
+    s.setMat4("view", frame.view);
+    s.setMat4("projection", frame.projection);
+    s.setVec3("viewPos", frame.camPos);
+    s.setFloat("ambientStrength", lightSettings.ambientStrength);
+    s.setVec3("ambientColor", lightSettings.ambientColor);
+    uploadLights(s);
+    uploadDirLights(s);
+}
+
+void RenderSystem::draw() {
+    // apply debug settings
+    // e.g. wireframe view
+    applyDebugState();
+
+    collectRenderItems();
+    collectGpuLights(); 
+
+    drawOpaquePass();
+    drawTransparentPass();
+    drawOutline();
 }

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "entities/Hierarchy.h"
-
 #include "renderer/shader.h"
 #include "renderer/mesh.h" 
 #include "renderer/model.h"
