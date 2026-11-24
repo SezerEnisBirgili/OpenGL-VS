@@ -6,4 +6,5 @@ struct Material
 {
     Texture diffuse;
     Texture specular;
+    int shaderId;
 };

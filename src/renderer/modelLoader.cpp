@@ -1,5 +1,3 @@
-#pragma once
-
 #include "renderer/modelLoader.h"
 #include "renderer/model.h"
 #include "renderer/texture.h"
@@ -10,7 +8,7 @@
 #include "assimp/postprocess.h"
 
 
-void ModelLoader::loadModel(std::string path)
+Model* ModelLoader::loadModel()
 {
     std::replace(path.begin(), path.end(), '\\', '/');
 
@@ -20,11 +18,25 @@ void ModelLoader::loadModel(std::string path)
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
 
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+    if (!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode) {
         std::cout << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
+        return;
     }
 
-    return processNode(scene, scene->mRootNode);
+    // one material for the whole model
+    for (unsigned int i = 0; i < scene->mNumMeshes; i++)
+    {
+        Material m = processMaterial(scene, scene->mMeshes[i]);
+        if (m.diffuse.textureID != 0)
+        {
+            model.material = m;
+            break;
+        }
+    }
+
+    processNode(scene, scene->mRootNode, NULL_ENTITY);
+
+    return &model;
 }
 
 Transform ModelLoader::toTransform(const aiMatrix4x4& m)
@@ -35,7 +47,7 @@ Transform ModelLoader::toTransform(const aiMatrix4x4& m)
 
     Transform t;
     t.position = { pos.x, pos.y, pos.z };
-    t.rotation = glm::quat(rot.w, rot.x, rot.y, rot.z);  // glm is w-first
+    t.rotation = glm::quat(rot.w, rot.x, rot.y, rot.z);
     t.scale = { scl.x, scl.y, scl.z };
     return t;
 }
@@ -43,27 +55,26 @@ Transform ModelLoader::toTransform(const aiMatrix4x4& m)
 void ModelLoader::processNode(const aiScene* scene, aiNode* node, int parent)
 {
     const int self = model.nodes.size();
-    model.nodes.push_back({ nullptr, Material{}, toTransform(node->mTransformation), parent });
+    model.nodes.push_back({ nullptr, toTransform(node->mTransformation) });
+    model.hierarchy.add(self, parent);
 
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         unsigned meshIndex = node->mMeshes[i];
         std::string key = registry.makeKey(ResourceType::Mesh, path, meshIndex);
-        const aiMesh* aMesh = scene->mMeshes[meshIndex];
 
         Mesh* mesh = registry.get(key);
         // there is no mesh for key
         if (!mesh)
-            mesh = registry.add(key, processMesh(scene, aMesh));
-
-        Material material = processMaterial(scene, aMesh);
+            mesh = registry.add(key, processMesh(scene, scene->mMeshes[meshIndex]));
 
         if (i == 0) {
             model.nodes[self].mesh = mesh;
-            model.nodes[self].material = material;
         }
         else {
-            model.nodes.push_back({ mesh, material, Transform{}, self });
+            const int extra = model.nodes.size();
+            model.nodes.push_back({ mesh, Transform{} });
+            model.hierarchy.add(extra, self);
         }
     }
 

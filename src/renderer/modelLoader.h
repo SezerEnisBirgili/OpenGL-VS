@@ -14,14 +14,15 @@ public:
     std::string path;
     std::unordered_map<std::string, Texture> loadedTextures;
 
-    ModelLoader(Registry& reg, const std::string& path): registry(reg) {
-        loadModel(path);
+    ModelLoader(Registry& reg, const std::string& p) : registry(reg) {
+        path = p;
     }
+
+    Model* loadModel();
 
 private:
     Registry& registry;
 
-    void loadModel(std::string path);
     void processNode(const aiScene* scene, aiNode* node, int parent = 0);
     Mesh processMesh(const aiScene* scene, const aiMesh* aMesh);
     Mesh loadMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);

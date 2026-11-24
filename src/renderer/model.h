@@ -9,14 +9,14 @@
 struct ModelNode 
 {
     Mesh* mesh;
-    Material material;
     Transform transform;
-    int parent;
 };
 
 struct Model
 {
     std::string directory;
+    Material material;
+    Hierarchy hierarchy;
     std::vector<ModelNode> nodes;
 };
 

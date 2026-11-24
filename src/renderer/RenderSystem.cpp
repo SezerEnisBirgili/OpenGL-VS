@@ -9,21 +9,21 @@
 #define GLM_ENABLE_EXPERIMENTAL   // required for glm/gtx/* headers in GLM 1.0+
 #include <glm/gtx/norm.hpp>       // glm::distance2
 
-void RenderSystem:: render(RenderItem renderable, int s) {
-
+void RenderSystem::render(Renderable r, int s) {    
     Shader* shader;
-    int e = renderable.e;
 
     // if shader is not given, use shader assigned to entity
     if (!s) {
-        shader = reg.getShader(e);
+        shader = reg.shader(r.material.shaderId);
     } else {
-        shader = reg.getShaderWithId(s);
+        shader = reg.shader(s);
     }
 
-    const Mesh* mesh = reg.getMesh(e);
+
     const auto& camera = player.getCamera();
-    const glm::mat4& model = renderable.model;
+
+    const Mesh* mesh = reg.model(r.modelId);
+    const glm::mat4& model = r.;
     const MaterialComponent& mat = reg.materials.at(e);
 
     shader->use();
@@ -170,41 +170,20 @@ void RenderSystem::uploadDirLights(const Registry& reg, Shader& shader, bool ena
 }
 
 void RenderSystem::collectRenderItems() {
-    opaque.clear();
-    transparent.clear();
-    instancedOpaque.clear();
-    pointLightsGPU.clear();
 
-    // entities
-    for (int e : reg.renderableEntities) {
-        const MaterialComponent& mat = reg.materials.at(e);
-        const glm::mat4& model = reg.worldMatrices.at(e).value;
+    renderables.clear();
+    lights.clear();
 
-        if (mat.isTransparent) transparent.push_back({ e, model });
-        else opaque.push_back({ e, model });
-
-        auto lightIt = reg.pointLights.find(e);
-        if (lightIt != reg.pointLights.end()) {
-            const PointLightComponent& pl = lightIt->second;
-            GpuPointLight gpuLight;
-            gpuLight.position = glm::vec3(model[3]); // world position
-            gpuLight.color = pl.color;
-            gpuLight.intensity = pl.intensity;
-            gpuLight.constant = pl.constant;
-            gpuLight.linear = pl.linear;
-            gpuLight.quadratic = pl.quadratic;
-            pointLightsGPU.push_back(gpuLight);
-        }
+    for (const auto& [e, r] : scene.renderables) {
+        if (!r.isVisible || r.modelId < 0) continue;
+        renderables.push_back(r);
     }
 
-    for (int e : reg.renderableWorlds) {
-        World& world = *reg.getWorld(e);
-        world.collectInstancedRenderItems(instancedOpaque, glm::mat4(1.0f));
-        world.collectRenderItems(transparent, glm::mat4(1.0f));
-    }
+    for (const auto& [e, l] : scene.lights) { lights.push_back(l); }
 }
 
-void RenderSystem::collectPointLights() {
+void RenderSystem::collectPointLights() 
+{
     pointLightsGPU.clear();
 
     for (const RenderItem& item : opaque) {
@@ -226,6 +205,7 @@ void RenderSystem::collectPointLights() {
             addLight(batch.e, pos);
         }
     }
+    
 }
 
 void RenderSystem::applyDebugState() {
@@ -255,7 +235,7 @@ void RenderSystem::addLight(int e, const glm::vec3& worldPos) {
     pointLightsGPU.push_back(gpuLight);
 }
 
-void RenderSystem::renderFrame() {
+void RenderSystem::draw() {
     // apply debug settings
     applyDebugState();
     // collect all renderable entities
@@ -268,10 +248,7 @@ void RenderSystem::renderFrame() {
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
 
-    if (opaque.empty())
-        std::cout << "[RenderSystem] WARNING: opaque list is empty, nothing will be drawn this pass\n";
-
-    for (const auto& item : opaque)
+    for (const auto& item : renderables)
         render(item);
 
     for (int e : reg.renderableWorlds) {
