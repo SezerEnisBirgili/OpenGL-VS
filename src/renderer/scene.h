@@ -27,7 +27,7 @@ public:
     Hierarchy hierarchy;
     ComponentStore<Transform>  transforms;
     ComponentStore<Renderable> renderables;
-    ComponentStore<Camera>     cameras;
+    ComponentStore<CameraComponent>     cameras;
     ComponentStore<Light>      lights;
     ComponentStore<Name>       names;
 

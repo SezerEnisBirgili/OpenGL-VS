@@ -13,12 +13,16 @@ struct Renderable
     bool isVisible = true;
 };
 
-struct Camera
+struct CameraComponent
 {
     float fov = 60.0f;
     float nearPlane = 0.1f;
     float farPlane = 100.0f;
     bool  active = true;
+
+    glm::mat4 view{ 1.0f };
+    glm::mat4 projection{ 1.0f };
+    glm::mat4 viewProjection{ 1.0f };
 };
 
 enum class LightType { Directional, Point, Spot };

@@ -1,6 +1,8 @@
 #include "RenderSystem.h"
 #include "IRenderable.h"
 #include "core/settings.h"
+#include "renderer/cameraSystem.h"
+#include "renderer/transform.h"
 
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
@@ -242,13 +244,17 @@ void RenderSystem::drawOpaquePass()
     */
 }
 
-void RenderSystem::drawTransparentPass() 
+void RenderSystem::drawTransparentPass()
 {
-    const glm::vec3 camPos = player.getCamera().Position;
+    CameraSystem cameraSystem;
+    Transform* t = cameraSystem.getActiveCameraPos(scene);
 
-    std::sort(transparent.begin(), transparent.end(), 
-    [&](const RenderItem& a, const RenderItem& b) { return glm::distance2(camPos, glm::vec3(a.model[3])) > glm::distance2(camPos, glm::vec3(b.model[3]));
-    });
+    const glm::vec3 camPos = t->world[3];
+
+    std::sort(transparent.begin(), transparent.end(), [&](const DrawItem& a, const DrawItem& b)
+        {
+            return glm::distance2(camPos, glm::vec3(a.model[3])) > glm::distance2(camPos, glm::vec3(b.model[3]));
+        });
 
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
@@ -265,7 +271,7 @@ const glm::mat4& RenderSystem::resolveWorld(int e) {
     auto it = worldMatrices.find(e);
     if (it != worldMatrices.end()) return it->second;
     
-    glm::mat4 local = scene.transforms.at(e).toMatrix();
+    glm::mat4 local = scene.transforms.get(e)->toMat4();
 
     int parent = scene.hierarchy.getParent(e);
     glm::mat4 world = (parent != NULL_ENTITY) ? local : resolveWorld(parent) * local;

@@ -8,10 +8,7 @@ struct EngineSettings
     unsigned int screenWidth = 1920;
     unsigned int screenHeight = 1080;
 
-    // Projection settings
-    float fov = 45.0f;
-    float nearPlane = 0.1f;
-    float farPlane = 100.0f;
+    float aspect() const { return screenHeight == 0 ? 1.0f : (float)screenWidth / screenHeight; }
 
     // Mouse state
     float lastX = 400.0f;
@@ -24,8 +21,6 @@ struct EngineSettings
 
     // outline 
     glm::vec3 outlineColor = glm::vec3(1.0f);
-
-    glm::mat4 getProjectionMatrix() const { return glm::perspective(glm::radians(fov), (float)screenWidth / screenHeight, nearPlane, farPlane); }
 };
 
 struct GlobalLightSettings {
